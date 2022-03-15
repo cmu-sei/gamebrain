@@ -1,9 +1,8 @@
-settings:
-    ca_cert_path: /usr/local/share/ca-certificates/foundry-appliance-root-ca.crt
-    identity:
-        base_url: https://foundry.local/identity/
-        token_endpoint: connect/token
-        client_id: gamebrain-client
-        client_secret: 7e972ec6610b49dab492a92ec3d7f5cd
-    topomojo:
-        base_api_url: https://foundry.local/topomojo/api/
+ca_cert_path: /usr/local/share/ca-certificates/foundry-appliance-root-ca.crt
+identity:
+    base_url: https://foundry.local/identity/
+    token_endpoint: connect/token
+    client_id: gamebrain-client
+    client_secret: 7e972ec6610b49dab492a92ec3d7f5cd
+topomojo:
+    base_api_url: https://foundry.local/topomojo/api/

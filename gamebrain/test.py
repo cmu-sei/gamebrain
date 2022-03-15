@@ -8,12 +8,12 @@ import yaml
 def main():
     settings = gbsettings.load_settings("./settings.yaml")
 
-    identity = settings.settings.identity
+    identity = settings.identity
     token_url = f'{identity.base_url}{identity.token_endpoint}'
 
     client = BackendApplicationClient(client_id=identity.client_id)
     session = OAuth2Session(client=client)
-    token = session.fetch_token(token_url=token_url, client_id=identity.client_id, client_secret=identity.client_secret, verify=settings.settings.ca_cert_path)
+    token = session.fetch_token(token_url=token_url, client_id=identity.client_id, client_secret=identity.client_secret, verify=settings.ca_cert_path)
 
     print(token)
 
