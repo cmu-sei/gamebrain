@@ -8,8 +8,15 @@ requests = "*"
 pyyaml = "*"
 requests-oauthlib = "*"
 pydantic = "*"
+fastapi = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.8"
+
+[packages.uvicorn]
+extras = [ "standard",]
+
+[packages.python-jose]
+extras = [ "cryptography",]
