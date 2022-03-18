@@ -7,7 +7,7 @@ import requests
 from requests_oauthlib import OAuth2Session
 import yaml
 
-import gbsettings
+from .gbsettings import load_settings
 
 
 class User(BaseModel):
@@ -15,7 +15,7 @@ class User(BaseModel):
 
 
 def main():
-    settings = gbsettings.load_settings("./settings.yaml")
+    settings = load_settings("./settings.yaml")
 
     identity = settings.identity
     token_url = f'{identity.base_url}{identity.token_endpoint}'
@@ -31,9 +31,14 @@ def main():
     # r = session.get("https://foundry.local/topomojo/api/gamespaces")
     # print(r.status_code)
 
+settings = load_settings("./settings.yaml")
+identity = settings.identity
+token_url = f'{identity.base_url}{identity.token_endpoint}'
+auth_url = f'{identity.base_url}authorize'
+
 app = FastAPI()
 
-@app.get("/")
+@app.get("/authtest")
 async def header_test(authorization: str = Header(None)):
     print(authorization)
 
