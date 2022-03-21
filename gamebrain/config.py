@@ -16,9 +16,11 @@ class IdentitySettingsModel(BaseModel):
 class GameboardSettingsModel(BaseModel):
     base_gb_url: str
     players_endpoint: str
+    specs_endpoint: str
 
 class TopomojoSettingsModel(BaseModel):
     base_api_url: str
+    workspace_endpoint: str
 
 class SettingsModel(BaseModel):
     ca_cert_path: str

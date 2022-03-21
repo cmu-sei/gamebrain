@@ -9,6 +9,8 @@ identity:
     jwt_issuer: https://foundry.local/identity
 topomojo:
     base_api_url: https://foundry.local/topomojo/api/
+    workspace_endpoint: workspace/{}
 gameboard:
     base_gb_url: https://foundry.local/gameboard/api/
     players_endpoint: players
+    specs_endpoint: game/{}/specs
