@@ -46,10 +46,32 @@ async def auth_test(auth: HTTPAuthorizationCredentials = Security(HTTPBearer()))
     user_id = payload["sub"]
 
     params = {"uid": user_id, "Filter": "collapse"}
-    player = OAUTH2_SESSION.get(
+    players = OAUTH2_SESSION.get(
         url_path_join(SETTINGS.gameboard.base_gb_url, SETTINGS.gameboard.players_endpoint),
         verify=SETTINGS.ca_cert_path,
         params=params
-    )
+    ).json()
+    player = {}
+    for item in players:
+        if item["userId"] == user_id:
+            player = item
+    if not player:
+        raise Exception("NYI")
+
+    game_id = player["gameId"]
+    endpoint = SETTINGS.gameboard.specs_endpoint.format(game_id)
+    specs = OAUTH2_SESSION.get(
+        url_path_join(SETTINGS.gameboard.base_gb_url, endpoint),
+        verify=SETTINGS.ca_cert_path
+    ).json()[0]
+
+    external_id = specs["externalId"]
+    endpoint = SETTINGS.topomojo.workspace_endpoint.format(external_id)
+    workspace = OAUTH2_SESSION.get(
+        url_path_join(SETTINGS.topomojo.base_api_url, endpoint),
+        verify=SETTINGS.ca_cert_path
+    ).json()
+
+    print(workspace)
 
     return ""
