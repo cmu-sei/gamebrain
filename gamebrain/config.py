@@ -13,6 +13,10 @@ class IdentitySettingsModel(BaseModel):
     jwt_audience: str
     jwt_issuer: str
 
+class GameboardSettingsModel(BaseModel):
+    base_gb_url: str
+    players_endpoint: str
+
 class TopomojoSettingsModel(BaseModel):
     base_api_url: str
 
@@ -20,6 +24,7 @@ class SettingsModel(BaseModel):
     ca_cert_path: str
     identity: IdentitySettingsModel
     topomojo: TopomojoSettingsModel
+    gameboard: GameboardSettingsModel
 
     @validator('ca_cert_path')
     def path_exists(cls, v):
