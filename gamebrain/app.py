@@ -1,11 +1,9 @@
 from typing import Optional
 from urllib.parse import urljoin
 
-from fastapi import FastAPI, Header, Security
+from fastapi import FastAPI, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
-from oauthlib.oauth2 import BackendApplicationClient
-from pydantic import BaseModel
 import requests
 from requests_oauthlib import OAuth2Session
 import yaml
@@ -20,9 +18,14 @@ JWKS = requests.get(url_path_join(SETTINGS.identity.base_url, SETTINGS.identity.
 app = FastAPI()
 security = HTTPBearer()
 
+
+def check_jwt(token: str):
+    print(token)
+    payload = jwt.decode(token, JWKS, audience=SETTINGS.identity.jwt_audience, issuer=SETTINGS.identity.jwt_issuer)
+    return payload
+
 @app.get("/authtest")
 async def header_test(auth: HTTPAuthorizationCredentials = Security(security)):
-    print(JWKS)
     try:
         payload = check_jwt(auth.credentials)
     except Exception as e:

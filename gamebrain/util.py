@@ -2,7 +2,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 
 """
-The following yoinked from here:
+The following two functions yoinked from here:
 https://codereview.stackexchange.com/questions/13027/joining-url-path-components-intelligently
 
 Because urllib.parse.urljoin does some weird stuff.
