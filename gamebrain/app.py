@@ -1,4 +1,5 @@
 from typing import Optional
+from urllib.parse import urljoin
 
 from fastapi import FastAPI, Header, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -10,11 +11,11 @@ from requests_oauthlib import OAuth2Session
 import yaml
 
 from .config import load_settings
+from .util import url_path_join
 
 
 SETTINGS = load_settings("./settings.yaml")
-IDENTITY = SETTINGS.identity
-JWKS = requests.get(f"{IDENTITY.base_url}.well-known/openid-configuration/jwks", verify=SETTINGS.ca_cert_path).json()
+JWKS = requests.get(url_path_join(SETTINGS.identity.base_url, SETTINGS.identity.jwks_endpoint), verify=SETTINGS.ca_cert_path).json()
 
 app = FastAPI()
 security = HTTPBearer()
