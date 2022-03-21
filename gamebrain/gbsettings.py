@@ -9,6 +9,8 @@ class IdentitySettingsModel(BaseModel):
     token_endpoint: str
     client_id: str
     client_secret: str
+    jwt_audience: str
+    jwt_issuer: str
 
 class TopomojoSettingsModel(BaseModel):
     base_api_url: str
