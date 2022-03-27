@@ -104,8 +104,25 @@ async def auth_test(auth: HTTPAuthorizationCredentials = Security(HTTPBearer()))
         url_path_join(SETTINGS.topomojo.base_api_url, endpoint),
         verify=SETTINGS.ca_cert_path,
         json=post_data
-    )
+    ).json()
 
-    print(response.json())
+    gs_id = response["id"]
+    visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in response["vms"] if vm["isVisible"]]
 
-    return ""
+    # This gets the websocket url.
+    # visible_vms = []
+    # for vm in response["vms"]:
+    #     if not vm["isVisible"]:
+    #         continue
+    #     visible_vms.append(vm["id"])
+
+    # vm_data = []
+    # for vm_id in visible_vms:
+    #     endpoint = f"vm-console/{vm_id}"
+    #     response = OAUTH2_SESSION.get(
+    #         url_path_join(SETTINGS.topomojo.base_api_url, endpoint),
+    #         verify=SETTINGS.ca_cert_path,
+    #     ).json()
+    #     vm_data.append(response)
+
+    return {"gamespaceId": gs_id, "vms": visible_vms}

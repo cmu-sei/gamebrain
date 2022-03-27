@@ -22,7 +22,9 @@ def main():
                         client_secret=CLIENT_SECRET,
                         verify=CA_CERT_PATH)
 
-    session.get("https://localhost:8000/authtest", verify=False)
+    resp = session.get("https://localhost:8000/authtest", verify=False)
+
+    print(resp.json())
 
 
 
