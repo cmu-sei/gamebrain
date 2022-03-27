@@ -10,11 +10,11 @@ import requests
 from requests_oauthlib import OAuth2Session
 import yaml
 
-from .config import load_settings
+from .config import get_settings
 from .util import url_path_join
 
 
-SETTINGS = load_settings("./settings.yaml")
+SETTINGS = get_settings("./settings.yaml")
 
 JWKS = requests.get(
     url_path_join(SETTINGS.identity.base_url, SETTINGS.identity.jwks_endpoint),

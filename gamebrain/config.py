@@ -31,8 +31,19 @@ class SettingsModel(BaseModel):
             raise ValueError(f"ca_cert_path: {ca_cert_path} does not exist or is not a file. Check the path and try again.")
         return v
 
-def load_settings(settings_path):
+class Settings:
+    settings: SettingsModel = {}
+
+def reload_settings(settings_path):
     with open(settings_path) as f:
         settings = yaml.safe_load(f)
 
-    return SettingsModel(**settings)
+    Settings.settings = SettingsModel(**settings)
+    return Settings.settings
+
+def get_settings(settings_path):
+    if not Settings.settings:
+        return reload_settings(settings_path)
+    return Settings.settings
+
+
