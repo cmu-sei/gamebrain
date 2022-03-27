@@ -12,6 +12,8 @@ class IdentitySettingsModel(BaseModel):
     client_secret: str
     jwt_audience: str
     jwt_issuer: str
+    token_user: str
+    token_password: str
 
 class GameboardSettingsModel(BaseModel):
     base_gb_url: str
