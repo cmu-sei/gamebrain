@@ -34,20 +34,20 @@ class SettingsModel(BaseModel):
         return v
 
 class Settings:
-    settings = None
+    _settings = None
 
     @classmethod
-    def init_settings(cls, settings_path):
+    def _init_settings(cls, settings_path):
         with open(settings_path) as f:
             settings = yaml.safe_load(f)
 
-        cls.settings = SettingsModel(**settings)
+        cls._settings = SettingsModel(**settings)
 
     @classmethod
     def get_settings(cls, settings_path):
-        if not cls.settings:
-            cls.init_settings(settings_path)
-        return cls.settings
+        if not cls._settings:
+            cls._init_settings(settings_path)
+        return cls._settings
 
 def get_settings(settings_path):
     return Settings.get_settings(settings_path)
