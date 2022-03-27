@@ -34,18 +34,22 @@ class SettingsModel(BaseModel):
         return v
 
 class Settings:
-    settings: SettingsModel = {}
+    settings = None
 
-def reload_settings(settings_path):
-    with open(settings_path) as f:
-        settings = yaml.safe_load(f)
+    @classmethod
+    def init_settings(cls, settings_path):
+        with open(settings_path) as f:
+            settings = yaml.safe_load(f)
 
-    Settings.settings = SettingsModel(**settings)
-    return Settings.settings
+        cls.settings = SettingsModel(**settings)
+
+    @classmethod
+    def get_settings(cls, settings_path):
+        if not cls.settings:
+            cls.init_settings(settings_path)
+        return cls.settings
 
 def get_settings(settings_path):
-    if not Settings.settings:
-        return reload_settings(settings_path)
-    return Settings.settings
+    return Settings.get_settings(settings_path)
 
 
