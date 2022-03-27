@@ -41,8 +41,8 @@ def check_jwt(token: str):
     except (JWTError, JWTClaimsError, ExpiredSignatureError) as e:
         raise HTTPException(status_code=401, detail="JWT Error")
 
-@APP.get("/authtest")
-async def auth_test(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+@APP.get("/deploy")
+async def deploy(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     payload = check_jwt(auth.credentials)
     user_id = payload["sub"]
 

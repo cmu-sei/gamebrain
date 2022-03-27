@@ -22,7 +22,7 @@ def main():
                         client_secret=CLIENT_SECRET,
                         verify=CA_CERT_PATH)
 
-    resp = session.get("https://localhost:8000/authtest", verify=False)
+    resp = session.get("https://localhost:8000/deploy", verify=False)
 
     print(resp.json())
 
