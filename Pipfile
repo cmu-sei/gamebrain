@@ -9,6 +9,8 @@ pyyaml = "*"
 requests-oauthlib = "*"
 pydantic = "*"
 fastapi = "*"
+psycopg2 = "*"
+sqlalchemy = "*"
 
 [dev-packages]
 
