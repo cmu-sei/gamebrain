@@ -45,7 +45,7 @@ class DBManager:
         __tablename__ = "event"
 
         id = Column(Integer, primary_key=True)
-        event = Column(String, nullable=False)
+        message = Column(String, nullable=False)
 
     @classmethod
     def _init_db(cls, connection_string: str = "", drop_first=False):
