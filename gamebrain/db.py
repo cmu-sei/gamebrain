@@ -27,7 +27,9 @@ class DBManager:
         console_urls = relationship("ConsoleUrl")
 
         def __repr__(self):
-            return f"TeamData(id={self.id!r}, headless_ip={self.headless_ip!r}, console_urls={[console_url for console_url in self.console_urls]!r}"
+            return f"TeamData(id={self.id!r}, " \
+                   f"headless_ip={self.headless_ip!r}, " \
+                   f"console_urls={[console_url for console_url in self.console_urls]!r}"
 
     class ConsoleUrl(orm_base):
         __tablename__ = "console_url"
