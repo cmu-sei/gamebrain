@@ -15,7 +15,7 @@ class DBManager:
         __tablename__ = "challenge_secret"
 
         id = Column(Integer, primary_key=True)
-        secret = Column(String(40))
+        secret = Column(String(40), nullable=False)
 
         def __repr__(self):
             return f"ChallengeSecret(id={self.id!r}, secret={self.secret!r})"
@@ -24,7 +24,7 @@ class DBManager:
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
-        headless_ip = Column(BigInteger)
+        headless_ip = Column(BigInteger, nullable=False)
         console_urls = relationship("ConsoleUrl")
 
         def __repr__(self):
