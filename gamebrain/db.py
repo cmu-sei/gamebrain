@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, insert, select
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, select
 from sqlalchemy.orm import declarative_base, relationship, Session
 
 from config import get_settings
@@ -23,7 +23,7 @@ class DBManager:
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
-        headless_ip = Column(Integer)
+        headless_ip = Column(BigInteger)
         console_urls = relationship("ConsoleUrl")
 
         def __repr__(self):
