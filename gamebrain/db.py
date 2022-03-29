@@ -1,3 +1,4 @@
+from ipaddress import IPv4Address
 from typing import List
 
 from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, select
@@ -90,3 +91,23 @@ class DBManager:
         settings = get_settings()
         cls._add_rows(items, settings.db.connection_string)
 
+
+def store_events(messages: List[str]):
+    events = [DBManager.Event(message=message) for message in messages]
+    DBManager.add_rows(events)
+
+
+def store_console_urls(team_id: str, urls: List[str]):
+    console_urls = [DBManager.ConsoleUrl(team_id=team_id, url=url) for url in urls]
+    DBManager.add_rows(console_urls)
+
+
+def store_team(team_id: str, headless_ip: str):
+    addr = IPv4Address(headless_ip)
+    team_data = DBManager.TeamData(id=team_id, headless_ip=int(addr))
+    DBManager.add_rows([team_data])
+
+
+def store_challenge_secret(secret: str):
+    secret = DBManager.ChallengeSecret(secret=secret)
+    DBManager.add_rows([secret])
