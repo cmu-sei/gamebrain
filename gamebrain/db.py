@@ -43,6 +43,8 @@ class DBManager:
 
     @classmethod
     def _init_db(cls, connection_string: str):
+        if cls.engine:
+            return
         cls.engine = create_engine(connection_string, echo=True, future=True)
         cls.orm_base.metadata.create_all(cls.engine)
 
