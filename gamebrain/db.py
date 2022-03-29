@@ -12,12 +12,18 @@ class DBManager:
         id = Column(Integer, primary_key=True)
         secret = Column(String(40))
 
+        def __repr__(self):
+            return f"ChallengeSecret(id={self.id!r}, secret={self.secret!r})"
+
     class TeamData(orm_base):
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
         headless_ip = Column(Integer)
         console_urls = relationship("ConsoleUrl")
+
+        def __repr__(self):
+            return f"TeamData(id={self.id!r}, headless_ip={self.headless_ip!r}, console_urls={[console_url for console_url in self.console_urls]!r}"
 
     class ConsoleUrl(orm_base):
         __tablename__ = "console_url"
@@ -26,14 +32,23 @@ class DBManager:
         team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
         url = Column(String, nullable=False)
 
+        def __repr__(self):
+            return f"ConsoleUrl(id={self.id!r}, team_id={self.team_id!r}, url={self.url!r}"
+
+    class Event(orm_base):
+        __tablename__ = "event"
+
+        id = Column(Integer, primary_key=True)
+        event = Column(String, nullable=False)
+
     @classmethod
-    def _init_db(cls):
-        cls.engine = create_engine("sqlite+pysqlite:///:memory:", echo=True, future=True)
+    def _init_db(cls, connection_string: str):
+        cls.engine = create_engine(connection_string, echo=True, future=True)
         cls.orm_base.metadata.create_all(cls.engine)
 
     @classmethod
     def test_db(cls):
-        cls._init_db()
+        cls._init_db("sqlite+pysqlite:///:memory:")
 
         from ipaddress import IPv4Address
         addr = IPv4Address("192.168.1.91")
@@ -50,8 +65,9 @@ class DBManager:
             )
             session.commit()
 
+        with Session(cls.engine) as session:
             team = session.scalars(
                 select(cls.TeamData)
             ).first()
 
-            print(team.console_urls)
+            print(team)
