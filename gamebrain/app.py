@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from fastapi import FastAPI, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
+from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
 from oauthlib.oauth2 import LegacyApplicationClient
 import requests
 from requests_oauthlib import OAuth2Session
