@@ -103,8 +103,8 @@ def store_console_urls(team_id: str, urls: List[str]):
 
 
 def store_team(team_id: str, headless_ip: str):
-    addr = IPv4Address(headless_ip)
-    team_data = DBManager.TeamData(id=team_id, headless_ip=int(addr))
+    address = IPv4Address(headless_ip)
+    team_data = DBManager.TeamData(id=team_id, headless_ip=int(address))
     DBManager.add_rows([team_data])
 
 
