@@ -1,15 +1,8 @@
-import datetime
-from typing import Optional
-from urllib.parse import urljoin
-
 from fastapi import FastAPI, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
-from oauthlib.oauth2 import LegacyApplicationClient
 import requests
-from requests_oauthlib import OAuth2Session
-import yaml
 
 from gamebrain.clients import gameboard, topomojo
 from .config import get_settings
@@ -40,9 +33,11 @@ APP = FastAPI()
 def check_jwt(token: str):
     settings = get_settings("settings.yaml")
     try:
-        return jwt.decode(token, Global.get_jwks(), audience=settings.identity.jwt_audience, issuer=settings.identity.jwt_issuer)
+        return jwt.decode(token, Global.get_jwks(), audience=settings.identity.jwt_audience,
+                          issuer=settings.identity.jwt_issuer)
     except (JWTError, JWTClaimsError, ExpiredSignatureError) as e:
         raise HTTPException(status_code=401, detail="JWT Error")
+
 
 @APP.get("/deploy")
 async def deploy(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
