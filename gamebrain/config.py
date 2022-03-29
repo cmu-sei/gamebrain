@@ -24,11 +24,16 @@ class TopomojoSettingsModel(BaseModel):
     base_api_url: str
 
 
+class DbSettingsModel(BaseModel):
+    connection_string: str
+
+
 class SettingsModel(BaseModel):
     ca_cert_path: str
     identity: IdentitySettingsModel
     topomojo: TopomojoSettingsModel
     gameboard: GameboardSettingsModel
+    db: DbSettingsModel
 
     @validator('ca_cert_path')
     def path_exists(cls, v):
