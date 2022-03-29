@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, insert, select
 from sqlalchemy.orm import declarative_base, relationship, Session
 
+from config import get_settings
+
 
 class DBManager:
     orm_base = declarative_base()
@@ -42,10 +44,15 @@ class DBManager:
         event = Column(String, nullable=False)
 
     @classmethod
-    def _init_db(cls, connection_string: str):
-        if cls.engine:
+    def _init_db(cls, connection_string: str = "", drop_first=False):
+        if cls.engine and not drop_first:
             return
+        if not connection_string:
+            settings = get_settings()
+            connection_string = settings.db.connection_string
         cls.engine = create_engine(connection_string, echo=True, future=True)
+        if drop_first:
+            cls.orm_base.metadata.drop_all(cls.engine)
         cls.orm_base.metadata.create_all(cls.engine)
 
     @classmethod
