@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, select
 from sqlalchemy.orm import declarative_base, relationship, Session
 
-from config import get_settings
+from .config import get_settings
 
 
 class DBManager:
