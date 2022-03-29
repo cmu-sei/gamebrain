@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, insert, select
 from sqlalchemy.orm import declarative_base, relationship, Session
 
@@ -56,23 +58,23 @@ class DBManager:
         cls.orm_base.metadata.create_all(cls.engine)
 
     @classmethod
-    def test_db(cls):
-        cls._init_db("sqlite+pysqlite:///:memory:")
+    def _add_rows(cls, items: List, connection_string: str = ""):
+        cls._init_db(connection_string)
+        with Session(cls.engine) as session:
+            for item in items:
+                session.add(item)
+            session.commit()
 
+    @classmethod
+    def test_db(cls):
         from ipaddress import IPv4Address
         addr = IPv4Address("192.168.1.91")
         team_id = "4af9eada-c6e2-4dab-951b-d5ff711a43e5"
 
-        with Session(cls.engine) as session:
-            session.execute(
-                insert(cls.TeamData),
-                {"id": team_id, "headless_ip": int(addr)}
-            )
-            session.execute(
-                insert(cls.ConsoleUrl),
-                {"team_id": team_id, "url": "https://foundry.local/console"}
-            )
-            session.commit()
+        team = cls.TeamData(id=team_id, headless_ip=int(addr))
+        console_url = cls.ConsoleUrl(team_id=team.id, url="https://foundry.local/console")
+
+        cls._add_rows([console_url, team], "sqlite+pysqlite:///:memory:")
 
         with Session(cls.engine) as session:
             team = session.scalars(
@@ -80,3 +82,9 @@ class DBManager:
             ).first()
 
             print(team)
+
+    @classmethod
+    def add_rows(cls, items: List):
+        settings = get_settings()
+        cls._add_rows(items, settings.db.connection_string)
+
