@@ -15,11 +15,14 @@ class IdentitySettingsModel(BaseModel):
     token_user: str
     token_password: str
 
+
 class GameboardSettingsModel(BaseModel):
     base_gb_url: str
 
+
 class TopomojoSettingsModel(BaseModel):
     base_api_url: str
+
 
 class SettingsModel(BaseModel):
     ca_cert_path: str
@@ -30,8 +33,10 @@ class SettingsModel(BaseModel):
     @validator('ca_cert_path')
     def path_exists(cls, v):
         if not os.path.isfile(v):
-            raise ValueError(f"ca_cert_path: {ca_cert_path} does not exist or is not a file. Check the path and try again.")
+            raise ValueError(
+                f"ca_cert_path: {v} does not exist or is not a file. Check the path and try again.")
         return v
+
 
 class Settings:
     _settings = None
@@ -49,7 +54,6 @@ class Settings:
             cls._init_settings(settings_path)
         return cls._settings
 
+
 def get_settings(settings_path=None):
     return Settings.get_settings(settings_path)
-
-
