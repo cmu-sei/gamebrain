@@ -16,3 +16,4 @@ gameboard:
 db:
     connection_string: postgresql+psycopg2://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
     drop_app_tables: true
+    echo_sql: true

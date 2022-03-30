@@ -28,6 +28,7 @@ class TopomojoSettingsModel(BaseModel):
 class DbSettingsModel(BaseModel):
     connection_string: str
     drop_app_tables: Optional[bool]
+    echo_sql: Optional[bool]
 
 
 class SettingsModel(BaseModel):

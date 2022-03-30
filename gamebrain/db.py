@@ -49,13 +49,13 @@ class DBManager:
         message = Column(String, nullable=False)
 
     @classmethod
-    def init_db(cls, connection_string: str = "", drop_first=False):
+    def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
         if cls.engine and not drop_first:
             return
         if not connection_string:
             settings = get_settings()
             connection_string = settings.db.connection_string
-        cls.engine = create_engine(connection_string, echo=True, future=True)
+        cls.engine = create_engine(connection_string, echo=echo, future=True)
         if drop_first:
             cls.orm_base.metadata.drop_all(cls.engine)
         cls.orm_base.metadata.create_all(cls.engine)

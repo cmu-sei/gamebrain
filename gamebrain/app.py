@@ -18,7 +18,7 @@ class Global:
     def init(cls):
         Settings.init_settings(cls.settings_path)
         settings = get_settings()
-        db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables)
+        db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
         cls._init_jwks()
 
     @classmethod
