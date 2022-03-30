@@ -6,16 +6,24 @@ import requests
 
 from gamebrain.clients import gameboard, topomojo
 import gamebrain.db as db
-from .config import get_settings
+from .config import Settings, get_settings
 from .util import url_path_join
 
 
 class Global:
+    settings_path = "settings.yaml"
     jwks = None
 
     @classmethod
-    def init_jwks(cls):
-        settings = get_settings("settings.yaml")
+    def init(cls):
+        Settings.init_settings(cls.settings_path)
+        settings = get_settings()
+        db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables)
+        cls._init_jwks()
+
+    @classmethod
+    def _init_jwks(cls):
+        settings = get_settings()
         cls.jwks = requests.get(
             url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
             verify=settings.ca_cert_path
@@ -23,16 +31,15 @@ class Global:
 
     @classmethod
     def get_jwks(cls):
-        if not cls.jwks:
-            cls.init_jwks()
         return cls.jwks
 
 
+Global.init()
 APP = FastAPI()
 
 
 def check_jwt(token: str):
-    settings = get_settings("settings.yaml")
+    settings = get_settings()
     try:
         return jwt.decode(token, Global.get_jwks(), audience=settings.identity.jwt_audience,
                           issuer=settings.identity.jwt_issuer)

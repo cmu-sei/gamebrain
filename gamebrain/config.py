@@ -1,4 +1,5 @@
 import os.path
+from typing import Optional
 
 from pydantic import BaseModel, validator
 import yaml
@@ -26,6 +27,7 @@ class TopomojoSettingsModel(BaseModel):
 
 class DbSettingsModel(BaseModel):
     connection_string: str
+    drop_app_tables: Optional[bool]
 
 
 class SettingsModel(BaseModel):
@@ -47,18 +49,16 @@ class Settings:
     _settings = None
 
     @classmethod
-    def _init_settings(cls, settings_path=None):
+    def init_settings(cls, settings_path):
         with open(settings_path) as f:
             settings = yaml.safe_load(f)
 
         cls._settings = SettingsModel(**settings)
 
     @classmethod
-    def get_settings(cls, settings_path=None):
-        if not cls._settings:
-            cls._init_settings(settings_path)
+    def get_settings(cls):
         return cls._settings
 
 
-def get_settings(settings_path=None):
-    return Settings.get_settings(settings_path)
+def get_settings():
+    return Settings.get_settings()

@@ -48,7 +48,7 @@ class DBManager:
         message = Column(String, nullable=False)
 
     @classmethod
-    def _init_db(cls, connection_string: str = "", drop_first=False):
+    def init_db(cls, connection_string: str = "", drop_first=False):
         if cls.engine and not drop_first:
             return
         if not connection_string:
@@ -61,7 +61,7 @@ class DBManager:
 
     @classmethod
     def _merge_rows(cls, items: List, connection_string: str = ""):
-        cls._init_db(connection_string)
+        cls.init_db(connection_string)
         with Session(cls.engine) as session:
             for item in items:
                 session.merge(item)
