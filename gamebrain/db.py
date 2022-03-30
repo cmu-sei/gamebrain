@@ -61,11 +61,11 @@ class DBManager:
         cls.orm_base.metadata.create_all(cls.engine)
 
     @classmethod
-    def _add_rows(cls, items: List, connection_string: str = ""):
+    def _merge_rows(cls, items: List, connection_string: str = ""):
         cls._init_db(connection_string)
         with Session(cls.engine) as session:
             for item in items:
-                session.add(item)
+                session.merge(item)
             session.commit()
 
     @classmethod
@@ -77,7 +77,7 @@ class DBManager:
         team = cls.TeamData(id=team_id, headless_ip=int(addr))
         console_url = cls.ConsoleUrl(team_id=team.id, url="https://foundry.local/console")
 
-        cls._add_rows([console_url, team], "sqlite+pysqlite:///:memory:")
+        cls._merge_rows([console_url, team], "sqlite+pysqlite:///:memory:")
 
         with Session(cls.engine) as session:
             team = session.scalars(
@@ -87,27 +87,27 @@ class DBManager:
             print(team)
 
     @classmethod
-    def add_rows(cls, items: List):
+    def merge_rows(cls, items: List):
         settings = get_settings()
-        cls._add_rows(items, settings.db.connection_string)
+        cls._merge_rows(items, settings.db.connection_string)
 
 
 def store_events(messages: List[str]):
     events = [DBManager.Event(message=message) for message in messages]
-    DBManager.add_rows(events)
+    DBManager.merge_rows(events)
 
 
 def store_console_urls(team_id: str, urls: List[str]):
     console_urls = [DBManager.ConsoleUrl(team_id=team_id, url=url) for url in urls]
-    DBManager.add_rows(console_urls)
+    DBManager.merge_rows(console_urls)
 
 
 def store_team(team_id: str, headless_ip: str):
     address = IPv4Address(headless_ip)
     team_data = DBManager.TeamData(id=team_id, headless_ip=int(address))
-    DBManager.add_rows([team_data])
+    DBManager.merge_rows([team_data])
 
 
 def store_challenge_secret(secret: str):
     secret = DBManager.ChallengeSecret(secret=secret)
-    DBManager.add_rows([secret])
+    DBManager.merge_rows([secret])
