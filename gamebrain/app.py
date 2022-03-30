@@ -59,17 +59,23 @@ async def deploy(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     specs = gameboard.get_game_specs(game_id).pop()
 
     team_id = player["teamId"]
-    team = gameboard.get_team(team_id)
+    team_data = db.get_team(team_id)
 
-    external_id = specs["externalId"]
+    if not team_data:
+        team = gameboard.get_team(team_id)
 
-    gamespace = topomojo.register_gamespace(external_id, team["members"])
+        external_id = specs["externalId"]
 
-    gs_id = gamespace["id"]
-    visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in gamespace["vms"] if vm["isVisible"]]
+        gamespace = topomojo.register_gamespace(external_id, team["members"])
 
-    console_urls = [f"https://topomojo.cyberforce.site/mks/?f=1&s={gs_id}&v={vm['id']}" for vm in visible_vms]
-    db.store_team(team_id, gs_id)
-    db.store_console_urls(team_id, console_urls)
+        gs_id = gamespace["id"]
+        visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in gamespace["vms"] if vm["isVisible"]]
 
-    return {"gamespaceId": gs_id, "vms": visible_vms}
+        console_urls = [f"https://topomojo.cyberforce.site/mks/?f=1&s={gs_id}&v={vm['id']}" for vm in visible_vms]
+        db.store_team(team_id, gs_id)
+        db.store_console_urls(team_id, console_urls)
+    else:
+        gs_id = team_data["gamespace_id"]
+        console_urls = [console_url["url"] for console_url in team_data["console_urls"]]
+
+    return {"gamespaceId": gs_id, "vms": console_urls}

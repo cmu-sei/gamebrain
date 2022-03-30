@@ -126,6 +126,13 @@ def store_team(team_id: str, gamespace_id: Optional[str] = None, headless_ip: Op
     DBManager.merge_rows([team_data])
 
 
+def get_team(team_id: str) -> Dict:
+    try:
+        return DBManager.get_rows(DBManager.TeamData, id=team_id).pop()
+    except IndexError:
+        return {}
+
+
 def store_challenge_secret(secret: str):
     challenge_secret = DBManager.ChallengeSecret(id=secret)
     DBManager.merge_rows([challenge_secret])
