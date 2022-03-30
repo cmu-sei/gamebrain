@@ -1,5 +1,5 @@
-from ipaddress import IPv4Address
-from typing import List
+from ipaddress import IPv4Address, AddressValueError
+from typing import List, Optional
 
 from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, select
 from sqlalchemy.orm import declarative_base, relationship, Session
@@ -23,7 +23,8 @@ class DBManager:
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
-        headless_ip = Column(BigInteger, nullable=False)
+        gamespace_id = Column(String(36))
+        headless_ip = Column(BigInteger)
         console_urls = relationship("ConsoleUrl")
 
         def __repr__(self):
@@ -101,9 +102,12 @@ def store_console_urls(team_id: str, urls: List[str]):
     DBManager.merge_rows(console_urls)
 
 
-def store_team(team_id: str, headless_ip: str):
-    address = IPv4Address(headless_ip)
-    team_data = DBManager.TeamData(id=team_id, headless_ip=int(address))
+def store_team(team_id: str, gamespace_id: Optional[str] = None, headless_ip: Optional[str] = ""):
+    try:
+        address = int(IPv4Address(headless_ip))
+    except AddressValueError:
+        address = None
+    team_data = DBManager.TeamData(id=team_id, gamespace_id=gamespace_id, headless_ip=address)
     DBManager.merge_rows([team_data])
 
 

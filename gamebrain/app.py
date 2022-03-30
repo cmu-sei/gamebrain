@@ -69,8 +69,7 @@ async def deploy(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in gamespace["vms"] if vm["isVisible"]]
 
     console_urls = [f"https://topomojo.cyberforce.site/mks/?f=1&s={gs_id}&v={vm['id']}" for vm in visible_vms]
-    # TODO: Fix IP address.
-    db.store_team(team_id, "192.168.1.1")
+    db.store_team(team_id, gs_id)
     db.store_console_urls(team_id, console_urls)
 
     return {"gamespaceId": gs_id, "vms": visible_vms}
