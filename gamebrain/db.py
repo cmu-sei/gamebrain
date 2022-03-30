@@ -14,8 +14,7 @@ class DBManager:
     class ChallengeSecret(orm_base):
         __tablename__ = "challenge_secret"
 
-        id = Column(Integer, primary_key=True)
-        secret = Column(String(40), nullable=False)
+        id = Column(String(40), primary_key=True)
 
         def __repr__(self):
             return f"ChallengeSecret(id={self.id!r}, secret={self.secret!r})"
@@ -109,5 +108,5 @@ def store_team(team_id: str, headless_ip: str):
 
 
 def store_challenge_secret(secret: str):
-    secret = DBManager.ChallengeSecret(secret=secret)
-    DBManager.merge_rows([secret])
+    challenge_secret = DBManager.ChallengeSecret(id=secret)
+    DBManager.merge_rows([challenge_secret])
