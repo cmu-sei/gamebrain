@@ -47,16 +47,12 @@ def check_jwt(token: str):
         raise HTTPException(status_code=401, detail="JWT Error")
 
 
-@APP.get("/deploy")
-async def deploy(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+@APP.get("/deploy/{game_id}")
+async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     payload = check_jwt(auth.credentials)
     user_id = payload["sub"]
 
-    player = gameboard.get_player_by_user_id(user_id)
-
-    game_id = player["gameId"]
-    # This needs to be corrected. Will need to get game ID elsewhere.
-    specs = gameboard.get_game_specs(game_id).pop()
+    player = gameboard.get_player_by_user_id(user_id, game_id)
 
     team_id = player["teamId"]
     team_data = db.get_team(team_id)
@@ -64,6 +60,7 @@ async def deploy(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     if not team_data:
         team = gameboard.get_team(team_id)
 
+        specs = gameboard.get_game_specs(game_id).pop()
         external_id = specs["externalId"]
 
         gamespace = topomojo.register_gamespace(external_id, team["members"])

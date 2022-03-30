@@ -11,6 +11,8 @@ CA_CERT_PATH = "/usr/local/share/ca-certificates/foundry-appliance-root-ca.crt"
 TEST_USER = "testplayer1@foundry.local"
 TEST_PASS = "7FB77QEc8yhDxAa!"
 
+GAME_ID = "f63c8e41fd994e16bad08075dd2a666c"
+
 
 def main():
     session = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
@@ -22,7 +24,8 @@ def main():
                         client_secret=CLIENT_SECRET,
                         verify=CA_CERT_PATH)
 
-    resp = session.get("https://localhost:8000/deploy", verify=False)
+
+    resp = session.get(f"https://localhost:8000/deploy/{GAME_ID}", verify=False)
 
     print(resp.json())
 
