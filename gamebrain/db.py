@@ -1,7 +1,7 @@
 from ipaddress import IPv4Address, AddressValueError
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, select
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, select, inspect
 from sqlalchemy.orm import declarative_base, relationship, Session
 
 from .config import get_settings
@@ -25,7 +25,7 @@ class DBManager:
         id = Column(String(36), primary_key=True)
         gamespace_id = Column(String(36))
         headless_ip = Column(BigInteger)
-        console_urls = relationship("ConsoleUrl")
+        console_urls = relationship("ConsoleUrl", lazy="joined")
 
         def __repr__(self):
             return f"TeamData(id={self.id!r}, " \
@@ -49,6 +49,15 @@ class DBManager:
         message = Column(String, nullable=False)
 
     @classmethod
+    def _orm_obj_to_dict(cls, obj: orm_base) -> Dict:
+        result = {}
+        for column in inspect(obj).mapper.column_attrs.keys():
+            result[column] = getattr(obj, column)
+        for relation in inspect(obj).mapper.relationships.keys():
+            result[relation] = [cls._orm_obj_to_dict(item) for item in getattr(obj, relation)]
+        return result
+
+    @classmethod
     def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
         if cls.engine and not drop_first:
             return
@@ -67,6 +76,12 @@ class DBManager:
             for item in items:
                 session.merge(item)
             session.commit()
+
+    @classmethod
+    def get_rows(cls, orm_class: orm_base, **kwargs) -> List[Dict]:
+        with Session(cls.engine) as session:
+            result = session.query(orm_class).filter_by(**kwargs).all()
+            return [cls._orm_obj_to_dict(item) for item in result]
 
     @classmethod
     def test_db(cls):
