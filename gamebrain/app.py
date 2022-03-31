@@ -82,3 +82,10 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
         console_urls = [console_url["url"] for console_url in team_data["console_urls"]]
 
     return {"gamespaceId": gs_id, "vms": console_urls}
+
+
+@APP.get("/gamestate/team_data")
+async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+    check_jwt(auth.credentials, get_settings().identity.gamestate_jwt_audience)
+
+    return db.get_teams()
