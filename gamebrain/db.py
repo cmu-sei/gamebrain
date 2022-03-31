@@ -25,6 +25,8 @@ class DBManager:
         id = Column(String(36), primary_key=True)
         gamespace_id = Column(String(36))
         headless_ip = Column(BigInteger)
+        ship_hp = Column(Integer, default=100, nullable=False)
+        ship_fuel = Column(Integer, default=100, nullable=False)
         console_urls = relationship("ConsoleUrl", lazy="joined")
 
         def __repr__(self):
@@ -47,6 +49,16 @@ class DBManager:
 
         id = Column(Integer, primary_key=True)
         message = Column(String, nullable=False)
+
+    class MediaAsset(orm_base):
+        __tablename__ = "media_assets"
+
+        id = Column(Integer, primary_key=True)
+        short_name = Column(String, nullable=False)
+        url = Column(String, nullable=False)
+
+        def __repr__(self):
+            return f"MediaAsset(id={self.id!r}, short_name={self.short_name!r}, url={self.url!r}"
 
     @classmethod
     def _orm_obj_to_dict(cls, obj: orm_base) -> Dict:
