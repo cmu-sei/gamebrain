@@ -19,7 +19,7 @@ class IdentitySettingsModel(BaseModel):
 
 
 class GameboardSettingsModel(BaseModel):
-    base_gb_url: str
+    base_api_url: str
 
 
 class TopomojoSettingsModel(BaseModel):

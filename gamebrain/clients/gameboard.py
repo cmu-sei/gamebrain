@@ -9,7 +9,7 @@ def get_player_by_user_id(user_id: str, game_id: str):
 
     # This endpoint claims that it can accept query params, but "uid" appears not to work.
     players = session.get(
-        url_path_join(settings.gameboard.base_gb_url, "players"),
+        url_path_join(settings.gameboard.base_api_url, "players"),
         verify=settings.ca_cert_path
     ).json()
     for player in players:
@@ -23,7 +23,7 @@ def get_game_specs(game_id: str):
     session = get_oauth2_session()
 
     return session.get(
-        url_path_join(settings.gameboard.base_gb_url, f"game/{game_id}/specs"),
+        url_path_join(settings.gameboard.base_api_url, f"game/{game_id}/specs"),
         verify=settings.ca_cert_path
     ).json()
 
@@ -33,6 +33,6 @@ def get_team(team_id: str):
     session = get_oauth2_session()
 
     return session.get(
-        url_path_join(settings.gameboard.base_gb_url, f"team/{team_id}"),
+        url_path_join(settings.gameboard.base_api_url, f"team/{team_id}"),
         verify=settings.ca_cert_path
     ).json()
