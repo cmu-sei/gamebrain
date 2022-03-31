@@ -11,6 +11,7 @@ identity:
     token_user: administrator@foundry.local
     token_password: foundry
 topomojo:
+    base_url: https://foundry.local/topomojo
     base_api_url: https://foundry.local/topomojo/api/
 gameboard:
     base_gb_url: https://foundry.local/gameboard/api/

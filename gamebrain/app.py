@@ -74,7 +74,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
         gs_id = gamespace["id"]
         visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in gamespace["vms"] if vm["isVisible"]]
 
-        console_urls = [f"https://topomojo.cyberforce.site/mks/?f=1&s={gs_id}&v={vm['id']}" for vm in visible_vms]
+        console_urls = [f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['id']}" for vm in visible_vms]
         db.store_team(team_id, gs_id)
         db.store_console_urls(team_id, console_urls)
     else:

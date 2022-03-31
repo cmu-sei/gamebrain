@@ -23,6 +23,7 @@ class GameboardSettingsModel(BaseModel):
 
 
 class TopomojoSettingsModel(BaseModel):
+    base_url: str
     base_api_url: str
 
 
