@@ -145,6 +145,10 @@ def get_team(team_id: str) -> Dict:
         return {}
 
 
+def get_teams() -> List[Dict]:
+    return DBManager.get_rows(DBManager.TeamData)
+
+
 def store_challenge_secret(secret: str):
     challenge_secret = DBManager.ChallengeSecret(id=secret)
     DBManager.merge_rows([challenge_secret])
