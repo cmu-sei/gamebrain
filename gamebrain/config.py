@@ -12,6 +12,7 @@ class IdentitySettingsModel(BaseModel):
     client_id: str
     client_secret: str
     gamebrain_jwt_audience: str
+    gamestate_jwt_audience: str
     jwt_issuer: str
     token_user: str
     token_password: str

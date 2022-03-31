@@ -6,6 +6,7 @@ identity:
     client_id: gamebrain-client
     client_secret: 7e972ec6610b49dab492a92ec3d7f5cd
     gamebrain_jwt_audience: gamebrain-api
+    gamestate_jwt_audience: gamestate-api
     jwt_issuer: https://foundry.local/identity
     token_user: administrator@foundry.local
     token_password: foundry
