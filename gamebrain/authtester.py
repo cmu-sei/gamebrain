@@ -1,7 +1,5 @@
 from oauthlib.oauth2 import LegacyApplicationClient
-import requests
 from requests_oauthlib import OAuth2Session
-
 
 CLIENT_ID = "gb-test-client"
 CLIENT_SECRET = "cbcf8df872684a82b370f461513ad0b3"
@@ -27,7 +25,6 @@ def main():
     resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", verify=False)
 
     print(resp.json())
-
 
 
 if __name__ == "__main__":
