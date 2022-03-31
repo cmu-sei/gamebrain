@@ -5,7 +5,7 @@ identity:
     jwks_endpoint: .well-known/openid-configuration/jwks
     client_id: gamebrain-client
     client_secret: 7e972ec6610b49dab492a92ec3d7f5cd
-    jwt_audience: gamebrain-api
+    gamebrain_jwt_audience: gamebrain-api
     jwt_issuer: https://foundry.local/identity
     token_user: administrator@foundry.local
     token_password: foundry

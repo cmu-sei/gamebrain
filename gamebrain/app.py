@@ -38,18 +38,19 @@ Global.init()
 APP = FastAPI()
 
 
-def check_jwt(token: str):
+def check_jwt(token: str, audience: str, require_sub: bool = False):
     settings = get_settings()
     try:
-        return jwt.decode(token, Global.get_jwks(), audience=settings.identity.jwt_audience,
-                          issuer=settings.identity.jwt_issuer)
-    except (JWTError, JWTClaimsError, ExpiredSignatureError) as e:
+        return jwt.decode(token, Global.get_jwks(), audience=audience,
+                          issuer=settings.identity.jwt_issuer,
+                          options={"require_aud": True, "require_iss": True, "require_sub": require_sub})
+    except (JWTError, JWTClaimsError, ExpiredSignatureError):
         raise HTTPException(status_code=401, detail="JWT Error")
 
 
 @APP.get("/deploy/{game_id}")
 async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
-    payload = check_jwt(auth.credentials)
+    payload = check_jwt(auth.credentials, get_settings().identity.gamebrain_jwt_audience, True)
     user_id = payload["sub"]
 
     player = gameboard.get_player_by_user_id(user_id, game_id)
