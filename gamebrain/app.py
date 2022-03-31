@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
@@ -38,7 +40,7 @@ Global.init()
 APP = FastAPI()
 
 
-def check_jwt(token: str, audience: str, require_sub: bool = False):
+def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = False):
     settings = get_settings()
     try:
         return jwt.decode(token,
