@@ -24,8 +24,7 @@ def main():
                         client_secret=CLIENT_SECRET,
                         verify=CA_CERT_PATH)
 
-
-    resp = session.get(f"https://localhost:8000/deploy/{GAME_ID}", verify=False)
+    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", verify=False)
 
     print(resp.json())
 

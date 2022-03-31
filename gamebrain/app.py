@@ -48,7 +48,7 @@ def check_jwt(token: str, audience: str, require_sub: bool = False):
         raise HTTPException(status_code=401, detail="JWT Error")
 
 
-@APP.get("/deploy/{game_id}")
+@APP.get("/gamebrain/deploy/{game_id}")
 async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     payload = check_jwt(auth.credentials, get_settings().identity.gamebrain_jwt_audience, True)
     user_id = payload["sub"]
