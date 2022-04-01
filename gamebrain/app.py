@@ -78,14 +78,15 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
         team_name = player.get("approvedName", None)
 
         visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in gamespace["vms"] if vm["isVisible"]]
-        console_urls = [f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['id']}" for vm in visible_vms]
+        console_urls = {vm["id"]: f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['id']}"
+                        for vm in visible_vms}
 
         db.store_team(team_id, gamespace_id=gs_id, team_name=team_name)
         db.store_event(team_id, f"Launched gamespace {gs_id}")
-        db.store_console_urls(team_id, console_urls)
+        db.store_virtual_machines(team_id, console_urls)
     else:
         gs_id = team_data["gamespace_id"]
-        console_urls = [console_url["url"] for console_url in team_data["console_urls"]]
+        console_urls = {vm["id"]: vm["url"] for vm in team_data["vm_data"]}
 
     return {"gamespaceId": gs_id, "vms": console_urls}
 

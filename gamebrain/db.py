@@ -27,13 +27,13 @@ class DBManager:
         ship_fuel = Column(Integer, default=100, nullable=False)
         team_name = Column(String)
 
-        console_urls = relationship("ConsoleUrl", lazy="joined")
+        vm_data = relationship("VirtualMachine", lazy="joined")
         event_log = relationship("Event", lazy="joined")
 
-    class ConsoleUrl(orm_base):
+    class VirtualMachine(orm_base):
         __tablename__ = "console_url"
 
-        id = Column(Integer, primary_key=True)
+        id = Column(String(36), primary_key=True)
         team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
         url = Column(String, nullable=False)
 
@@ -99,9 +99,12 @@ def store_event(team_id: str, message: str):
     DBManager.merge_rows(event)
 
 
-def store_console_urls(team_id: str, urls: List[str]):
-    console_urls = [DBManager.ConsoleUrl(team_id=team_id, url=url) for url in urls]
-    DBManager.merge_rows(console_urls)
+def store_virtual_machines(team_id: str, vms: Dict):
+    """
+    vms: vm_id: url pairs
+    """
+    vm_data = [DBManager.VirtualMachine(id=vm_id, team_id=team_id, url=url) for vm_id, url in vms.items()]
+    DBManager.merge_rows(vm_data)
 
 
 def store_team(team_id: str,
