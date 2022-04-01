@@ -88,24 +88,6 @@ class DBManager:
             return [cls._orm_obj_to_dict(item) for item in result]
 
     @classmethod
-    def test_db(cls):
-        from ipaddress import IPv4Address
-        addr = IPv4Address("192.168.1.91")
-        team_id = "4af9eada-c6e2-4dab-951b-d5ff711a43e5"
-
-        team = cls.TeamData(id=team_id, headless_ip=int(addr))
-        console_url = cls.ConsoleUrl(team_id=team.id, url="https://foundry.local/console")
-
-        cls._merge_rows([console_url, team], "sqlite+pysqlite:///:memory:")
-
-        with Session(cls.engine) as session:
-            team = session.scalars(
-                select(cls.TeamData)
-            ).first()
-
-            print(team)
-
-    @classmethod
     def merge_rows(cls, items: List):
         settings = get_settings()
         cls._merge_rows(items, settings.db.connection_string)
