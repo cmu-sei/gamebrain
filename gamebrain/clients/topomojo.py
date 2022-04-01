@@ -15,6 +15,7 @@ def get_workspace(workspace_id: str):
         verify=settings.ca_cert_path
     )
 
+
 def register_gamespace(workspace_id: str, team_members: List[Dict]):
     """
     team_members: Each dict contains 'id' and 'approvedName' keys.
