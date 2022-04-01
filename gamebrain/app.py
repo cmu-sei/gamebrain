@@ -93,4 +93,8 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
 async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.gamestate_jwt_audience)
 
-    return db.get_teams()
+    teams = db.get_teams()
+    return [{"teamId": team["id"],
+             "teamName": team["team_name"],
+             "shipHp": team["ship_hp"],
+             "shipFuel": team["ship_fuel"]} for team in teams]
