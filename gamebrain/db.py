@@ -1,5 +1,5 @@
-from ipaddress import IPv4Address, AddressValueError
 from datetime import datetime, timezone
+from ipaddress import IPv4Address, AddressValueError
 from typing import Dict, List, Optional
 
 from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, DateTime, select, inspect
@@ -17,9 +17,6 @@ class DBManager:
 
         id = Column(String(40), primary_key=True)
 
-        def __repr__(self):
-            return f"ChallengeSecret(id={self.id!r}, secret={self.secret!r})"
-
     class TeamData(orm_base):
         __tablename__ = "team_data"
 
@@ -33,20 +30,12 @@ class DBManager:
         console_urls = relationship("ConsoleUrl", lazy="joined")
         event_log = relationship("Event", lazy="joined")
 
-        def __repr__(self):
-            return f"TeamData(id={self.id!r}, " \
-                   f"headless_ip={self.headless_ip!r}, " \
-                   f"console_urls={[console_url for console_url in self.console_urls]!r}"
-
     class ConsoleUrl(orm_base):
         __tablename__ = "console_url"
 
         id = Column(Integer, primary_key=True)
         team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
         url = Column(String, nullable=False)
-
-        def __repr__(self):
-            return f"ConsoleUrl(id={self.id!r}, team_id={self.team_id!r}, url={self.url!r}"
 
     class Event(orm_base):
         __tablename__ = "event"
@@ -56,18 +45,12 @@ class DBManager:
         message = Column(String, nullable=False)
         received_time = Column(DateTime, nullable=False)
 
-        def __repr__(self):
-            return f"Event(id={self.id!r}, team_id={self.team_id!r}, url={self.url!r}"
-
     class MediaAsset(orm_base):
         __tablename__ = "media_assets"
 
         id = Column(Integer, primary_key=True)
         short_name = Column(String, nullable=False)
         url = Column(String, nullable=False)
-
-        def __repr__(self):
-            return f"MediaAsset(id={self.id!r}, short_name={self.short_name!r}, url={self.url!r}"
 
     @classmethod
     def _orm_obj_to_dict(cls, obj: orm_base) -> Dict:
