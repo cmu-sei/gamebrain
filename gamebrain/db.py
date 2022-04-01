@@ -27,6 +27,8 @@ class DBManager:
         headless_ip = Column(BigInteger)
         ship_hp = Column(Integer, default=100, nullable=False)
         ship_fuel = Column(Integer, default=100, nullable=False)
+        team_name = Column(String)
+
         console_urls = relationship("ConsoleUrl", lazy="joined")
 
         def __repr__(self):
@@ -129,12 +131,18 @@ def store_console_urls(team_id: str, urls: List[str]):
     DBManager.merge_rows(console_urls)
 
 
-def store_team(team_id: str, gamespace_id: Optional[str] = None, headless_ip: Optional[str] = ""):
+def store_team(team_id: str,
+               gamespace_id: Optional[str] = None,
+               headless_ip: Optional[str] = None,
+               team_name: Optional[str] = None):
     try:
         address = int(IPv4Address(headless_ip))
     except AddressValueError:
         address = None
-    team_data = DBManager.TeamData(id=team_id, gamespace_id=gamespace_id, headless_ip=address)
+    team_data = DBManager.TeamData(id=team_id,
+                                   gamespace_id=gamespace_id,
+                                   headless_ip=address,
+                                   team_name=team_name)
     DBManager.merge_rows([team_data])
 
 
