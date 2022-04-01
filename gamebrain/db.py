@@ -1,7 +1,8 @@
 from ipaddress import IPv4Address, AddressValueError
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, select, inspect
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, DateTime, select, inspect
 from sqlalchemy.orm import declarative_base, relationship, Session
 
 from .config import get_settings
@@ -30,6 +31,7 @@ class DBManager:
         team_name = Column(String)
 
         console_urls = relationship("ConsoleUrl", lazy="joined")
+        event_log = relationship("Event", lazy="joined")
 
         def __repr__(self):
             return f"TeamData(id={self.id!r}, " \
@@ -50,7 +52,12 @@ class DBManager:
         __tablename__ = "event"
 
         id = Column(Integer, primary_key=True)
+        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
         message = Column(String, nullable=False)
+        received_time = Column(DateTime, nullable=False)
+
+        def __repr__(self):
+            return f"Event(id={self.id!r}, team_id={self.team_id!r}, url={self.url!r}"
 
     class MediaAsset(orm_base):
         __tablename__ = "media_assets"
@@ -121,9 +128,10 @@ class DBManager:
         cls._merge_rows(items, settings.db.connection_string)
 
 
-def store_events(messages: List[str]):
-    events = [DBManager.Event(message=message) for message in messages]
-    DBManager.merge_rows(events)
+def store_event(team_id: str, message: str):
+    received_time = datetime.now(timezone.utc)
+    event = [DBManager.Event(team_id=team_id, message=message, received_time=received_time)]
+    DBManager.merge_rows(event)
 
 
 def store_console_urls(team_id: str, urls: List[str]):
