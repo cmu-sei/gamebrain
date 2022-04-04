@@ -13,7 +13,7 @@ def get_workspace(workspace_id: str):
     return session.get(
         url_path_join(settings.base_api_url, f"workspace/{workspace_id}"),
         verify=settings.ca_cert_path
-    )
+    ).json()
 
 
 def register_gamespace(workspace_id: str, team_members: List[Dict]):
