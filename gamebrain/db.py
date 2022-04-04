@@ -141,6 +141,13 @@ def get_teams() -> List[Dict]:
     return DBManager.get_rows(DBManager.TeamData)
 
 
+def get_vm(vm_id: str) -> Dict:
+    try:
+        return DBManager.get_rows(DBManager.VirtualMachine, id=vm_id).pop()
+    except IndexError:
+        return {}
+
+
 def store_challenge_secrets(team_id: str, secrets: List[str]):
     objects = [DBManager.ChallengeSecret(id=secret, team_id=team_id) for secret in secrets]
     DBManager.merge_rows(objects)

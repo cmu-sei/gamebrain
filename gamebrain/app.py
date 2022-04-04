@@ -96,9 +96,22 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
 
 
+@APP.post("/gamebrain/privileged/{team_id}")
+async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
+
+    db.store_event(team_id, event_message)
+    # TODO: Publish update event.
+
+
 @APP.put("/gamebrain/privileged/changenet/{vm_id}")
 async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
+
+    vm = db.get_vm(vm_id)
+    if not vm:
+        raise HTTPException(status_code=400, detail="Speciied VM cannot be found.")
+    team_id = vm["team_id"]
 
     possible_networks = topomojo.get_vm_nets(vm_id).get("net")
     if possible_networks is None:
@@ -110,6 +123,9 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
             break
     else:
         raise HTTPException(status_code=400, detail="Specified VM cannot be changed to the specified network.")
+
+    db.store_event(team_id, f"Changed VM {vm_id} network to {new_net} for team {team_id}")
+    # TODO: Publish update event.
 
 
 @APP.put("/gamebrain/admin/headlessip/{team_id}")
