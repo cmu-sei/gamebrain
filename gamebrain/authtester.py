@@ -42,6 +42,10 @@ def main():
 
     print(resp.json())
 
+    vm_id = next(iter(resp.json()["vms"]))
+
+    session.put(f"https://localhost:8000/gamebrain/changenet/{vm_id}", verify=False, params={"new_net": "bridge-net"})
+
     session = OAuth2Session(client=BackendApplicationClient(client_id=GS_CLIENT_ID))
 
     session.fetch_token(token_url=TOKEN_URL,
