@@ -51,8 +51,7 @@ class DBManager:
     class MediaAsset(orm_base):
         __tablename__ = "media_assets"
 
-        id = Column(Integer, primary_key=True)
-        short_name = Column(String, nullable=False)
+        id = Column(String, primary_key=True)
         url = Column(String, nullable=False)
 
     @classmethod
@@ -144,4 +143,12 @@ def get_teams() -> List[Dict]:
 
 def store_challenge_secrets(team_id: str, secrets: List[str]):
     objects = [DBManager.ChallengeSecret(id=secret, team_id=team_id) for secret in secrets]
+    DBManager.merge_rows(objects)
+
+
+def store_media_assets(asset_map: Dict):
+    """
+    asset_map: shortname: url key-value pairs
+    """
+    objects = [DBManager.MediaAsset(id=short_name, url=url) for short_name, url in asset_map.items()]
     DBManager.merge_rows(objects)

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -126,6 +126,14 @@ async def create_challenge_secrets(team_id: str,
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
 
     db.store_challenge_secrets(team_id, secrets)
+
+
+@APP.post("/gamebrain/admin/media")
+async def add_media_urls(media_map: Dict[str, str],
+                         auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
+
+    db.store_media_assets(media_map)
 
 
 @APP.get("/gamestate/team_data")
