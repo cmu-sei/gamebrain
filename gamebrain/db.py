@@ -115,10 +115,16 @@ def store_team(team_id: str,
         address = int(IPv4Address(headless_ip))
     except AddressValueError:
         address = None
+    # Avoid clobbering existing values
+    kwargs = {}
+    if gamespace_id:
+        kwargs["gamespace_id"] = gamespace_id
+    if address:
+        kwargs["headless_ip"] = address
+    if team_name:
+        kwargs["team_name"] = team_name
     team_data = DBManager.TeamData(id=team_id,
-                                   gamespace_id=gamespace_id,
-                                   headless_ip=address,
-                                   team_name=team_name)
+                                   **kwargs)
     DBManager.merge_rows([team_data])
 
 

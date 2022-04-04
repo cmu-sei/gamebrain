@@ -109,6 +109,13 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
         raise HTTPException(status_code=400, detail="Specified VM cannot be changed to the specified network.")
 
 
+@APP.put("/gamebrain/admin/headlessip/{team_id}")
+async def set_headless_ip(team_id: str, headless_ip: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
+
+    db.store_team(team_id, headless_ip=headless_ip)
+
+
 @APP.get("/gamestate/team_data")
 async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
