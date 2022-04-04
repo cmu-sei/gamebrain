@@ -48,3 +48,27 @@ def register_gamespace(workspace_id: str, team_members: List[Dict]):
         verify=settings.ca_cert_path,
         json=post_data
     ).json()
+
+
+def get_vm_nets(vm_id: str):
+    settings = get_settings()
+    session = get_oauth2_session()
+
+    endpoint = f"vm/{vm_id}/nets"
+    return session.get(
+        url_path_join(settings.topomojo.base_api_url, endpoint),
+        verify=settings.ca_cert_path
+    ).json()
+
+
+def change_vm_net(vm_id: str, new_net: str):
+    settings = get_settings()
+    session = get_oauth2_session()
+
+    endpoint = f"vm/{vm_id}/change"
+    params = {"key": "net", "value": new_net}
+    return session.put(
+        url_path_join(settings.topomojo.base_api_url, endpoint),
+        verify=settings.ca_cert_path,
+        json=params
+    ).json()
