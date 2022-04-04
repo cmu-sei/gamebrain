@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -117,6 +117,15 @@ async def set_headless_ip(team_id: str, headless_ip: str, auth: HTTPAuthorizatio
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
 
     db.store_team(team_id, headless_ip=headless_ip)
+
+
+@APP.post("/gamebrain/admin/secrets/{team_id}")
+async def create_challenge_secrets(team_id: str,
+                                   secrets: List[str],
+                                   auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
+
+    db.store_challenge_secrets(team_id, secrets)
 
 
 @APP.get("/gamestate/team_data")

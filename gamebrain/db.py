@@ -16,6 +16,7 @@ class DBManager:
         __tablename__ = "challenge_secret"
 
         id = Column(String(40), primary_key=True)
+        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
 
     class TeamData(orm_base):
         __tablename__ = "team_data"
@@ -27,8 +28,10 @@ class DBManager:
         ship_fuel = Column(Integer, default=100, nullable=False)
         team_name = Column(String)
 
+        # lazy="joined" to prevent session errors.
         vm_data = relationship("VirtualMachine", lazy="joined")
         event_log = relationship("Event", lazy="joined")
+        secrets = relationship("ChallengeSecret", lazy="joined")
 
     class VirtualMachine(orm_base):
         __tablename__ = "console_url"
@@ -139,6 +142,6 @@ def get_teams() -> List[Dict]:
     return DBManager.get_rows(DBManager.TeamData)
 
 
-def store_challenge_secret(secret: str):
-    challenge_secret = DBManager.ChallengeSecret(id=secret)
-    DBManager.merge_rows([challenge_secret])
+def store_challenge_secrets(team_id: str, secrets: List[str]):
+    objects = [DBManager.ChallengeSecret(id=secret, team_id=team_id) for secret in secrets]
+    DBManager.merge_rows(objects)
