@@ -91,6 +91,23 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     return {"gamespaceId": gs_id, "vms": console_urls}
 
 
+@APP.put("/gamebrain/changenet/{vm_id}")
+async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+    # TODO: Figure out how to verify the caller is a headless client.
+    check_jwt(auth.credentials, get_settings().identity.gamebrain_jwt_audience)
+
+    possible_networks = topomojo.get_vm_nets(vm_id).get("net")
+    if possible_networks is None:
+        raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
+
+    for net in possible_networks:
+        if net.startswith(new_net):
+            topomojo.change_vm_net(vm_id, new_net)
+            break
+    else:
+        raise HTTPException(status_code=400, detail="Specified VM cannot be changed to the specified network.")
+
+
 @APP.get("/gamestate/team_data")
 async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.gamestate_jwt_audience)
