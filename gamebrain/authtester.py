@@ -54,6 +54,12 @@ def main():
                         json=["secret_4", "secret_5", "secret_6"])
     print(resp.json())
 
+    resp = session.post(f"https://localhost:8000/gamebrain/admin/media",
+                        verify=False,
+                        json={"video1": "https://example.com/video1",
+                              "video2": "https://example.com/video2"})
+    print(resp.json())
+
     session = OAuth2Session(client=LegacyApplicationClient(client_id=GB_CLIENT_ID_UNPRIV))
 
     session.fetch_token(token_url=TOKEN_URL,
