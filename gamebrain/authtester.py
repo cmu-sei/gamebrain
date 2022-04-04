@@ -1,7 +1,7 @@
 from oauthlib.oauth2 import BackendApplicationClient, LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
 
-GB_CLIENT_ID = "gb-test-client"
+GB_CLIENT_ID = "gb-test-client-priv"
 GB_CLIENT_SECRET = "cbcf8df872684a82b370f461513ad0b3"
 GS_CLIENT_ID = "gs-test-client"
 GS_CLIENT_SECRET = "43bcc0072ab54a349368b20f1c31b0cd"

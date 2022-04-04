@@ -57,7 +57,7 @@ def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = Fa
 
 @APP.get("/gamebrain/deploy/{game_id}")
 async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
-    payload = check_jwt(auth.credentials, get_settings().identity.gamebrain_jwt_audience, True)
+    payload = check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv, True)
     user_id = payload["sub"]
 
     player = gameboard.get_player_by_user_id(user_id, game_id)
@@ -65,7 +65,9 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     team_id = player["teamId"]
     team_data = db.get_team(team_id)
 
-    if not team_data:
+    # Originally it just checked if not team_data, but because headless clients are going to be manually added ahead
+    # of the start of the round, team_data will be partially populated.
+    if not team_data.get("gamespace_id"):
         team = gameboard.get_team(team_id)
 
         specs = gameboard.get_game_specs(game_id).pop()
@@ -94,7 +96,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
 @APP.put("/gamebrain/changenet/{vm_id}")
 async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     # TODO: Figure out how to verify the caller is a headless client.
-    check_jwt(auth.credentials, get_settings().identity.gamebrain_jwt_audience)
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
     possible_networks = topomojo.get_vm_nets(vm_id).get("net")
     if possible_networks is None:
@@ -110,7 +112,7 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
 
 @APP.get("/gamestate/team_data")
 async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
-    check_jwt(auth.credentials, get_settings().identity.gamestate_jwt_audience)
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
     teams = db.get_teams()
     return [{"teamId": team["id"],

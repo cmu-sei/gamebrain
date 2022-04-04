@@ -5,17 +5,23 @@ from pydantic import BaseModel, validator
 import yaml
 
 
+class JwtAudiencesModel(BaseModel):
+    gamebrain_api_unpriv: str
+    gamebrain_api_priv: str
+    gamebrain_api_admin: str
+    gamestate_api: str
+
+
 class IdentitySettingsModel(BaseModel):
     base_url: str
     token_endpoint: str
     jwks_endpoint: str
     client_id: str
     client_secret: str
-    gamebrain_jwt_audience: str
-    gamestate_jwt_audience: str
     jwt_issuer: str
     token_user: str
     token_password: str
+    jwt_audiences: JwtAudiencesModel
 
 
 class GameboardSettingsModel(BaseModel):
