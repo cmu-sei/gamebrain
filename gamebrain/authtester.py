@@ -1,3 +1,5 @@
+import warnings
+
 from oauthlib.oauth2 import BackendApplicationClient, LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
 
@@ -22,6 +24,9 @@ GAME_ID = "f63c8e41fd994e16bad08075dd2a666c"
 
 
 def main():
+    # SSL warnings pollute the console too much.
+    warnings.filterwarnings("ignore")
+
     session = OAuth2Session(client=BackendApplicationClient(client_id=GB_CLIENT_ID_ADMIN))
 
     session.fetch_token(token_url=TOKEN_URL,
@@ -33,9 +38,20 @@ def main():
                        verify=False,
                        params={"headless_ip": "10.10.10.10"})
     print(resp.json())
+
     resp = session.put(f"https://localhost:8000/gamebrain/admin/headlessip/{TEST_TEAM_2}",
                        verify=False,
                        params={"headless_ip": "10.10.10.11"})
+    print(resp.json())
+
+    resp = session.post(f"https://localhost:8000/gamebrain/admin/secrets/{TEST_TEAM_1}",
+                        verify=False,
+                        json=["secret_1", "secret_2", "secret_3"])
+    print(resp.json())
+
+    resp = session.post(f"https://localhost:8000/gamebrain/admin/secrets/{TEST_TEAM_2}",
+                        verify=False,
+                        json=["secret_4", "secret_5", "secret_6"])
     print(resp.json())
 
     session = OAuth2Session(client=LegacyApplicationClient(client_id=GB_CLIENT_ID_UNPRIV))
