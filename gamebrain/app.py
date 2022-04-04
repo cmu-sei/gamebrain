@@ -83,14 +83,17 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
         console_urls = {vm["id"]: f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['id']}"
                         for vm in visible_vms}
 
+        headless_ip = team_data.get("headless_ip")
+
         db.store_team(team_id, gamespace_id=gs_id, team_name=team_name)
         db.store_event(team_id, f"Launched gamespace {gs_id}")
         db.store_virtual_machines(team_id, console_urls)
     else:
         gs_id = team_data["gamespace_id"]
         console_urls = {vm["id"]: vm["url"] for vm in team_data["vm_data"]}
+        headless_ip = team_data["headless_ip"]
 
-    return {"gamespaceId": gs_id, "vms": console_urls}
+    return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
 
 
 @APP.put("/gamebrain/privileged/changenet/{vm_id}")
