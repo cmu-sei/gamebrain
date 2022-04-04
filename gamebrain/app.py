@@ -93,7 +93,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     return {"gamespaceId": gs_id, "vms": console_urls}
 
 
-@APP.put("/gamebrain/changenet/{vm_id}")
+@APP.put("/gamebrain/privileged/changenet/{vm_id}")
 async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 

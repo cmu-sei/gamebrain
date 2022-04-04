@@ -53,7 +53,7 @@ def main():
 
     vm_id = next(iter(resp.json()["vms"]))
 
-    resp = session.put(f"https://localhost:8000/gamebrain/changenet/{vm_id}", verify=False,
+    resp = session.put(f"https://localhost:8000/gamebrain/privileged/changenet/{vm_id}", verify=False,
                        params={"new_net": "bridge-net"})
     print(resp.json())
 
