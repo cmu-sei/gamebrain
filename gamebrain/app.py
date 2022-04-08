@@ -1,9 +1,10 @@
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Security
+from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
+import redis.asyncio as redis
 import requests
 
 from gamebrain.clients import gameboard, topomojo
@@ -15,6 +16,7 @@ from .util import url_path_join
 class Global:
     settings_path = "settings.yaml"
     jwks = None
+    redis = None
 
     @classmethod
     def init(cls):
@@ -22,6 +24,7 @@ class Global:
         settings = get_settings()
         db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
         cls._init_jwks()
+        cls._init_redis()
 
     @classmethod
     def _init_jwks(cls):
@@ -30,6 +33,10 @@ class Global:
             url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
             verify=settings.ca_cert_path
         ).json()
+
+    @classmethod
+    def _init_redis(cls):
+        cls.redis = redis.Redis()
 
     @classmethod
     def get_jwks(cls):
@@ -161,3 +168,16 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
              "teamName": team["team_name"],
              "shipHp": team["ship_hp"],
              "shipFuel": team["ship_fuel"]} for team in teams]
+
+
+@APP.websocket("/gamestate/websocket/events")
+async def subscribe_events(ws: WebSocket):
+    await ws.accept()
+    pubsub = Global.redis.pubsub()
+    await pubsub.subscribe("test")
+    async for message in pubsub.listen():
+        try:
+            await ws.send_text(f"Text was: {message}")
+        except WebSocketDisconnect:
+            break
+    await pubsub.unsubscribe("test")
