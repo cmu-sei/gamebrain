@@ -36,7 +36,11 @@ class Global:
 
     @classmethod
     def _init_redis(cls):
-        cls.redis = redis.Redis()
+        settings = get_settings()
+        if settings.redis.connection_string:
+            cls.redis = redis.Redis.from_url(settings.redis.connection_string)
+        else:
+            cls.redis = redis.Redis()
 
     @classmethod
     def get_jwks(cls):
@@ -172,12 +176,14 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
 
 @APP.websocket("/gamestate/websocket/events")
 async def subscribe_events(ws: WebSocket):
+    settings = get_settings()
+
     await ws.accept()
-    pubsub = Global.redis.pubsub()
-    await pubsub.subscribe("test")
+    pubsub = Global.redis.pubsub(ignore_subscribe_messages=True)
+    await pubsub.subscribe(settings.redis.channel_name)
     async for message in pubsub.listen():
         try:
-            await ws.send_text(f"Text was: {message}")
+            await ws.send_text(str(message))
         except WebSocketDisconnect:
             break
-    await pubsub.unsubscribe("test")
+    await pubsub.unsubscribe(settings.redis.channel_name)

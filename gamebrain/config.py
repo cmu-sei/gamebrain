@@ -39,12 +39,18 @@ class DbSettingsModel(BaseModel):
     echo_sql: Optional[bool]
 
 
+class RedisSettingsModel(BaseModel):
+    connection_string: Optional[str]
+    channel_name: Optional[str] = "gamebrain-default"
+
+
 class SettingsModel(BaseModel):
     ca_cert_path: str
     identity: IdentitySettingsModel
     topomojo: TopomojoSettingsModel
     gameboard: GameboardSettingsModel
     db: DbSettingsModel
+    redis: Optional[RedisSettingsModel] = RedisSettingsModel()
 
     @validator('ca_cert_path')
     def path_exists(cls, v):
