@@ -111,8 +111,9 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
 async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
-    db.store_event(team_id, event_message)
-    # TODO: Publish update event.
+    event_time = db.store_event(team_id, event_message)
+
+    await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
 
 
 @APP.put("/gamebrain/privileged/changenet/{vm_id}")
@@ -135,8 +136,10 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
     else:
         raise HTTPException(status_code=400, detail="Specified VM cannot be changed to the specified network.")
 
-    db.store_event(team_id, f"Changed VM {vm_id} network to {new_net} for team {team_id}")
-    # TODO: Publish update event.
+    event_message = f"Changed VM {vm_id} network to {new_net} for team {team_id}"
+    event_time = db.store_event(team_id, event_message)
+
+    await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
 
 
 @APP.put("/gamebrain/admin/headlessip/{team_id}")
