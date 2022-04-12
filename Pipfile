@@ -5,18 +5,20 @@ name = "pypi"
 
 [packages]
 requests = "*"
-pyyaml = "*"
+PyYAML = "*"
 requests-oauthlib = "*"
 pydantic = "*"
 fastapi = "*"
-psycopg2 = "*"
-sqlalchemy = "*"
 redis = "*"
+asyncpg = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.8"
+
+[packages.SQLAlchemy]
+extras = [ "asyncio",]
 
 [packages.uvicorn]
 extras = [ "standard",]

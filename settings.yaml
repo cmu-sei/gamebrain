@@ -19,6 +19,6 @@ topomojo:
 gameboard:
     base_api_url: https://foundry.local/gameboard/api/
 db:
-    connection_string: postgresql+psycopg2://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
+    connection_string: postgresql+asyncpg://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
     drop_app_tables: true
     echo_sql: false

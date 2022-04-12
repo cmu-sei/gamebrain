@@ -20,10 +20,10 @@ class Global:
     redis = None
 
     @classmethod
-    def init(cls):
+    async def init(cls):
         Settings.init_settings(cls.settings_path)
         settings = get_settings()
-        db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
+        await db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
         cls._init_jwks()
         cls._init_redis()
 
@@ -48,7 +48,6 @@ class Global:
         return cls.jwks
 
 
-Global.init()
 APP = FastAPI()
 
 
@@ -67,6 +66,11 @@ def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = Fa
         raise HTTPException(status_code=401, detail="JWT Error")
 
 
+@APP.on_event("startup")
+async def startup():
+    await Global.init()
+
+
 @APP.get("/gamebrain/deploy/{game_id}")
 async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     payload = check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_unpriv, True)
@@ -75,7 +79,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     player = gameboard.get_player_by_user_id(user_id, game_id)
 
     team_id = player["teamId"]
-    team_data = db.get_team(team_id)
+    team_data = await db.get_team(team_id)
 
     # Originally it just checked if not team_data, but because headless clients are going to be manually added ahead
     # of the start of the round, team_data will be partially populated.
@@ -97,9 +101,9 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
 
         headless_ip = team_data.get("headless_ip")
 
-        db.store_team(team_id, gamespace_id=gs_id, team_name=team_name)
-        db.store_event(team_id, f"Launched gamespace {gs_id}")
-        db.store_virtual_machines(team_id, console_urls)
+        await db.store_team(team_id, gamespace_id=gs_id, team_name=team_name)
+        await db.store_event(team_id, f"Launched gamespace {gs_id}")
+        await db.store_virtual_machines(team_id, console_urls)
     else:
         gs_id = team_data["gamespace_id"]
         console_urls = {vm["id"]: vm["url"] for vm in team_data["vm_data"]}
@@ -112,7 +116,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
 async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
-    event_time = db.store_event(team_id, event_message)
+    event_time = await db.store_event(team_id, event_message)
 
     await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
 
@@ -121,7 +125,7 @@ async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCr
 async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
-    vm = db.get_vm(vm_id)
+    vm = await db.get_vm(vm_id)
     if not vm:
         raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
     team_id = vm["team_id"]
@@ -138,7 +142,7 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
         raise HTTPException(status_code=400, detail="Specified VM cannot be changed to the specified network.")
 
     event_message = f"Changed VM {vm_id} network to {new_net} for team {team_id}"
-    event_time = db.store_event(team_id, event_message)
+    event_time = await db.store_event(team_id, event_message)
 
     await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
 
@@ -147,7 +151,7 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
 async def set_headless_ip(team_id: str, headless_ip: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
 
-    db.store_team(team_id, headless_ip=headless_ip)
+    await db.store_team(team_id, headless_ip=headless_ip)
 
 
 @APP.post("/gamebrain/admin/secrets/{team_id}")
@@ -156,7 +160,7 @@ async def create_challenge_secrets(team_id: str,
                                    auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
 
-    db.store_challenge_secrets(team_id, secrets)
+    await db.store_challenge_secrets(team_id, secrets)
 
 
 @APP.post("/gamebrain/admin/media")
@@ -164,14 +168,14 @@ async def add_media_urls(media_map: Dict[str, str],
                          auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
 
-    db.store_media_assets(media_map)
+    await db.store_media_assets(media_map)
 
 
 @APP.get("/gamestate/team_data")
 async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
-    teams = db.get_teams()
+    teams = await db.get_teams()
     return [{"teamId": team["id"],
              "teamName": team["team_name"],
              "shipHp": team["ship_hp"],
@@ -190,7 +194,7 @@ async def subscribe_events(ws: WebSocket):
     except WebSocketDisconnect:
         return
 
-    events = db.get_events()
+    events = await db.get_events()
     for event in events:
         try:
             message = event["message"]

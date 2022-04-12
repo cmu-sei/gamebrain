@@ -2,8 +2,9 @@ from datetime import datetime, timezone
 from ipaddress import IPv4Address, AddressValueError
 from typing import Dict, List, Optional
 
-from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, TIMESTAMP, inspect
-from sqlalchemy.orm import declarative_base, relationship, Session
+from sqlalchemy import Column, Integer, BigInteger, String, ForeignKey, TIMESTAMP, inspect, select
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from .config import get_settings
 
@@ -11,6 +12,7 @@ from .config import get_settings
 class DBManager:
     orm_base = declarative_base()
     engine = None
+    session_factory = None
 
     class ChallengeSecret(orm_base):
         __tablename__ = "challenge_secret"
@@ -64,60 +66,58 @@ class DBManager:
         return result
 
     @classmethod
-    def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
+    async def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
         if cls.engine and not drop_first:
             return
         if not connection_string:
             settings = get_settings()
             connection_string = settings.db.connection_string
-        cls.engine = create_engine(connection_string, echo=echo, future=True)
-        if drop_first:
-            cls.orm_base.metadata.drop_all(cls.engine)
-        cls.orm_base.metadata.create_all(cls.engine)
+        cls.engine = create_async_engine(connection_string, echo=echo, future=True)
+        # I don't know if expire_on_commit is necessary here, but the SQLAlchemy docs used it.
+        cls.session_factory = sessionmaker(cls.engine, expire_on_commit=False, class_=AsyncSession)
+        async with cls.engine.begin() as connection:
+            if drop_first:
+                await connection.run_sync(cls.orm_base.metadata.drop_all)
+            await connection.run_sync(cls.orm_base.metadata.create_all)
 
     @classmethod
-    def _merge_rows(cls, items: List, connection_string: str = ""):
-        cls.init_db(connection_string)
-        with Session(cls.engine) as session:
-            for item in items:
-                session.merge(item)
-            session.commit()
-
-    @classmethod
-    def get_rows(cls, orm_class: orm_base, **kwargs) -> List[Dict]:
-        with Session(cls.engine) as session:
-            result = session.query(orm_class).filter_by(**kwargs).all()
+    async def get_rows(cls, orm_class: orm_base, *args) -> List[Dict]:
+        async with cls.session_factory() as session:
+            query = select(orm_class).where(*args)
+            result = (await session.execute(query)).unique().scalars().all()
             return [cls._orm_obj_to_dict(item) for item in result]
 
     @classmethod
-    def merge_rows(cls, items: List):
-        settings = get_settings()
-        cls._merge_rows(items, settings.db.connection_string)
+    async def merge_rows(cls, items: List):
+        async with cls.session_factory() as session:
+            for item in items:
+                await session.merge(item)
+            await session.commit()
 
 
-def store_event(team_id: str, message: str):
+async def store_event(team_id: str, message: str):
     received_time = datetime.now(timezone.utc)
     event = [DBManager.Event(team_id=team_id, message=message, received_time=received_time)]
-    DBManager.merge_rows(event)
+    await DBManager.merge_rows(event)
     return received_time
 
 
-def get_events(team_id: Optional[str] = None):
-    kwargs = {}
+async def get_events(team_id: Optional[str] = None):
+    args = []
     if team_id:
-        kwargs["team_id"] = team_id
-    return DBManager.get_rows(DBManager.Event, **kwargs)
+        args.append(DBManager.Event.team_id == team_id)
+    return await DBManager.get_rows(DBManager.Event, *args)
 
 
-def store_virtual_machines(team_id: str, vms: Dict):
+async def store_virtual_machines(team_id: str, vms: Dict):
     """
     vms: vm_id: url pairs
     """
     vm_data = [DBManager.VirtualMachine(id=vm_id, team_id=team_id, url=url) for vm_id, url in vms.items()]
-    DBManager.merge_rows(vm_data)
+    await DBManager.merge_rows(vm_data)
 
 
-def store_team(team_id: str,
+async def store_team(team_id: str,
                gamespace_id: Optional[str] = None,
                headless_ip: Optional[str] = None,
                team_name: Optional[str] = None):
@@ -135,35 +135,35 @@ def store_team(team_id: str,
         kwargs["team_name"] = team_name
     team_data = DBManager.TeamData(id=team_id,
                                    **kwargs)
-    DBManager.merge_rows([team_data])
+    await DBManager.merge_rows([team_data])
 
 
-def get_team(team_id: str) -> Dict:
+async def get_team(team_id: str) -> Dict:
     try:
-        return DBManager.get_rows(DBManager.TeamData, id=team_id).pop()
+        return (await DBManager.get_rows(DBManager.TeamData, DBManager.TeamData.id == team_id)).pop()
     except IndexError:
         return {}
 
 
-def get_teams() -> List[Dict]:
-    return DBManager.get_rows(DBManager.TeamData)
+async def get_teams() -> List[Dict]:
+    return await DBManager.get_rows(DBManager.TeamData)
 
 
-def get_vm(vm_id: str) -> Dict:
+async def get_vm(vm_id: str) -> Dict:
     try:
-        return DBManager.get_rows(DBManager.VirtualMachine, id=vm_id).pop()
+        return (await DBManager.get_rows(DBManager.VirtualMachine, DBManager.VirtualMachine.id == vm_id)).pop()
     except IndexError:
         return {}
 
 
-def store_challenge_secrets(team_id: str, secrets: List[str]):
+async def store_challenge_secrets(team_id: str, secrets: List[str]):
     objects = [DBManager.ChallengeSecret(id=secret, team_id=team_id) for secret in secrets]
-    DBManager.merge_rows(objects)
+    await DBManager.merge_rows(objects)
 
 
-def store_media_assets(asset_map: Dict):
+async def store_media_assets(asset_map: Dict):
     """
     asset_map: shortname: url key-value pairs
     """
     objects = [DBManager.MediaAsset(id=short_name, url=url) for short_name, url in asset_map.items()]
-    DBManager.merge_rows(objects)
+    await DBManager.merge_rows(objects)
