@@ -11,6 +11,8 @@ pydantic = "*"
 fastapi = "*"
 redis = "*"
 asyncpg = "*"
+Authlib = "*"
+httpx = "*"
 
 [dev-packages]
 

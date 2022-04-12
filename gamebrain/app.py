@@ -3,10 +3,10 @@ from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import httpx
 from jose import jwt
 from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
 import redis.asyncio as redis
-import requests
 
 from gamebrain.clients import gameboard, topomojo
 import gamebrain.db as db
@@ -30,7 +30,7 @@ class Global:
     @classmethod
     def _init_jwks(cls):
         settings = get_settings()
-        cls.jwks = requests.get(
+        cls.jwks = httpx.get(
             url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
             verify=settings.ca_cert_path
         ).json()
@@ -76,7 +76,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     payload = check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_unpriv, True)
     user_id = payload["sub"]
 
-    player = gameboard.get_player_by_user_id(user_id, game_id)
+    player = await gameboard.get_player_by_user_id(user_id, game_id)
 
     team_id = player["teamId"]
     team_data = await db.get_team(team_id)
@@ -84,12 +84,12 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     # Originally it just checked if not team_data, but because headless clients are going to be manually added ahead
     # of the start of the round, team_data will be partially populated.
     if not team_data.get("gamespace_id"):
-        team = gameboard.get_team(team_id)
+        team = await gameboard.get_team(team_id)
 
-        specs = gameboard.get_game_specs(game_id).pop()
+        specs = (await gameboard.get_game_specs(game_id)).pop()
         external_id = specs["externalId"]
 
-        gamespace = topomojo.register_gamespace(external_id, team["members"])
+        gamespace = await topomojo.register_gamespace(external_id, team["members"])
 
         gs_id = gamespace["id"]
         # Oddly, the team approved name is counterintuitively stored with each player as "approvedName".
@@ -130,13 +130,13 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
         raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
     team_id = vm["team_id"]
 
-    possible_networks = topomojo.get_vm_nets(vm_id).get("net")
+    possible_networks = (await topomojo.get_vm_nets(vm_id)).get("net")
     if possible_networks is None:
         raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
 
     for net in possible_networks:
         if net.startswith(new_net):
-            topomojo.change_vm_net(vm_id, new_net)
+            await topomojo.change_vm_net(vm_id, new_net)
             break
     else:
         raise HTTPException(status_code=400, detail="Specified VM cannot be changed to the specified network.")
