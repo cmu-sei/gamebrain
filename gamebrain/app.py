@@ -107,7 +107,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
     return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
 
 
-@APP.post("/gamebrain/privileged/{team_id}")
+@APP.post("/gamebrain/privileged/event/{team_id}")
 async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
