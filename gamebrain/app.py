@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
@@ -182,11 +183,27 @@ async def subscribe_events(ws: WebSocket):
     settings = get_settings()
 
     await ws.accept()
+
+    timestamp_message = f"Server time is currently @ {datetime.now(timezone.utc)}"
+    try:
+        await ws.send_text(timestamp_message)
+    except WebSocketDisconnect:
+        return
+
+    events = db.get_events()
+    for event in events:
+        try:
+            message = event["message"]
+            received_time = event["received_time"]
+            await ws.send_text(f"{message} @ {received_time}")
+        except WebSocketDisconnect:
+            return
+
     pubsub = Global.redis.pubsub(ignore_subscribe_messages=True)
     await pubsub.subscribe(settings.redis.channel_name)
     async for message in pubsub.listen():
         try:
-            await ws.send_text(str(message))
+            await ws.send_text(message["data"].decode())
         except WebSocketDisconnect:
             break
     await pubsub.unsubscribe(settings.redis.channel_name)

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from ipaddress import IPv4Address, AddressValueError
 from typing import Dict, List, Optional
 
-from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, DateTime, select, inspect
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, ForeignKey, TIMESTAMP, inspect
 from sqlalchemy.orm import declarative_base, relationship, Session
 
 from .config import get_settings
@@ -46,7 +46,7 @@ class DBManager:
         id = Column(Integer, primary_key=True)
         team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
         message = Column(String, nullable=False)
-        received_time = Column(DateTime, nullable=False)
+        received_time = Column(TIMESTAMP(timezone.utc), nullable=False)
 
     class MediaAsset(orm_base):
         __tablename__ = "media_assets"
