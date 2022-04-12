@@ -121,7 +121,7 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
 
     vm = db.get_vm(vm_id)
     if not vm:
-        raise HTTPException(status_code=400, detail="Speciied VM cannot be found.")
+        raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
     team_id = vm["team_id"]
 
     possible_networks = topomojo.get_vm_nets(vm_id).get("net")
