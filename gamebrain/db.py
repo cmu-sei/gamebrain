@@ -99,6 +99,14 @@ def store_event(team_id: str, message: str):
     received_time = datetime.now(timezone.utc)
     event = [DBManager.Event(team_id=team_id, message=message, received_time=received_time)]
     DBManager.merge_rows(event)
+    return received_time
+
+
+def get_events(team_id: Optional[str] = None):
+    kwargs = {}
+    if team_id:
+        kwargs["team_id"] = team_id
+    return DBManager.get_rows(DBManager.Event, **kwargs)
 
 
 def store_virtual_machines(team_id: str, vms: Dict):
