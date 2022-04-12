@@ -4,9 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
 PyYAML = "*"
-requests-oauthlib = "*"
 pydantic = "*"
 fastapi = "*"
 redis = "*"

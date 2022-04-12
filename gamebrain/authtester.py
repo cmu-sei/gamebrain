@@ -1,7 +1,6 @@
 import warnings
 
-from oauthlib.oauth2 import BackendApplicationClient, LegacyApplicationClient
-from requests_oauthlib import OAuth2Session
+from authlib.integrations.httpx_client import OAuth2Client
 
 GB_CLIENT_ID_UNPRIV = "gb-test-client-unpriv"
 GB_CLIENT_SECRET_UNPRIV = "46ec755e2bab4070a9634214620389b5"
@@ -27,86 +26,64 @@ def main():
     # SSL warnings pollute the console too much.
     warnings.filterwarnings("ignore")
 
-    session = OAuth2Session(client=BackendApplicationClient(client_id=GB_CLIENT_ID_ADMIN))
+    session = OAuth2Client(GB_CLIENT_ID_ADMIN, GB_CLIENT_SECRET_ADMIN, verify=False)
 
-    session.fetch_token(token_url=TOKEN_URL,
-                        client_id=GB_CLIENT_ID_ADMIN,
-                        client_secret=GB_CLIENT_SECRET_ADMIN,
-                        verify=CA_CERT_PATH)
+    session.fetch_token(TOKEN_URL)
 
     resp = session.put(f"https://localhost:8000/gamebrain/admin/headlessip/{TEST_TEAM_1}",
-                       verify=False,
                        params={"headless_ip": "10.10.10.10"})
     print(resp.json())
 
     resp = session.put(f"https://localhost:8000/gamebrain/admin/headlessip/{TEST_TEAM_2}",
-                       verify=False,
                        params={"headless_ip": "10.10.10.11"})
     print(resp.json())
 
     resp = session.post(f"https://localhost:8000/gamebrain/admin/secrets/{TEST_TEAM_1}",
-                        verify=False,
                         json=["secret_1", "secret_2", "secret_3"])
     print(resp.json())
 
     resp = session.post(f"https://localhost:8000/gamebrain/admin/secrets/{TEST_TEAM_2}",
-                        verify=False,
                         json=["secret_4", "secret_5", "secret_6"])
     print(resp.json())
 
     resp = session.post(f"https://localhost:8000/gamebrain/admin/media",
-                        verify=False,
                         json={"video1": "https://example.com/video1",
                               "video2": "https://example.com/video2"})
     print(resp.json())
 
-    session = OAuth2Session(client=LegacyApplicationClient(client_id=GB_CLIENT_ID_UNPRIV))
+    session = OAuth2Client(GB_CLIENT_ID_UNPRIV, GB_CLIENT_SECRET_UNPRIV, verify=False)
 
-    session.fetch_token(token_url=TOKEN_URL,
+    session.fetch_token(TOKEN_URL,
                         username=TEST_USER_1,
-                        password=TEST_PASS,
-                        client_id=GB_CLIENT_ID_UNPRIV,
-                        client_secret=GB_CLIENT_SECRET_UNPRIV,
-                        verify=CA_CERT_PATH)
+                        password=TEST_PASS)
 
-    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", verify=False)
+    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}")
 
     print(resp.json())
 
-    session = OAuth2Session(client=LegacyApplicationClient(client_id=GB_CLIENT_ID_UNPRIV))
+    session = OAuth2Client(GB_CLIENT_ID_UNPRIV, GB_CLIENT_SECRET_UNPRIV, verify=False)
 
-    session.fetch_token(token_url=TOKEN_URL,
+    session.fetch_token(TOKEN_URL,
                         username=TEST_USER_2,
-                        password=TEST_PASS,
-                        client_id=GB_CLIENT_ID_UNPRIV,
-                        client_secret=GB_CLIENT_SECRET_UNPRIV,
-                        verify=CA_CERT_PATH)
+                        password=TEST_PASS)
 
-    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", verify=False)
+    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}")
 
     print(resp.json())
 
-    session = OAuth2Session(client=BackendApplicationClient(client_id=GB_CLIENT_ID_PRIV))
-
-    session.fetch_token(token_url=TOKEN_URL,
-                        client_id=GB_CLIENT_ID_PRIV,
-                        client_secret=GB_CLIENT_SECRET_PRIV,
-                        verify=CA_CERT_PATH)
+    session = OAuth2Client(GB_CLIENT_ID_PRIV, GB_CLIENT_SECRET_PRIV, verify=False)
+    session.fetch_token(TOKEN_URL)
 
     vm_id = next(iter(resp.json()["vms"]))
 
-    resp = session.put(f"https://localhost:8000/gamebrain/privileged/changenet/{vm_id}", verify=False,
+    resp = session.put(f"https://localhost:8000/gamebrain/privileged/changenet/{vm_id}",
                        params={"new_net": "bridge-net"})
     print(resp.json())
 
-    session = OAuth2Session(client=BackendApplicationClient(client_id=GS_CLIENT_ID))
+    session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
+    session.fetch_token(TOKEN_URL)
 
-    session.fetch_token(token_url=TOKEN_URL,
-                        client_id=GS_CLIENT_ID,
-                        client_secret=GS_CLIENT_SECRET,
-                        verify=CA_CERT_PATH)
-
-    resp = session.get(f"https://localhost:8000/gamestate/team_data", verify=False)
+    resp = session.get(f"https://localhost:8000/gamestate/team_data")
 
     print(resp.json())
 
