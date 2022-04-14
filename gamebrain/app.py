@@ -67,9 +67,15 @@ def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = Fa
         raise HTTPException(status_code=401, detail="JWT Error")
 
 
+def format_message(event_message, event_time: Optional[datetime] = None):
+    if not event_time:
+        event_time = datetime.now(timezone.utc)
+    return f"{event_time}: {event_message}"
+
+
 async def publish_event(team_id: str, event_message: str):
     event_time = await db.store_event(team_id, event_message)
-    await Global.redis.publish(get_settings().redis.channel_name, f"{event_time}: {event_message}")
+    await Global.redis.publish(get_settings().redis.channel_name, format_message(event_message, event_time))
 
 
 @APP.on_event("startup")
@@ -192,7 +198,7 @@ async def subscribe_events(ws: WebSocket):
 
     await ws.accept()
 
-    timestamp_message = f"Server time is currently @ {datetime.now(timezone.utc)}"
+    timestamp_message = format_message("Current server time")
     try:
         await ws.send_text(timestamp_message)
     except WebSocketDisconnect:
@@ -203,7 +209,7 @@ async def subscribe_events(ws: WebSocket):
         try:
             message = event["message"]
             received_time = event["received_time"]
-            await ws.send_text(f"{message} @ {received_time}")
+            await ws.send_text(format_message(message, received_time))
         except WebSocketDisconnect:
             return
 
