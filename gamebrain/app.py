@@ -101,9 +101,12 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
 
         headless_ip = team_data.get("headless_ip")
 
+        event_message = f"Launched gamespace {gs_id}"
         await db.store_team(team_id, gamespace_id=gs_id, team_name=team_name)
-        await db.store_event(team_id, f"Launched gamespace {gs_id}")
         await db.store_virtual_machines(team_id, console_urls)
+
+        event_time = await db.store_event(team_id, event_message)
+        await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
     else:
         gs_id = team_data["gamespace_id"]
         console_urls = {vm["id"]: vm["url"] for vm in team_data["vm_data"]}
