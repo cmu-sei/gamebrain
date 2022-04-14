@@ -66,6 +66,11 @@ def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = Fa
         raise HTTPException(status_code=401, detail="JWT Error")
 
 
+async def publish_event(team_id: str, event_message: str):
+    event_time = await db.store_event(team_id, event_message)
+    await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
+
+
 @APP.on_event("startup")
 async def startup():
     await Global.init()
@@ -105,8 +110,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
         await db.store_team(team_id, gamespace_id=gs_id, team_name=team_name)
         await db.store_virtual_machines(team_id, console_urls)
 
-        event_time = await db.store_event(team_id, event_message)
-        await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
+        await publish_event(team_id, event_message)
     else:
         gs_id = team_data["gamespace_id"]
         console_urls = {vm["id"]: vm["url"] for vm in team_data["vm_data"]}
@@ -119,9 +123,7 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
 async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
-    event_time = await db.store_event(team_id, event_message)
-
-    await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
+    await publish_event(team_id, event_message)
 
 
 @APP.put("/gamebrain/privileged/changenet/{vm_id}")
@@ -145,9 +147,7 @@ async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredent
         raise HTTPException(status_code=400, detail="Specified VM cannot be changed to the specified network.")
 
     event_message = f"Changed VM {vm_id} network to {new_net} for team {team_id}"
-    event_time = await db.store_event(team_id, event_message)
-
-    await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
+    await publish_event(team_id, event_message)
 
 
 @APP.put("/gamebrain/admin/headlessip/{team_id}")
