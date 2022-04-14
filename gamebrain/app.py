@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
@@ -208,9 +209,17 @@ async def subscribe_events(ws: WebSocket):
 
     pubsub = Global.redis.pubsub(ignore_subscribe_messages=True)
     await pubsub.subscribe(settings.redis.channel_name)
-    async for message in pubsub.listen():
+    while True:
+        message = await pubsub.get_message(timeout=10.0)
         try:
-            await ws.send_text(message["data"].decode())
+            if not message:
+                # Check if the handled websocket is still connected.
+                try:
+                    await asyncio.wait_for(ws.receive_text(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    continue
+            else:
+                await ws.send_text(message["data"].decode())
         except WebSocketDisconnect:
             break
     await pubsub.unsubscribe(settings.redis.channel_name)
