@@ -57,7 +57,7 @@ def main():
                         username=TEST_USER_1,
                         password=TEST_PASS)
 
-    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}")
+    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", timeout=60.0)
 
     print(resp.json())
 
@@ -67,7 +67,7 @@ def main():
                         username=TEST_USER_2,
                         password=TEST_PASS)
 
-    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}")
+    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", timeout=60.0)
 
     print(resp.json())
 
