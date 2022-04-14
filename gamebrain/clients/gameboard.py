@@ -33,3 +33,12 @@ async def get_team(team_id: str):
     return (await session.get(
         url_path_join(settings.gameboard.base_api_url, f"team/{team_id}")
     )).json()
+
+
+async def get_teams(game_id: str):
+    settings = get_settings()
+    session = await get_oauth2_session()
+
+    return (await session.get(
+        url_path_join(settings.gameboard.base_api_url, f"teams/{game_id}")
+    )).json()

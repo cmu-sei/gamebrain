@@ -68,5 +68,6 @@ async def change_vm_net(vm_id: str, new_net: str):
     params = {"key": "net", "value": new_net}
     return (await session.put(
         url_path_join(settings.topomojo.base_api_url, endpoint),
-        json=params
+        json=params,
+        timeout=60.0
     )).json()

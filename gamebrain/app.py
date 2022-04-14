@@ -83,14 +83,22 @@ async def startup():
     await Global.init()
 
 
-@APP.get("/gamebrain/deploy/{game_id}")
-async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+@APP.get("/gamebrain/headless_client/{game_id}")
+async def get_headless_ip(game_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))):
     payload = check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_unpriv, True)
     user_id = payload["sub"]
 
     player = await gameboard.get_player_by_user_id(user_id, game_id)
 
     team_id = player["teamId"]
+    team_data = await db.get_team(team_id)
+    return team_data.get("headless_ip")
+
+
+@APP.get("/gamebrain/privileged/deploy/{game_id}/{team_id}")
+async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
+
     team_data = await db.get_team(team_id)
 
     # Originally it just checked if not team_data, but because headless clients are going to be manually added ahead
@@ -104,8 +112,15 @@ async def deploy(game_id: str, auth: HTTPAuthorizationCredentials = Security(HTT
         gamespace = await topomojo.register_gamespace(external_id, team["members"])
 
         gs_id = gamespace["id"]
-        # Oddly, the team approved name is counterintuitively stored with each player as "approvedName".
-        team_name = player.get("approvedName", None)
+
+        # Oddly, the single-team data structure doesn't contain the name.
+        teams_list = await gameboard.get_teams(game_id)
+        for team_meta in teams_list:
+            if team_meta["id"] == team_id:
+                team_name = team_meta["name"]
+                break
+        else:
+            team_name = None
 
         visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in gamespace["vms"] if vm["isVisible"]]
         console_urls = {vm["id"]: f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['id']}"

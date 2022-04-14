@@ -51,33 +51,22 @@ def main():
                               "video2": "https://example.com/video2"})
     print(resp.json())
 
-    session = OAuth2Client(GB_CLIENT_ID_UNPRIV, GB_CLIENT_SECRET_UNPRIV, verify=False)
-
-    session.fetch_token(TOKEN_URL,
-                        username=TEST_USER_1,
-                        password=TEST_PASS)
-
-    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", timeout=60.0)
-
-    print(resp.json())
-
-    session = OAuth2Client(GB_CLIENT_ID_UNPRIV, GB_CLIENT_SECRET_UNPRIV, verify=False)
-
-    session.fetch_token(TOKEN_URL,
-                        username=TEST_USER_2,
-                        password=TEST_PASS)
-
-    resp = session.get(f"https://localhost:8000/gamebrain/deploy/{GAME_ID}", timeout=60.0)
-
-    print(resp.json())
-
     session = OAuth2Client(GB_CLIENT_ID_PRIV, GB_CLIENT_SECRET_PRIV, verify=False)
     session.fetch_token(TOKEN_URL)
+
+    resp = session.get(f"https://localhost:8000/gamebrain/privileged/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0)
+
+    print(resp.json())
+
+    resp = session.get(f"https://localhost:8000/gamebrain/privileged/deploy/{GAME_ID}/{TEST_TEAM_2}", timeout=60.0)
+
+    print(resp.json())
 
     vm_id = next(iter(resp.json()["vms"]))
 
     resp = session.put(f"https://localhost:8000/gamebrain/privileged/changenet/{vm_id}",
-                       params={"new_net": "bridge-net"})
+                       params={"new_net": "bridge-net"},
+                       timeout=60.0)
     print(resp.json())
 
     session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
