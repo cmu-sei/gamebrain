@@ -118,9 +118,9 @@ async def store_virtual_machines(team_id: str, vms: Dict):
 
 
 async def store_team(team_id: str,
-               gamespace_id: Optional[str] = None,
-               headless_ip: Optional[str] = None,
-               team_name: Optional[str] = None):
+                     gamespace_id: Optional[str] = None,
+                     headless_ip: Optional[str] = None,
+                     team_name: Optional[str] = None):
     try:
         address = int(IPv4Address(headless_ip))
     except AddressValueError:
