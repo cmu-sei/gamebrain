@@ -69,7 +69,7 @@ def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = Fa
 
 async def publish_event(team_id: str, event_message: str):
     event_time = await db.store_event(team_id, event_message)
-    await Global.redis.publish(get_settings().redis.channel_name, f"{event_message} @ {event_time}")
+    await Global.redis.publish(get_settings().redis.channel_name, f"{event_time}: {event_message}")
 
 
 @APP.on_event("startup")
