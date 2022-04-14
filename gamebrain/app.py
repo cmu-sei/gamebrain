@@ -170,6 +170,7 @@ async def create_challenge_secrets(team_id: str,
                                    auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
 
+    await db.store_team(team_id)
     await db.store_challenge_secrets(team_id, secrets)
 
 
