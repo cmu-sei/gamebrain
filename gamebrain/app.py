@@ -152,6 +152,10 @@ async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCr
 async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
+    await _change_vm_net(vm_id, new_net)
+
+
+async def _change_vm_net(vm_id: str, new_net: str):
     vm = await db.get_vm(vm_id)
     if not vm:
         raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
