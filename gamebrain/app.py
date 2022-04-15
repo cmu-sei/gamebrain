@@ -145,6 +145,13 @@ async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials 
 async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
+    for event_action in get_settings().game.event_actions:
+        if event_action.event_message_partial not in event_message:
+            continue
+        if event_action.action.action_type == "change-net":
+            print(f"Mock up of changing VM net based on even message: Switching VM {event_action.action.vm_name} "
+                  f"to {event_action.action.new_net}")
+
     await publish_event(team_id, event_message)
 
 

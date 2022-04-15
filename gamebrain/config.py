@@ -1,5 +1,5 @@
 import os.path
-from typing import Optional
+from typing import Optional, List, Literal, Union
 
 from pydantic import BaseModel, validator
 import yaml
@@ -44,6 +44,22 @@ class RedisSettingsModel(BaseModel):
     channel_name: Optional[str] = "gamebrain-default"
 
 
+class ChangeNetArgumentsModel(BaseModel):
+    action_type: Literal["change-net"]
+    vm_name: str
+    new_net: str
+
+
+class EventActionsSettingsModel(BaseModel):
+    event_message_partial: str
+    action: Union[ChangeNetArgumentsModel]
+
+
+class GameSettingsModel(BaseModel):
+    ship_workspace_id: str
+    event_actions: List[EventActionsSettingsModel]
+
+
 class SettingsModel(BaseModel):
     ca_cert_path: str
     identity: IdentitySettingsModel
@@ -51,6 +67,7 @@ class SettingsModel(BaseModel):
     gameboard: GameboardSettingsModel
     db: DbSettingsModel
     redis: Optional[RedisSettingsModel] = RedisSettingsModel()
+    game: GameSettingsModel
 
     @validator('ca_cert_path')
     def path_exists(cls, v):

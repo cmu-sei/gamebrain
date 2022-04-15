@@ -69,6 +69,10 @@ def main():
                        timeout=60.0)
     print(resp.json())
 
+    resp = session.post(f"https://localhost:8000/gamebrain/privileged/event/{TEST_TEAM_1}",
+                        params={"event_message": "Mission 1"})
+    print(resp.json())
+
     session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
     session.fetch_token(TOKEN_URL)
 

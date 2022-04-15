@@ -22,3 +22,11 @@ db:
     connection_string: postgresql+asyncpg://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
     drop_app_tables: true
     echo_sql: false
+game:
+    ship_workspace_id: b67a9cb7818e4ca3b4b12a71a2c3be35
+    event_actions:
+        - event_message_partial: Mission 1
+          action:
+            action_type: change-net
+            vm_name: alpine-3.15.2
+            new_net: bridge-net
