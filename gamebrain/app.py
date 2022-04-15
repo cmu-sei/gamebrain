@@ -219,7 +219,7 @@ async def subscribe_events(ws: WebSocket):
         try:
             check_jwt(token, get_settings().identity.jwt_audiences.gamestate_api)
         except HTTPException:
-            await ws.send_text("Websocket Unauthorized")
+            await ws.send_text(format_message("Websocket Unauthorized"))
             return
 
         timestamp_message = format_message("Current server time")
