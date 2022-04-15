@@ -214,7 +214,11 @@ async def subscribe_events(ws: WebSocket):
 
     try:
         await ws.accept()
-        token = await ws.receive_text()
+        try:
+            # Make sure an unauthorized client can't just hold a connection open.
+            token = await asyncio.wait_for(ws.receive_text(), timeout=10.0)
+        except asyncio.TimeoutError:
+            return
 
         try:
             check_jwt(token, get_settings().identity.jwt_audiences.gamestate_api)
