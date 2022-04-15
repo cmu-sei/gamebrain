@@ -212,22 +212,26 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
 async def subscribe_events(ws: WebSocket):
     settings = get_settings()
 
-    await ws.accept()
-
-    timestamp_message = format_message("Current server time")
     try:
-        await ws.send_text(timestamp_message)
-    except WebSocketDisconnect:
-        return
+        await ws.accept()
+        token = await ws.receive_text()
 
-    events = await db.get_events()
-    for event in events:
         try:
+            check_jwt(token, get_settings().identity.jwt_audiences.gamestate_api)
+        except HTTPException:
+            await ws.send_text("Websocket Unauthorized")
+            return
+
+        timestamp_message = format_message("Current server time")
+        await ws.send_text(timestamp_message)
+
+        events = await db.get_events()
+        for event in events:
             message = event["message"]
             received_time = event["received_time"]
             await ws.send_text(format_message(message, received_time))
-        except WebSocketDisconnect:
-            return
+    except WebSocketDisconnect:
+        return
 
     pubsub = Global.redis.pubsub(ignore_subscribe_messages=True)
     await pubsub.subscribe(settings.redis.channel_name)
