@@ -1,6 +1,9 @@
+from logging import error
 import time
+from typing import Optional, Dict
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
+from httpx import Response
 
 from ..config import get_settings
 from ..util import url_path_join
@@ -27,7 +30,7 @@ class SharedOAuth2Session:
         )
 
     @classmethod
-    async def get_session(cls):
+    async def get_session(cls) -> AsyncOAuth2Client:
         if not cls._session:
             await cls._init_session()
         if cls._session.token["expires_at"] - time.time() < 30.0:
@@ -35,5 +38,18 @@ class SharedOAuth2Session:
         return cls._session
 
 
-async def get_oauth2_session():
+async def get_oauth2_session() -> AsyncOAuth2Client:
     return await SharedOAuth2Session.get_session()
+
+
+async def _service_get(service_api_url: str, endpoint: str, query_params: Optional[Dict] = None) -> Response:
+    if query_params is None:
+        query_params = {}
+
+    session = await get_oauth2_session()
+
+    url = url_path_join(service_api_url, endpoint)
+    resp = await session.get(url, params=query_params)
+    if resp.status_code != 200:
+        error(f"HTTP Request to {url} returned {resp.status_code}")
+    return resp

@@ -1,18 +1,30 @@
 import datetime
-from typing import Dict, List
+import json as jsonlib
+from typing import Any, Dict, List, Optional
 
 from ..config import get_settings
 from ..util import url_path_join
-from .common import get_oauth2_session
+from .common import get_oauth2_session, _service_get
 
 
-async def get_workspace(workspace_id: str):
-    settings = get_settings()
-    session = await get_oauth2_session()
+async def _topomojo_get(endpoint: str, query_params: Optional[Dict] = None) -> Optional[Any]:
+    resp = await _service_get(get_settings().topomojo.base_api_url, endpoint, query_params)
+    try:
+        return resp.json()
+    except jsonlib.JSONDecodeError:
+        return None
 
-    return (await session.get(
-        url_path_join(settings.base_api_url, f"workspace/{workspace_id}")
-    )).json()
+
+async def get_workspace(workspace_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"workspace/{workspace_id}")
+
+
+async def get_gamespace(gamespace_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"gamespace/{gamespace_id}")
+
+
+async def get_vm_nets(vm_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"vm/{vm_id}/nets")
 
 
 async def register_gamespace(workspace_id: str, team_members: List[Dict]):
@@ -47,16 +59,6 @@ async def register_gamespace(workspace_id: str, team_members: List[Dict]):
         json=post_data,
         # This call can take a while.
         timeout=60.0
-    )).json()
-
-
-async def get_vm_nets(vm_id: str):
-    settings = get_settings()
-    session = await get_oauth2_session()
-
-    endpoint = f"vm/{vm_id}/nets"
-    return (await session.get(
-        url_path_join(settings.topomojo.base_api_url, endpoint)
     )).json()
 
 
