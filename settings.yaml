@@ -25,7 +25,7 @@ db:
 game:
     ship_workspace_id: b67a9cb7818e4ca3b4b12a71a2c3be35
     event_actions:
-        - event_message_partial: Mission 1
+        - event_message_partial: "Mission 1"
           action:
             action_type: change-net
             vm_name: alpine-3.15.2
