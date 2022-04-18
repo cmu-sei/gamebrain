@@ -62,14 +62,7 @@ def main():
 
     print(resp.json())
 
-    vm_id = next(iter(resp.json()["vms"]))
-
-    resp = session.put(f"https://localhost:8000/gamebrain/privileged/changenet/{vm_id}",
-                       params={"new_net": "bridge-net"},
-                       timeout=60.0)
-    print(resp.json())
-
-    resp = session.post(f"https://localhost:8000/gamebrain/privileged/event/{TEST_TEAM_1}",
+    resp = session.post(f"https://localhost:8000/gamebrain/privileged/event/{TEST_TEAM_2}",
                         params={"event_message": "Mission 1"})
     print(resp.json())
 
