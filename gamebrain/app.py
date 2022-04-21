@@ -83,6 +83,11 @@ async def startup():
     await Global.init()
 
 
+@APP.get("/live")
+async def liveness_check():
+    return
+
+
 @APP.get("/gamebrain/headless_client/{game_id}")
 async def get_headless_ip(game_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))):
     payload = check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_unpriv, True)

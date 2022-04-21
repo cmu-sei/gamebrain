@@ -8,7 +8,6 @@ WORKDIR /app
 COPY Pipfile Pipfile.lock ./
 RUN pipenv install --system --deploy
 
-COPY gamebrain .
+COPY gamebrain gamebrain
 
-
-CMD [ "uvicorn", "gamebrain.app:APP", "--ssl-keyfile=/app/certs/tls.key", "--ssl-certfile=/app/certs/tls.crt" ]
+CMD [ "uvicorn", "gamebrain.app:APP", "--host", "0.0.0.0", "--port", "8000"]
