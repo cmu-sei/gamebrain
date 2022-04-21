@@ -2,6 +2,9 @@ import warnings
 
 from authlib.integrations.httpx_client import OAuth2Client
 
+
+GAMEBRAIN_URL = "https://foundry.local"
+
 GB_CLIENT_ID_UNPRIV = "gb-test-client-unpriv"
 GB_CLIENT_SECRET_UNPRIV = "46ec755e2bab4070a9634214620389b5"
 GB_CLIENT_ID_PRIV = "gb-test-client-priv"
@@ -30,46 +33,46 @@ def main():
 
     session.fetch_token(TOKEN_URL)
 
-    resp = session.put(f"https://localhost:8000/gamebrain/admin/headlessip/{TEST_TEAM_1}",
+    resp = session.put(f"{GAMEBRAIN_URL}/gamebrain/admin/headlessip/{TEST_TEAM_1}",
                        params={"headless_ip": "10.10.10.10"})
     print(resp.json())
 
-    resp = session.put(f"https://localhost:8000/gamebrain/admin/headlessip/{TEST_TEAM_2}",
+    resp = session.put(f"{GAMEBRAIN_URL}/gamebrain/admin/headlessip/{TEST_TEAM_2}",
                        params={"headless_ip": "10.10.10.11"})
     print(resp.json())
 
-    resp = session.post(f"https://localhost:8000/gamebrain/admin/secrets/{TEST_TEAM_1}",
+    resp = session.post(f"{GAMEBRAIN_URL}/gamebrain/admin/secrets/{TEST_TEAM_1}",
                         json=["secret_1", "secret_2", "secret_3"])
     print(resp.json())
 
-    resp = session.post(f"https://localhost:8000/gamebrain/admin/secrets/{TEST_TEAM_2}",
+    resp = session.post(f"{GAMEBRAIN_URL}/gamebrain/admin/secrets/{TEST_TEAM_2}",
                         json=["secret_4", "secret_5", "secret_6"])
     print(resp.json())
 
-    resp = session.post(f"https://localhost:8000/gamebrain/admin/media",
-                        json={"video1": "https://example.com/video1",
-                              "video2": "https://example.com/video2"})
+    resp = session.post(f"{GAMEBRAIN_URL}/gamebrain/admin/media",
+                        json={"video1": "example.com/video1",
+                              "video2": "example.com/video2"})
     print(resp.json())
 
     session = OAuth2Client(GB_CLIENT_ID_PRIV, GB_CLIENT_SECRET_PRIV, verify=False)
     session.fetch_token(TOKEN_URL)
 
-    resp = session.get(f"https://localhost:8000/gamebrain/privileged/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0)
+    resp = session.get(f"{GAMEBRAIN_URL}/gamebrain/privileged/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0)
 
     print(resp.json())
 
-    resp = session.get(f"https://localhost:8000/gamebrain/privileged/deploy/{GAME_ID}/{TEST_TEAM_2}", timeout=60.0)
+    resp = session.get(f"{GAMEBRAIN_URL}/gamebrain/privileged/deploy/{GAME_ID}/{TEST_TEAM_2}", timeout=60.0)
 
     print(resp.json())
 
-    resp = session.post(f"https://localhost:8000/gamebrain/privileged/event/{TEST_TEAM_2}",
+    resp = session.post(f"{GAMEBRAIN_URL}/gamebrain/privileged/event/{TEST_TEAM_2}",
                         params={"event_message": "Mission 1"})
     print(resp.json())
 
     session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
     session.fetch_token(TOKEN_URL)
 
-    resp = session.get(f"https://localhost:8000/gamestate/team_data")
+    resp = session.get(f"{GAMEBRAIN_URL}/gamestate/team_data")
 
     print(resp.json())
 
