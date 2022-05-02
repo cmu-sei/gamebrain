@@ -1,9 +1,13 @@
+import os
 import warnings
 
 from authlib.integrations.httpx_client import OAuth2Client
 
 
-GAMEBRAIN_URL = "https://foundry.local"
+if os.getenv("LOCALHOST_TEST"):
+    GAMEBRAIN_URL = "https://localhost:8000"
+else:
+    GAMEBRAIN_URL = "https://foundry.local"
 
 GB_CLIENT_ID_UNPRIV = "gb-test-client-unpriv"
 GB_CLIENT_SECRET_UNPRIV = "46ec755e2bab4070a9634214620389b5"
