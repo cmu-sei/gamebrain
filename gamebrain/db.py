@@ -41,6 +41,7 @@ class DBManager:
         id = Column(String(36), primary_key=True)
         team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
         url = Column(String, nullable=False)
+        name = Column(String, nullable=False)
 
     class Event(orm_base):
         __tablename__ = "event"
@@ -109,11 +110,11 @@ async def get_events(team_id: Optional[str] = None):
     return await DBManager.get_rows(DBManager.Event, *args)
 
 
-async def store_virtual_machines(team_id: str, vms: Dict):
+async def store_virtual_machines(team_id: str, vms: List[Dict]):
     """
-    vms: vm_id: url pairs
+    vms: List of {"Id": str, "Url": str, "Name": str} dicts
     """
-    vm_data = [DBManager.VirtualMachine(id=vm_id, team_id=team_id, url=url) for vm_id, url in vms.items()]
+    vm_data = [DBManager.VirtualMachine(id=vm["Id"], team_id=team_id, url=vm["Url"], name=vm["Name"]) for vm in vms]
     await DBManager.merge_rows(vm_data)
 
 
