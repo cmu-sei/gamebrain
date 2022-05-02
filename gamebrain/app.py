@@ -128,7 +128,7 @@ async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials 
             team_name = None
 
         visible_vms = [{"id": vm["id"], "name": vm["name"]} for vm in gamespace["vms"] if vm["isVisible"]]
-        console_urls = {vm["id"]: f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['id']}"
+        console_urls = {vm["id"]: f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['name']}"
                         for vm in visible_vms}
 
         headless_ip = team_data.get("headless_ip")
