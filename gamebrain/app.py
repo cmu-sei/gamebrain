@@ -142,7 +142,10 @@ async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials 
         await publish_event(team_id, event_message)
     else:
         gs_id = team_data["gamespace_id"]
-        console_urls = {vm["id"]: vm["url"] for vm in team_data["vm_data"]}
+        console_urls = [{"Id": vm["id"],
+                         "Url": f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['name']}",
+                         "Name": vm["name"]}
+                        for vm in team_data["vm_data"]]
         headless_ip = team_data["headless_ip"]
 
     return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
