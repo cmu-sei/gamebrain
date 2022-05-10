@@ -106,6 +106,12 @@ async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials 
 
     team_data = await db.get_team(team_id)
 
+    if expiration := team_data.get("gamespace_expiration"):
+        if datetime.now(timezone.utc) > expiration:
+            del team_data["gamespace_expiration"]
+            del team_data["gamespace_id"]
+            await db.expire_team_gamespace(team_id)
+
     # Originally it just checked if not team_data, but because headless clients are going to be manually added ahead
     # of the start of the round, team_data will be partially populated.
     if not team_data.get("gamespace_id"):
@@ -135,8 +141,9 @@ async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials 
 
         headless_ip = team_data.get("headless_ip")
 
+        gamespace_expiration = gamespace["expirationTime"]
         event_message = f"Launched gamespace {gs_id}"
-        await db.store_team(team_id, gamespace_id=gs_id, team_name=team_name)
+        await db.store_team(team_id, gamespace_id=gs_id, gamespace_expiration=gamespace_expiration, team_name=team_name)
         await db.store_virtual_machines(team_id, console_urls)
 
         await publish_event(team_id, event_message)

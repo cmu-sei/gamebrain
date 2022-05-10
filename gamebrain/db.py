@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from dateutil.parser import isoparse
 from ipaddress import IPv4Address, AddressValueError
 from typing import Dict, List, Optional
 
@@ -25,6 +26,7 @@ class DBManager:
 
         id = Column(String(36), primary_key=True)
         gamespace_id = Column(String(36))
+        gamespace_expiration = Column(TIMESTAMP(timezone.utc))
         headless_ip = Column(BigInteger)
         ship_hp = Column(Integer, default=100, nullable=False)
         ship_fuel = Column(Integer, default=100, nullable=False)
@@ -120,8 +122,13 @@ async def store_virtual_machines(team_id: str, vms: List[Dict]):
 
 async def store_team(team_id: str,
                      gamespace_id: Optional[str] = None,
+                     gamespace_expiration: Optional[str] = None,
                      headless_ip: Optional[str] = None,
                      team_name: Optional[str] = None):
+    """
+    gamespace_id: Maximum 36 character string.
+    gamespace_expiration: https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse
+    """
     try:
         address = int(IPv4Address(headless_ip))
     except AddressValueError:
@@ -130,12 +137,19 @@ async def store_team(team_id: str,
     kwargs = {}
     if gamespace_id:
         kwargs["gamespace_id"] = gamespace_id
+    if gamespace_expiration:
+        kwargs["gamespace_expiration"] = isoparse(gamespace_expiration)
     if address:
         kwargs["headless_ip"] = address
     if team_name:
         kwargs["team_name"] = team_name
     team_data = DBManager.TeamData(id=team_id,
                                    **kwargs)
+    await DBManager.merge_rows([team_data])
+
+
+async def expire_team_gamespace(team_id: str):
+    team_data = DBManager.TeamData(id=team_id, gamespace_id=None, gamespace_expiration=None)
     await DBManager.merge_rows([team_data])
 
 

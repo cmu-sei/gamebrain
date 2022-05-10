@@ -24,6 +24,7 @@ db:
     echo_sql: false
 game:
     ship_workspace_id: b67a9cb7818e4ca3b4b12a71a2c3be35
+    gamespace_duration_minutes: 1
     event_actions:
         - event_message_partial: "Mission 1"
           action:
