@@ -34,7 +34,8 @@ async def register_gamespace(workspace_id: str, team_members: List[Dict]):
     settings = get_settings()
     session = await get_oauth2_session()
 
-    expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    expiration_time = datetime.datetime.now(datetime.timezone.utc) + \
+                      datetime.timedelta(minutes=settings.game.gamespace_duration_minutes)
     post_data = {
         "resourceId": workspace_id,
         "graderKey": "",
@@ -42,7 +43,7 @@ async def register_gamespace(workspace_id: str, team_members: List[Dict]):
         "variant": 0,
         "playerCount": len(team_members),
         "maxAttempts": 3,
-        "maxMinutes": 60,
+        "maxMinutes": settings.game.gamespace_duration_minutes,
         "points": 100,
         "allowReset": True,
         "allowPreview": True,

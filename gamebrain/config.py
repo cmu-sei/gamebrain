@@ -58,6 +58,7 @@ class EventActionsSettingsModel(BaseModel):
 class GameSettingsModel(BaseModel):
     ship_workspace_id: str
     event_actions: List[EventActionsSettingsModel]
+    gamespace_duration_minutes: Optional[int] = 60
 
 
 class SettingsModel(BaseModel):
