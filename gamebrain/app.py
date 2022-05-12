@@ -49,7 +49,7 @@ class Global:
         return cls.jwks
 
 
-APP = FastAPI()
+APP = FastAPI(openapi_url="/gamebrain/openapi", docs_url="/gamebrain/api")
 
 
 def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = False):
