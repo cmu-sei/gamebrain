@@ -83,7 +83,7 @@ async def startup():
     await Global.init()
 
 
-@APP.get("/live")
+@APP.get("/live", include_in_schema=False)
 async def liveness_check():
     return
 
