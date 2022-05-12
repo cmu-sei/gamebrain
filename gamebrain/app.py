@@ -22,7 +22,6 @@ class Global:
 
     @classmethod
     async def init(cls):
-        Settings.init_settings(cls.settings_path)
         settings = get_settings()
         await db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
         cls._init_jwks()
@@ -49,7 +48,8 @@ class Global:
         return cls.jwks
 
 
-APP = FastAPI(openapi_url="/gamebrain/openapi", docs_url="/gamebrain/api")
+Settings.init_settings(Global.settings_path)
+APP = FastAPI(docs_url="/api", root_path=get_settings().app_root_prefix)
 
 
 def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = False):
@@ -88,7 +88,7 @@ async def liveness_check():
     return
 
 
-@APP.get("/gamebrain/headless_client/{game_id}")
+@APP.get("/unprivileged/headless_client/{game_id}")
 async def get_headless_ip(game_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))):
     payload = check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_unpriv, True)
     user_id = payload["sub"]
@@ -100,7 +100,7 @@ async def get_headless_ip(game_id: str, auth: HTTPAuthorizationCredentials = Sec
     return team_data.get("headless_ip")
 
 
-@APP.get("/gamebrain/privileged/deploy/{game_id}/{team_id}")
+@APP.get("/privileged/deploy/{game_id}/{team_id}")
 async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
@@ -158,7 +158,7 @@ async def deploy(game_id: str, team_id: str, auth: HTTPAuthorizationCredentials 
     return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
 
 
-@APP.post("/gamebrain/privileged/event/{team_id}")
+@APP.post("/privileged/event/{team_id}")
 async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
@@ -186,7 +186,7 @@ async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCr
     await publish_event(team_id, event_message)
 
 
-@APP.put("/gamebrain/privileged/changenet/{vm_id}")
+@APP.put("/privileged/changenet/{vm_id}")
 async def change_vm_net(vm_id: str, new_net: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv)
 
@@ -214,14 +214,14 @@ async def _change_vm_net(vm_id: str, new_net: str):
     await publish_event(team_id, event_message)
 
 
-@APP.put("/gamebrain/admin/headlessip/{team_id}")
+@APP.put("/admin/headlessip/{team_id}")
 async def set_headless_ip(team_id: str, headless_ip: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)
 
     await db.store_team(team_id, headless_ip=headless_ip)
 
 
-@APP.post("/gamebrain/admin/secrets/{team_id}")
+@APP.post("/admin/secrets/{team_id}")
 async def create_challenge_secrets(team_id: str,
                                    secrets: List[str],
                                    auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
@@ -231,7 +231,7 @@ async def create_challenge_secrets(team_id: str,
     await db.store_challenge_secrets(team_id, secrets)
 
 
-@APP.post("/gamebrain/admin/media")
+@APP.post("/admin/media")
 async def add_media_urls(media_map: Dict[str, str],
                          auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin)

@@ -63,6 +63,7 @@ class GameSettingsModel(BaseModel):
 
 class SettingsModel(BaseModel):
     ca_cert_path: str
+    app_root_prefix: Optional[str] = "/gamebrain"
     identity: IdentitySettingsModel
     topomojo: TopomojoSettingsModel
     gameboard: GameboardSettingsModel
