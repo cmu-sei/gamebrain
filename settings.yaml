@@ -1,33 +1,33 @@
 ca_cert_path: /usr/local/share/ca-certificates/foundry-appliance-root-ca.crt
 identity:
-    base_url: https://foundry.local/identity
-    token_endpoint: connect/token
-    jwks_endpoint: .well-known/openid-configuration/jwks
-    client_id: gamebrain-client
-    client_secret: 7e972ec6610b49dab492a92ec3d7f5cd
-    jwt_audiences:
-        gamebrain_api_unpriv: gamebrain-api-unpriv
-        gamebrain_api_priv: gamebrain-api-priv
-        gamebrain_api_admin: gamebrain-api-admin
-        gamestate_api: gamestate-api
-    jwt_issuer: https://foundry.local/identity
-    token_user: administrator@foundry.local
-    token_password: foundry
+  base_url: https://foundry.local/identity
+  token_endpoint: connect/token
+  jwks_endpoint: .well-known/openid-configuration/jwks
+  client_id: gamebrain-client
+  client_secret: 7e972ec6610b49dab492a92ec3d7f5cd
+  jwt_audiences:
+      gamebrain_api_unpriv: gamebrain-api-unpriv
+      gamebrain_api_priv: gamebrain-api-priv
+      gamebrain_api_admin: gamebrain-api-admin
+      gamestate_api: gamestate-api
+  jwt_issuer: https://foundry.local/identity
+  token_user: administrator@foundry.local
+  token_password: foundry
 topomojo:
-    base_url: https://foundry.local/topomojo
-    base_api_url: https://foundry.local/topomojo/api/
+  base_url: https://foundry.local/topomojo
+  base_api_url: https://foundry.local/topomojo/api/
 gameboard:
-    base_api_url: https://foundry.local/gameboard/api/
+  base_api_url: https://foundry.local/gameboard/api/
 db:
-    connection_string: postgresql+asyncpg://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
-    drop_app_tables: true
-    echo_sql: false
+  connection_string: postgresql+asyncpg://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
+  drop_app_tables: true
+  echo_sql: false
 game:
-    ship_workspace_id: b67a9cb7818e4ca3b4b12a71a2c3be35
-    gamespace_duration_minutes: 1
-    event_actions:
-        - event_message_partial: "Mission 1"
-          action:
-            action_type: change-net
-            vm_name: alpine-3.15.2
-            new_net: bridge-net
+  ship_workspace_id: b67a9cb7818e4ca3b4b12a71a2c3be35
+  gamespace_duration_minutes: 30
+  event_actions:
+    - event_message_partial: "Mission 1"
+      action:
+        action_type: change-net
+        vm_name: alpine-3.15.2
+        new_net: bridge-net
