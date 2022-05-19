@@ -29,5 +29,5 @@ game:
     - event_message_partial: "Mission 1"
       action:
         action_type: change-net
-        vm_name: alpine-3.15.2
+        vm_name: ubuntu
         new_net: bridge-net
