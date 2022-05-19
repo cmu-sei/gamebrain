@@ -50,9 +50,15 @@ class ChangeNetArgumentsModel(BaseModel):
     new_net: str
 
 
+class DispatchCommandModel(BaseModel):
+    action_type: Literal["dispatch"]
+    vm_name: str
+    command: str
+
+
 class EventActionsSettingsModel(BaseModel):
     event_message_partial: str
-    action: Union[ChangeNetArgumentsModel]
+    action: Union[ChangeNetArgumentsModel, DispatchCommandModel]
 
 
 class GameSettingsModel(BaseModel):

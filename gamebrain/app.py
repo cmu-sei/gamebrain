@@ -182,6 +182,13 @@ async def push_event(team_id: str, event_message: str, auth: HTTPAuthorizationCr
                 return HTTPException(status_code=400, detail=f"Unable to find a VM with the name "
                                                              f"{event_action.action.vm_name}")
             await _change_vm_net(vm_id, event_action.action.new_net)
+        elif event_action.action.action_type == "dispatch":
+            gs_id = team.get("gamespace_id")
+            if gs_id is None:
+                return HTTPException(status_code=400, detail="Unable to retrieve team's ship gamespace ID.")
+
+            dispatch = await topomojo.create_dispatch(gs_id, event_action.action.vm_name, event_action.action.command)
+            print(dispatch)
 
     await publish_event(team_id, event_message)
 

@@ -27,6 +27,10 @@ async def get_vm_nets(vm_id: str) -> Optional[Any]:
     return await _topomojo_get(f"vm/{vm_id}/nets")
 
 
+async def poll_dispatch(dispatch_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"dispatch/{dispatch_id}")
+
+
 async def register_gamespace(workspace_id: str, team_members: List[Dict]):
     """
     team_members: Each dict contains 'id' and 'approvedName' keys.
@@ -70,6 +74,22 @@ async def change_vm_net(vm_id: str, new_net: str):
     endpoint = f"vm/{vm_id}/change"
     params = {"key": "net", "value": new_net}
     return (await session.put(
+        url_path_join(settings.topomojo.base_api_url, endpoint),
+        json=params,
+        timeout=60.0
+    )).json()
+
+
+async def create_dispatch(gamespace_id: str, vm_name: str, command: str):
+    settings = get_settings()
+    session = await get_oauth2_session()
+
+    endpoint = "dispatch"
+    params = {"referenceId": "gamebrain",
+              "trigger": command,
+              "targetGroup": gamespace_id,
+              "targetName": vm_name}
+    return (await session.post(
         url_path_join(settings.topomojo.base_api_url, endpoint),
         json=params,
         timeout=60.0

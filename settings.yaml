@@ -31,3 +31,8 @@ game:
         action_type: change-net
         vm_name: ubuntu
         new_net: bridge-net
+    - event_message_partial: "Mission 2"
+      action:
+        action_type: dispatch
+        vm_name: ubuntu
+        command: touch /home/tmtest/it-worked
