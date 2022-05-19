@@ -1,5 +1,5 @@
-from logging import error
 import time
+from logging import error
 from typing import Optional, Dict
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client

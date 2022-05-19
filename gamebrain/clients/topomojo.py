@@ -2,9 +2,9 @@ import datetime
 import json as jsonlib
 from typing import Any, Dict, List, Optional
 
+from .common import get_oauth2_session, _service_get
 from ..config import get_settings
 from ..util import url_path_join
-from .common import get_oauth2_session, _service_get
 
 
 async def _topomojo_get(endpoint: str, query_params: Optional[Dict] = None) -> Optional[Any]:

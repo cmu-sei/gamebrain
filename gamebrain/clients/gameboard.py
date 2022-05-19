@@ -1,8 +1,8 @@
-from typing import Any, Dict, Optional
 import json as jsonlib
+from typing import Any, Dict, Optional
 
-from ..config import get_settings
 from .common import _service_get
+from ..config import get_settings
 
 
 async def _gameboard_get(endpoint: str, query_params: Optional[Dict] = None) -> Optional[Any]:

@@ -2,15 +2,15 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
+import httpx
+import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import httpx
 from jose import jwt
 from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
-import redis.asyncio as redis
 
-from gamebrain.clients import gameboard, topomojo
 import gamebrain.db as db
+from gamebrain.clients import gameboard, topomojo
 from .config import Settings, get_settings
 from .util import url_path_join
 

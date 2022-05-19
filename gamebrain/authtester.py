@@ -4,7 +4,6 @@ import warnings
 
 from authlib.integrations.httpx_client import OAuth2Client
 
-
 if os.getenv("LOCALHOST_TEST"):
     GAMEBRAIN_URL = "https://localhost:8000"
 else:

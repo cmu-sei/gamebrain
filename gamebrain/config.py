@@ -1,8 +1,8 @@
 import os.path
 from typing import Optional, List, Literal, Union
 
-from pydantic import BaseModel, validator
 import yaml
+from pydantic import BaseModel, validator
 
 
 class JwtAudiencesModel(BaseModel):
