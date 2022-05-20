@@ -68,7 +68,7 @@ def main():
     # print(resp.json())
 
     # Give the target VM some time to come up and start the agent service.
-    time.sleep(120)
+    time.sleep(60)
 
     resp = session.post(f"{GAMEBRAIN_URL}/privileged/event/{TEST_TEAM_1}",
                         params={"event_message": "Mission 2"})
