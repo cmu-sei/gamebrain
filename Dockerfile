@@ -1,11 +1,10 @@
-FROM python:3.8-bullseye
-
-RUN pip install pipenv
+FROM python:3.10-bullseye
 
 WORKDIR /app
 
-COPY Pipfile Pipfile.lock ./
-RUN pipenv install --system --deploy
+COPY requirements.txt ./
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
 COPY gamebrain gamebrain
 
