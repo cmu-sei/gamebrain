@@ -1,5 +1,5 @@
 import os.path
-from typing import Optional, List, Literal, Union
+from typing import Optional, Literal
 
 import yaml
 from pydantic import BaseModel, validator
@@ -58,12 +58,12 @@ class DispatchCommandModel(BaseModel):
 
 class EventActionsSettingsModel(BaseModel):
     event_message_partial: str
-    action: Union[ChangeNetArgumentsModel, DispatchCommandModel]
+    action: ChangeNetArgumentsModel | DispatchCommandModel
 
 
 class GameSettingsModel(BaseModel):
     ship_workspace_id: str
-    event_actions: List[EventActionsSettingsModel]
+    event_actions: list[EventActionsSettingsModel]
     gamespace_duration_minutes: Optional[int] = 60
 
 
