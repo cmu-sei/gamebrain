@@ -1,8 +1,13 @@
 import os.path
 from typing import Optional, Literal
 
+import httpx
+import redis.asyncio as redis
 import yaml
 from pydantic import BaseModel, validator
+
+import gamebrain.db as db
+from .util import url_path_join
 
 
 class JwtAudiencesModel(BaseModel):
@@ -102,3 +107,38 @@ class Settings:
 
 def get_settings():
     return Settings.get_settings()
+
+
+class Global:
+    settings_path = "settings.yaml"
+    jwks = None
+    redis = None
+
+    @classmethod
+    async def init(cls):
+        settings = get_settings()
+        await db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
+        cls._init_jwks()
+        cls._init_redis()
+
+    @classmethod
+    def _init_jwks(cls):
+        settings = get_settings()
+        cls.jwks = httpx.get(
+            url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
+            verify=settings.ca_cert_path
+        ).json()
+
+    @classmethod
+    def _init_redis(cls):
+        settings = get_settings()
+        if settings.redis.connection_string:
+            cls.redis = redis.Redis.from_url(settings.redis.connection_string)
+        else:
+            cls.redis = redis.Redis()
+
+    @classmethod
+    def get_jwks(cls):
+        return cls.jwks
+
+
