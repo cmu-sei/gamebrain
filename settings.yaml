@@ -23,7 +23,7 @@ db:
   drop_app_tables: true
   echo_sql: false
 game:
-  ship_workspace_id: b67a9cb7818e4ca3b4b12a71a2c3be35
+  ship_workspace_id: 064a5068907345c7a8c1fdf7b929c0bf
   gamespace_duration_minutes: 30
   event_actions:
     - event_message_partial: "Mission 1"
