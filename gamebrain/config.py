@@ -1,3 +1,4 @@
+import asyncio
 import os.path
 from typing import Optional, Literal
 
@@ -114,12 +115,16 @@ class Global:
     jwks = None
     redis = None
 
+    task_queue = None
+    updater_task = None
+
     @classmethod
     async def init(cls):
         settings = get_settings()
         await db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
         cls._init_jwks()
         cls._init_redis()
+        cls._init_updater_task()
 
     @classmethod
     def _init_jwks(cls):
@@ -138,7 +143,17 @@ class Global:
             cls.redis = redis.Redis()
 
     @classmethod
+    async def _updater_task(cls):
+        while True:
+            update = await cls.task_queue.get()
+            # TODO: Do the actual update
+
+    @classmethod
+    def _init_updater_task(cls):
+        cls.task_queue = asyncio.Queue()
+        cls.updater_task = asyncio.create_task(cls._updater_task())
+
+    @classmethod
     def get_jwks(cls):
         return cls.jwks
-
 
