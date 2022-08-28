@@ -1,13 +1,20 @@
 from datetime import datetime, timezone
+from functools import partial
 from ipaddress import IPv4Address, AddressValueError
 from typing import Dict, List, Optional
 
 from dateutil.parser import isoparse
-from sqlalchemy import Column, Integer, BigInteger, String, ForeignKey, TIMESTAMP, inspect, select
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean, ForeignKey, TIMESTAMP, inspect, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from .config import get_settings
+from .gamedata import view
+
+
+NonNullStrCol = partial(Column, String, nullable=False)
+NonNullBoolCol = partial(Column, Boolean, nullable=False)
+NonNullIntCol = partial(Column, Integer, nullable=False)
 
 
 class DBManager:
@@ -28,14 +35,13 @@ class DBManager:
         gamespace_id = Column(String(36))
         gamespace_expiration = Column(TIMESTAMP(timezone.utc))
         headless_ip = Column(BigInteger)
-        ship_hp = Column(Integer, default=100, nullable=False)
-        ship_fuel = Column(Integer, default=100, nullable=False)
         team_name = Column(String)
 
         # lazy="joined" to prevent session errors.
         vm_data = relationship("VirtualMachine", lazy="joined")
         event_log = relationship("Event", lazy="joined")
         secrets = relationship("ChallengeSecret", lazy="joined")
+        ship_data = relationship("GameData", backref="game_data", uselist=False, lazy="joined")
 
     class VirtualMachine(orm_base):
         __tablename__ = "console_url"
@@ -58,6 +64,118 @@ class DBManager:
 
         id = Column(String, primary_key=True)
         url = Column(String, nullable=False)
+
+    class TaskData(orm_base):
+        __tablename__ = "task_data"
+
+        task_id = Column(String, primary_key=True)
+        mission_id = Column(String, primary_key=True)
+        description = NonNullStrCol()
+        visible = NonNullBoolCol()
+        complete = NonNullBoolCol()
+        info_present = NonNullBoolCol()
+        info_text = NonNullStrCol()
+        video_present = NonNullBoolCol()
+        video_text = NonNullStrCol()
+        comm_id = NonNullStrCol()
+
+    class MissionRules(orm_base):
+        __tablename__ = "mission_rules"
+
+        id = Column(String, primary_key=True)
+
+    class MissionData(orm_base):
+        __tablename__ = "mission_data"
+
+        id = Column(String, primary_key=True)
+        mission_id = NonNullStrCol()
+        unlocked = NonNullBoolCol()
+        visible = NonNullBoolCol()
+        complete = NonNullBoolCol()
+        title = NonNullStrCol()
+        summary_short = NonNullStrCol()
+        summary_long = NonNullStrCol()
+        mission_icon = NonNullStrCol()
+        is_special = NonNullBoolCol()
+
+        rule_list = relationship("MissionRules", lazy="joined")
+        task_list = relationship("TaskData", lazy="joined")
+
+    class LocationData(orm_base):
+        __tablename__ = "location_data"
+
+        id = Column(String, primary_key=True)
+        location_id = NonNullStrCol()
+        name = NonNullStrCol()
+        image_id = NonNullStrCol()
+        backdrop_id = NonNullStrCol()
+        unlocked = NonNullBoolCol()
+        visited = NonNullBoolCol()
+        scanned = NonNullBoolCol()
+        surroundings = NonNullStrCol()
+        unlock_code = NonNullStrCol()
+        network_established = NonNullBoolCol()
+        network_name = NonNullStrCol()
+        first_contact_event = NonNullStrCol()
+        trajectory_launch = NonNullIntCol()
+        trajectory_correction = NonNullIntCol()
+        trajectory_cube = NonNullIntCol()
+
+    class ShipData(orm_base):
+        __tablename__ = "ship_data"
+
+        id = Column(String, ForeignKey("team_data.id"), primary_key=True)
+        codex_url = NonNullStrCol()
+        workstation_1_url = NonNullStrCol()
+        workstation_2_url = NonNullStrCol()
+        workstation_3_url = NonNullStrCol()
+        workstation_4_url = NonNullStrCol()
+        workstation_5_url = NonNullStrCol()
+
+    class SessionData(orm_base):
+        __tablename__ = "session_data"
+
+        id = Column(String, ForeignKey("team_data.id"), primary_key=True)
+        team_info_name = NonNullStrCol()
+        team_codex_count = NonNullIntCol()
+        jump_cutscene_url = NonNullStrCol()
+
+    class CommEventData(orm_base):
+        __tablename__ = "comm_event_data"
+
+        id = Column(String, primary_key=True)
+        video_url = NonNullStrCol()
+        comm_template = NonNullStrCol()
+        translation_message = NonNullStrCol()
+        scan_info_message = NonNullStrCol()
+        first_contact = NonNullBoolCol()
+        location_id = NonNullStrCol()
+
+    class CurrentLocationGameplayData(orm_base):
+        __tablename__ = "current_location_gameplay_data"
+
+        id = Column(String, ForeignKey("team_data.id"), primary_key=True)
+        current_location = NonNullStrCol()
+        current_location_scanned = NonNullBoolCol()
+        current_location_surroundings = NonNullStrCol()
+        antenna_extended = NonNullBoolCol()
+        network_connected = NonNullBoolCol()
+        network_name = NonNullStrCol()
+        first_contact_complete = NonNullBoolCol()
+        power_status = NonNullBoolCol()
+
+        incoming_transmission = relationship("CommEventData", lazy="joined", uselist=False)
+
+    class GameData(orm_base):
+        __tablename__ = "game_data"
+
+        team_id = Column(String(36), ForeignKey("team_data.id"), primary_key=True, nullable=False)
+
+        current_status = relationship("CurrentLocationGameplayData", lazy="joined", uselist=False)
+        session = relationship("SessionData", lazy="joined", uselist=False)
+        ship = relationship("ShipData", lazy="joined", uselist=False)
+        locations = relationship("LocationData", lazy="joined")
+        missions = relationship("MissionData", lazy="joined")
 
     @classmethod
     def _orm_obj_to_dict(cls, obj: orm_base) -> Dict:
@@ -182,3 +300,100 @@ async def store_media_assets(asset_map: Dict):
     """
     objects = [DBManager.MediaAsset(id=short_name, url=url) for short_name, url in asset_map.items()]
     await DBManager.merge_rows(objects)
+
+
+async def store_game_data(team_id: str, game_data: view.GameData):
+    comm_event_data = None
+    if game_data.currentStatus.incomingTransmissionObject:
+        obj = game_data.currentStatus.incomingTransmissionObject
+        comm_event_data = DBManager.CommEventData(**{
+            "id": obj.CommID,
+            "video_url": obj.VideoURL,
+            "comm_template": obj.CommTemplate,
+            "translation_message": obj.TranslationMessage,
+            "scan_info_message": obj.ScanInfoMessage,
+            "first_contact": obj.FirstContact,
+            "location_id": obj.LocationID,
+        })
+
+    current_loc_data = DBManager.CurrentLocationGameplayData(**{
+        "current_location": game_data.currentStatus.currentLocation,
+        "current_location_scanned": game_data.currentStatus.currentLocationScanned,
+        "current_location_surroundings": game_data.currentStatus.currentLocationSurroundings,
+        "antenna_extended": game_data.currentStatus.antennaExtended,
+        "network_connected": game_data.currentStatus.networkConnected,
+        "network_name": game_data.currentStatus.networkName,
+        "first_contact_complete": game_data.currentStatus.firstContactComplete,
+        "power_status": game_data.currentStatus.powerStatus,
+        "incoming_transmission": game_data.currentStatus.incomingTransmission,
+        "incoming_transmission_object": comm_event_data,
+    })
+
+    session_data = DBManager.SessionData(**{
+        "team_info_name": game_data.session.TeamInfoName,
+        "team_codex_count": game_data.session.TeamCodexCount,
+        "jump_cutscene_url": game_data.session.JumpCutsceneURL,
+    })
+
+    ship_data = DBManager.ShipData(**{
+        "codex_url": game_data.ship.CodexURL,
+        "workstation_1_url": game_data.ship.Workstation1URL,
+        "workstation_2_url": game_data.ship.Workstation2URL,
+        "workstation_3_url": game_data.ship.Workstation3URL,
+        "workstation_4_url": game_data.ship.Workstation4URL,
+        "workstation_5_url": game_data.ship.Workstation5URL,
+    })
+
+    location_data_list = [DBManager.LocationData(**{
+        "id": location.LocationID,
+        "name": location.Name,
+        "image_id": location.ImageID,
+        "backdrop_id": location.BackdropID,
+        "unlocked": location.Unlocked,
+        "visited": location.Visited,
+        "scanned": location.Scanned,
+        "surroundings": location.Surroundings,
+        "unlock_code": location.UnlockCode,
+        "network_established": location.NetworkEstablished,
+        "network_name": location.NetworkName,
+        "first_contact_event": location.FirstContactEvent,
+        "trajectory_launch": location.TrajectoryLaunch,
+        "trajectory_correction": location.TrajectoryCorrection,
+        "trajectory_cube": location.TrajectoryCube,
+    }) for location in game_data.locations]
+
+    mission_data_list = [DBManager.MissionData(**{
+        "id": mission.MissionID,
+        "unlocked": mission.Unlocked,
+        "visible": mission.Visible,
+        "complete": mission.Complete,
+        "title": mission.Title,
+        "summary_short": mission.SummaryShort,
+        "summary_long": mission.SummaryLong,
+        "mission_icon": mission.MissionIcon,
+        "is_special": mission.IsSpecial,
+        "rule_list": [DBManager.MissionRules(id=rule) for rule in mission.RuleList],
+        "task_list": [DBManager.TaskData(**{
+            "task_id": task.TaskID,
+            "mission_id": task.MissionID,
+            "description_text": task.DescriptionText,
+            "visible": task.Visible,
+            "complete": task.Complete,
+            "info_present": task.InfoPresent,
+            "info_text": task.InfoText,
+            "video_present": task.VideoPresent,
+            "video_url": task.VideoURL,
+            "comm_id": task.CommID,
+        }) for task in mission.TaskList],
+    }) for mission in game_data.missions]
+
+    game_data = DBManager.GameData(
+        team_id=team_id,
+        current_status=current_loc_data,
+        session=session_data,
+        ship=ship_data,
+        locations=location_data_list,
+        missions=mission_data_list,
+    )
+
+    await DBManager.merge_rows(game_data)
