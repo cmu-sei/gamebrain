@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from .config import get_settings
-from .gamedata import view
+from .gamedata import model
 
 
 NonNullStrCol = partial(Column, String, nullable=False)
@@ -302,7 +302,7 @@ async def store_media_assets(asset_map: Dict):
     await DBManager.merge_rows(objects)
 
 
-async def store_game_data(team_id: str, game_data: view.GameData):
+async def store_game_data(team_id: str, game_data: model.GameDataTeamSpecific):
     comm_event_data = None
     if game_data.currentStatus.incomingTransmissionObject:
         obj = game_data.currentStatus.incomingTransmissionObject

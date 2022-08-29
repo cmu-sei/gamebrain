@@ -7,8 +7,6 @@ class TaskData(BaseModel):
     TaskID: str
     MissionID: str
     DescriptionText: str
-    Visible: bool
-    Complete: bool
     InfoPresent: bool
     InfoText: str
     VideoPresent: bool
@@ -16,11 +14,18 @@ class TaskData(BaseModel):
     CommID: str
 
 
-class MissionData(BaseModel):
-    MissionID: str
-    Unlocked: bool
+class TaskDataTeamSpecific(BaseModel):
+    TaskID: str
     Visible: bool
     Complete: bool
+
+
+class TaskDataFull(TaskData, TaskDataTeamSpecific):
+    ...
+
+
+class MissionData(BaseModel):
+    MissionID: str
     Title: str
     SummaryShort: str
     SummaryLong: str
@@ -30,25 +35,44 @@ class MissionData(BaseModel):
     TaskList: list[TaskData] = None
 
 
+class MissionDataTeamSpecific(BaseModel):
+    MissionID: str
+    Unlocked: bool
+    Visible: bool
+    Complete: bool
+
+
+class MissionDataFull(MissionData, MissionDataTeamSpecific):
+    ...
+
+
 class LocationData(BaseModel):
     LocationID: str
     Name: str
     ImageID: str
     BackdropID: str
-    Unlocked: bool
-    Visited: bool
-    Scanned: bool
     Surroundings: str
     UnlockCode: str
-    NetworkEstablished: bool
-    NetworkName: str
-    FirstContactEvent: str
     TrajectoryLaunch: int
     TrajectoryCorrection: int
     TrajectoryCube: int
+    FirstContactEvent: str
+    NetworkName: str
 
 
-class ShipData(BaseModel):
+class LocationDataTeamSpecific(BaseModel):
+    LocationID: str
+    Unlocked: bool
+    Visited: bool
+    Scanned: bool
+    NetworkEstablished: bool
+
+
+class LocationDataFull(LocationData, LocationDataTeamSpecific):
+    ...
+
+
+class ShipDataTeamSpecific(BaseModel):
     CodexURL: AnyUrl
     Workstation1URL: AnyUrl
     Workstation2URL: AnyUrl
@@ -57,7 +81,7 @@ class ShipData(BaseModel):
     Workstation5URL: AnyUrl
 
 
-class SessionData(BaseModel):
+class SessionDataTeamSpecific(BaseModel):
     TeamInfoName: str
     TeamCodexCount: int
     JumpCutsceneURL: AnyUrl
@@ -66,14 +90,14 @@ class SessionData(BaseModel):
 class CommEventData(BaseModel):
     CommID: str
     VideoURL: str
-    CommTemplate: str
+    CommTemplate: Literal["incoming", "probe", "badTranslation"]
     TranslationMessage: str
     ScanInfoMessage: str
     FirstContact: bool
     LocationID: str
 
 
-class CurrentLocationGameplayData(BaseModel):
+class CurrentLocationGameplayDataTeamSpecific(BaseModel):
     currentLocation: str
     currentLocationScanned: bool
     currentLocationSurroundings: str
@@ -86,12 +110,12 @@ class CurrentLocationGameplayData(BaseModel):
     incomingTransmissionObject: CommEventData | None
 
 
-class GameData(BaseModel):
-    currentStatus: CurrentLocationGameplayData
-    session: SessionData
-    ship: ShipData
-    locations: list[LocationData]
-    missions: list[MissionData]
+class GameDataTeamSpecific(BaseModel):
+    currentStatus: CurrentLocationGameplayDataTeamSpecific
+    session: SessionDataTeamSpecific
+    ship: ShipDataTeamSpecific
+    locations: list[LocationDataFull]
+    missions: list[MissionDataFull]
 
 
 class GenericResponse(BaseModel):
