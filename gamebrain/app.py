@@ -4,31 +4,15 @@ from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import jwt
-from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
 
+from .auth import check_jwt
 import gamebrain.db as db
-from gamebrain.clients import gameboard, topomojo
+from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
 
 
 Settings.init_settings(Global.settings_path)
 APP = FastAPI(docs_url="/api", root_path=get_settings().app_root_prefix)
-
-
-def check_jwt(token: str, audience: Optional[str] = None, require_sub: bool = False):
-    settings = get_settings()
-    try:
-        return jwt.decode(token,
-                          Global.get_jwks(),
-                          audience=audience,
-                          issuer=settings.identity.jwt_issuer,
-                          options={"require_aud": True,
-                                   "require_iss": True,
-                                   "require_sub": require_sub}
-                          )
-    except (JWTError, JWTClaimsError, ExpiredSignatureError):
-        raise HTTPException(status_code=401, detail="JWT Error")
 
 
 def format_message(event_message, event_time: Optional[datetime] = None):
