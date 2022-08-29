@@ -8,7 +8,6 @@ from sqlalchemy import Column, Integer, BigInteger, String, Boolean, ForeignKey,
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
-from .config import get_settings
 from .gamedata import model
 
 
@@ -190,9 +189,6 @@ class DBManager:
     async def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
         if cls.engine and not drop_first:
             return
-        if not connection_string:
-            settings = get_settings()
-            connection_string = settings.db.connection_string
         cls.engine = create_async_engine(connection_string, echo=echo, future=True)
         # I don't know if expire_on_commit is necessary here, but the SQLAlchemy docs used it.
         cls.session_factory = sessionmaker(cls.engine, expire_on_commit=False, class_=AsyncSession)
