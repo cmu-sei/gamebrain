@@ -114,6 +114,11 @@ class GameDataTeamSpecific(BaseModel):
     currentStatus: CurrentLocationGameplayDataTeamSpecific
     session: SessionDataTeamSpecific
     ship: ShipDataTeamSpecific
+    locations: list[LocationDataTeamSpecific]
+    missions: list[MissionDataTeamSpecific]
+
+
+class GameDataResponse(GameDataTeamSpecific):
     locations: list[LocationDataFull]
     missions: list[MissionDataFull]
 

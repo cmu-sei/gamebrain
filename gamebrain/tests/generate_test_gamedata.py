@@ -223,9 +223,9 @@ def construct_team_specific_data(
     current_status = construct_team_current_location(locations.__root__[first_location])
 
     unlocked_locations = [
-        model.LocationDataFull(
-            **locations.__root__[first_location].dict()
-            | {
+        model.LocationDataTeamSpecific(
+            **{
+                "LocationID": locations.__root__[first_location].LocationID,
                 "Unlocked": True,
                 "Visited": False,
                 "Scanned": False,
@@ -234,9 +234,9 @@ def construct_team_specific_data(
         )
     ]
     unlocked_missions = [
-        model.MissionDataFull(
-            **missions.__root__[first_mission].dict()
-            | {
+        model.MissionDataTeamSpecific(
+            **{
+                "MissionID": missions.__root__[first_mission].MissionID,
                 "Unlocked": True,
                 "Visible": False,
                 "Complete": False,
