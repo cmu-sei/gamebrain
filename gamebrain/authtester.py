@@ -1,5 +1,5 @@
 import os
-import time
+import pprint
 import warnings
 
 from authlib.integrations.httpx_client import OAuth2Client
@@ -80,6 +80,10 @@ def main():
     # resp = session.get(f"{GAMEBRAIN_URL}/gamestate/team_data")
 
     # print(resp.json())
+
+    print("Getting GameData")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
+    pprint.pprint(resp.json())
 
 
 if __name__ == "__main__":

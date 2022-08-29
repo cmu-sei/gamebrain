@@ -1,10 +1,11 @@
 from typing import Literal
 
-from fastapi import APIRouter, Security
+from fastapi import APIRouter, Security, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import constr
 
 from ..auth import check_jwt
+from .cache import GameStateManager
 from ..config import get_settings
 from .model import (
     GameDataResponse,
@@ -18,17 +19,22 @@ Coordinates = constr(to_lower=True, regex=r"[0-9A-Za-z]{6}")
 router = APIRouter()
 
 
-@router.get("/GameData")
-def get_gamedata(
+@router.get("/GameData/{team_id}")
+async def get_gamedata(
+    team_id: str,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GameDataResponse:
     payload = check_jwt(
         auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
     )
+    result = await GameStateManager.get_team_data(team_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Team not found.")
+    return result
 
 
 @router.get("/GameData/LocationUnlock/{coordinates}")
-def get_locationunlock(
+async def get_locationunlock(
     coordinates: Coordinates,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> LocationUnlockResponse:
@@ -38,7 +44,7 @@ def get_locationunlock(
 
 
 @router.get("/GameData/Jump/{location}")
-def get_jump(
+async def get_jump(
     location: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ) -> GenericResponse:
     payload = check_jwt(
@@ -47,7 +53,7 @@ def get_jump(
 
 
 @router.get("/GameData/Initialize/{location}")
-def get_init(
+async def get_init(
     location: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ):
     payload = check_jwt(
@@ -56,7 +62,7 @@ def get_init(
 
 
 @router.get("/GameData/ExtendAntenna")
-def get_extendantenna(
+async def get_extendantenna(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
     payload = check_jwt(
@@ -65,7 +71,7 @@ def get_extendantenna(
 
 
 @router.get("/GameData/RetractAntenna")
-def get_retractantenna(
+async def get_retractantenna(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
     payload = check_jwt(
@@ -74,7 +80,7 @@ def get_retractantenna(
 
 
 @router.get("/GameData/ScanLocation")
-def get_scanlocation(
+async def get_scanlocation(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> ScanResponse:
     payload = check_jwt(
@@ -83,7 +89,7 @@ def get_scanlocation(
 
 
 @router.get("/GameData/PowerMode/{status}")
-def get_powermode(
+async def get_powermode(
     status: Literal["launchMode", "explorationMode", "standby"],
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
@@ -93,7 +99,7 @@ def get_powermode(
 
 
 @router.get("/GameData/CommEventCompleted")
-def get_commeventcompleted(
+async def get_commeventcompleted(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
     payload = check_jwt(
@@ -102,7 +108,7 @@ def get_commeventcompleted(
 
 
 @router.get("/GameData/InjectCommEvent/{commID}")
-def get_injectcommevent(
+async def get_injectcommevent(
     commID: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ) -> GenericResponse:
     payload = check_jwt(
@@ -111,7 +117,7 @@ def get_injectcommevent(
 
 
 @router.get("/GameData/CodexStationPowerOn")
-def get_codexstationpoweron(
+async def get_codexstationpoweron(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
     payload = check_jwt(
@@ -120,7 +126,7 @@ def get_codexstationpoweron(
 
 
 @router.get("/GameData/CodexStationPowerOff")
-def get_codexstationpoweroff(
+async def get_codexstationpoweroff(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
     payload = check_jwt(

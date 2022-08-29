@@ -4,8 +4,11 @@ from pydantic import BaseModel
 
 from .model import (
     GameDataTeamSpecific,
+    GameDataResponse,
     LocationData,
+    LocationDataFull,
     MissionData,
+    MissionDataFull,
     TaskData,
     CommEventData,
 )
@@ -70,3 +73,32 @@ class GameStateManager:
         from ..tests.generate_test_gamedata import construct_data
 
         cls._cache = construct_data()
+
+    @classmethod
+    async def get_team_data(cls, team_id: TeamID) -> GameDataResponse | None:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                return None
+
+            full_loc_data = []
+            for location in team_data.locations:
+                loc_global = cls._cache.location_map.__root__[location.LocationID]
+                loc_full = LocationDataFull(**loc_global.dict() | location.dict())
+                full_loc_data.append(loc_full)
+
+            full_mission_data = []
+            for mission in team_data.missions:
+                mission_global = cls._cache.mission_map.__root__[mission.MissionID]
+                mission_full = MissionDataFull(**mission_global.dict() | mission.dict())
+                full_mission_data.append(mission_full)
+
+            full_team_data = GameDataResponse(
+                currentStatus=team_data.currentStatus,
+                session=team_data.session,
+                ship=team_data.ship,
+                locations=full_loc_data,
+                missions=full_mission_data,
+            )
+
+            return full_team_data

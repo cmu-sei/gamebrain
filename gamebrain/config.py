@@ -7,6 +7,7 @@ import redis.asyncio as redis
 import yaml
 from pydantic import BaseModel, validator
 
+from .gamedata.cache import GameStateManager
 import gamebrain.db as db
 from .util import url_path_join
 
@@ -125,6 +126,8 @@ class Global:
         cls._init_jwks()
         cls._init_redis()
         cls._init_updater_task()
+        # TODO: Implement a check for test vs normal operation.
+        await GameStateManager.test_init()
 
     @classmethod
     def _init_jwks(cls):
