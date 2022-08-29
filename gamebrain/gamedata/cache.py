@@ -2,7 +2,13 @@ import asyncio
 
 from pydantic import BaseModel
 
-from .model import GameDataTeamSpecific, LocationData, MissionData, TaskData, CommEventData
+from .model import (
+    GameDataTeamSpecific,
+    LocationData,
+    MissionData,
+    TaskData,
+    CommEventData,
+)
 
 
 CommID = str
@@ -62,4 +68,5 @@ class GameStateManager:
         cls._test_mode = True
 
         from ..tests.generate_test_gamedata import construct_data
+
         cls._cache = construct_data()
