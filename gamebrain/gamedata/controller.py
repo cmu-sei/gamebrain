@@ -7,7 +7,7 @@ from pydantic import constr
 from ..auth import check_jwt
 from ..config import get_settings
 from .model import (
-    GameDataTeamSpecific,
+    GameDataResponse,
     GenericResponse,
     LocationUnlockResponse,
     ScanResponse,
@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/GameData")
 def get_gamedata(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
-) -> GameDataTeamSpecific:
+) -> GameDataResponse:
     payload = check_jwt(
         auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
     )
