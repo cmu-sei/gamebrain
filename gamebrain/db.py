@@ -40,7 +40,7 @@ class DBManager:
         vm_data = relationship("VirtualMachine", lazy="joined")
         event_log = relationship("Event", lazy="joined")
         secrets = relationship("ChallengeSecret", lazy="joined")
-        ship_data = relationship("GameData", backref="game_data", uselist=False, lazy="joined")
+        # ship_data = relationship("GameData", backref="game_data", uselist=False, lazy="joined")
 
     class VirtualMachine(orm_base):
         __tablename__ = "console_url"
@@ -64,117 +64,117 @@ class DBManager:
         id = Column(String, primary_key=True)
         url = Column(String, nullable=False)
 
-    class TaskData(orm_base):
-        __tablename__ = "task_data"
+    # class TaskData(orm_base):
+    #     __tablename__ = "task_data"
 
-        task_id = Column(String, primary_key=True)
-        mission_id = Column(String, primary_key=True)
-        description = NonNullStrCol()
-        visible = NonNullBoolCol()
-        complete = NonNullBoolCol()
-        info_present = NonNullBoolCol()
-        info_text = NonNullStrCol()
-        video_present = NonNullBoolCol()
-        video_text = NonNullStrCol()
-        comm_id = NonNullStrCol()
+    #     task_id = Column(String, primary_key=True)
+    #     mission_id = Column(String, primary_key=True)
+    #     description = NonNullStrCol()
+    #     visible = NonNullBoolCol()
+    #     complete = NonNullBoolCol()
+    #     info_present = NonNullBoolCol()
+    #     info_text = NonNullStrCol()
+    #     video_present = NonNullBoolCol()
+    #     video_text = NonNullStrCol()
+    #     comm_id = NonNullStrCol()
 
-    class MissionRules(orm_base):
-        __tablename__ = "mission_rules"
+    # class MissionRules(orm_base):
+    #     __tablename__ = "mission_rules"
 
-        id = Column(String, primary_key=True)
+    #     id = Column(String, primary_key=True)
 
-    class MissionData(orm_base):
-        __tablename__ = "mission_data"
+    # class MissionData(orm_base):
+    #     __tablename__ = "mission_data"
 
-        id = Column(String, primary_key=True)
-        mission_id = NonNullStrCol()
-        unlocked = NonNullBoolCol()
-        visible = NonNullBoolCol()
-        complete = NonNullBoolCol()
-        title = NonNullStrCol()
-        summary_short = NonNullStrCol()
-        summary_long = NonNullStrCol()
-        mission_icon = NonNullStrCol()
-        is_special = NonNullBoolCol()
+    #     id = Column(String, primary_key=True)
+    #     mission_id = NonNullStrCol()
+    #     unlocked = NonNullBoolCol()
+    #     visible = NonNullBoolCol()
+    #     complete = NonNullBoolCol()
+    #     title = NonNullStrCol()
+    #     summary_short = NonNullStrCol()
+    #     summary_long = NonNullStrCol()
+    #     mission_icon = NonNullStrCol()
+    #     is_special = NonNullBoolCol()
 
-        rule_list = relationship("MissionRules", lazy="joined")
-        task_list = relationship("TaskData", lazy="joined")
+    #     rule_list = relationship("MissionRules", lazy="joined")
+    #     task_list = relationship("TaskData", lazy="joined")
 
-    class LocationData(orm_base):
-        __tablename__ = "location_data"
+    # class LocationData(orm_base):
+    #     __tablename__ = "location_data"
 
-        id = Column(String, primary_key=True)
-        location_id = NonNullStrCol()
-        name = NonNullStrCol()
-        image_id = NonNullStrCol()
-        backdrop_id = NonNullStrCol()
-        unlocked = NonNullBoolCol()
-        visited = NonNullBoolCol()
-        scanned = NonNullBoolCol()
-        surroundings = NonNullStrCol()
-        unlock_code = NonNullStrCol()
-        network_established = NonNullBoolCol()
-        network_name = NonNullStrCol()
-        first_contact_event = NonNullStrCol()
-        trajectory_launch = NonNullIntCol()
-        trajectory_correction = NonNullIntCol()
-        trajectory_cube = NonNullIntCol()
+    #     id = Column(String, primary_key=True)
+    #     location_id = NonNullStrCol()
+    #     name = NonNullStrCol()
+    #     image_id = NonNullStrCol()
+    #     backdrop_id = NonNullStrCol()
+    #     unlocked = NonNullBoolCol()
+    #     visited = NonNullBoolCol()
+    #     scanned = NonNullBoolCol()
+    #     surroundings = NonNullStrCol()
+    #     unlock_code = NonNullStrCol()
+    #     network_established = NonNullBoolCol()
+    #     network_name = NonNullStrCol()
+    #     first_contact_event = NonNullStrCol()
+    #     trajectory_launch = NonNullIntCol()
+    #     trajectory_correction = NonNullIntCol()
+    #     trajectory_cube = NonNullIntCol()
 
-    class ShipData(orm_base):
-        __tablename__ = "ship_data"
+    # class ShipData(orm_base):
+    #     __tablename__ = "ship_data"
 
-        id = Column(String, ForeignKey("team_data.id"), primary_key=True)
-        codex_url = NonNullStrCol()
-        workstation_1_url = NonNullStrCol()
-        workstation_2_url = NonNullStrCol()
-        workstation_3_url = NonNullStrCol()
-        workstation_4_url = NonNullStrCol()
-        workstation_5_url = NonNullStrCol()
+    #     id = Column(String, ForeignKey("team_data.id"), primary_key=True)
+    #     codex_url = NonNullStrCol()
+    #     workstation_1_url = NonNullStrCol()
+    #     workstation_2_url = NonNullStrCol()
+    #     workstation_3_url = NonNullStrCol()
+    #     workstation_4_url = NonNullStrCol()
+    #     workstation_5_url = NonNullStrCol()
 
-    class SessionData(orm_base):
-        __tablename__ = "session_data"
+    # class SessionData(orm_base):
+    #     __tablename__ = "session_data"
 
-        id = Column(String, ForeignKey("team_data.id"), primary_key=True)
-        team_info_name = NonNullStrCol()
-        team_codex_count = NonNullIntCol()
-        jump_cutscene_url = NonNullStrCol()
+    #     id = Column(String, ForeignKey("team_data.id"), primary_key=True)
+    #     team_info_name = NonNullStrCol()
+    #     team_codex_count = NonNullIntCol()
+    #     jump_cutscene_url = NonNullStrCol()
 
-    class CommEventData(orm_base):
-        __tablename__ = "comm_event_data"
+    # class CommEventData(orm_base):
+    #     __tablename__ = "comm_event_data"
 
-        id = Column(String, primary_key=True)
-        video_url = NonNullStrCol()
-        comm_template = NonNullStrCol()
-        translation_message = NonNullStrCol()
-        scan_info_message = NonNullStrCol()
-        first_contact = NonNullBoolCol()
-        location_id = NonNullStrCol()
+    #     id = Column(String, primary_key=True)
+    #     video_url = NonNullStrCol()
+    #     comm_template = NonNullStrCol()
+    #     translation_message = NonNullStrCol()
+    #     scan_info_message = NonNullStrCol()
+    #     first_contact = NonNullBoolCol()
+    #     location_id = NonNullStrCol()
 
-    class CurrentLocationGameplayData(orm_base):
-        __tablename__ = "current_location_gameplay_data"
+    # class CurrentLocationGameplayData(orm_base):
+    #     __tablename__ = "current_location_gameplay_data"
 
-        id = Column(String, ForeignKey("team_data.id"), primary_key=True)
-        current_location = NonNullStrCol()
-        current_location_scanned = NonNullBoolCol()
-        current_location_surroundings = NonNullStrCol()
-        antenna_extended = NonNullBoolCol()
-        network_connected = NonNullBoolCol()
-        network_name = NonNullStrCol()
-        first_contact_complete = NonNullBoolCol()
-        power_status = NonNullBoolCol()
+    #     id = Column(String, ForeignKey("team_data.id"), primary_key=True)
+    #     current_location = NonNullStrCol()
+    #     current_location_scanned = NonNullBoolCol()
+    #     current_location_surroundings = NonNullStrCol()
+    #     antenna_extended = NonNullBoolCol()
+    #     network_connected = NonNullBoolCol()
+    #     network_name = NonNullStrCol()
+    #     first_contact_complete = NonNullBoolCol()
+    #     power_status = NonNullBoolCol()
 
-        incoming_transmission = relationship("CommEventData", lazy="joined", uselist=False)
+    #     incoming_transmission = relationship("CommEventData", lazy="joined", uselist=False)
 
-    class GameData(orm_base):
-        __tablename__ = "game_data"
+    # class GameData(orm_base):
+    #     __tablename__ = "game_data"
 
-        team_id = Column(String(36), ForeignKey("team_data.id"), primary_key=True, nullable=False)
+    #     team_id = Column(String(36), ForeignKey("team_data.id"), primary_key=True, nullable=False)
 
-        current_status = relationship("CurrentLocationGameplayData", lazy="joined", uselist=False)
-        session = relationship("SessionData", lazy="joined", uselist=False)
-        ship = relationship("ShipData", lazy="joined", uselist=False)
-        locations = relationship("LocationData", lazy="joined")
-        missions = relationship("MissionData", lazy="joined")
+    #     current_status = relationship("CurrentLocationGameplayData", lazy="joined", uselist=False)
+    #     session = relationship("SessionData", lazy="joined", uselist=False)
+    #     ship = relationship("ShipData", lazy="joined", uselist=False)
+    #     locations = relationship("LocationData", lazy="joined")
+    #     missions = relationship("MissionData", lazy="joined")
 
     @classmethod
     def _orm_obj_to_dict(cls, obj: orm_base) -> Dict:

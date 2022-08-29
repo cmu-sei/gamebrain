@@ -68,7 +68,7 @@ def main():
     # print(resp.json())
 
     # Give the target VM some time to come up and start the agent service.
-    time.sleep(60)
+    # time.sleep(60)
 
     resp = session.post(f"{GAMEBRAIN_URL}/privileged/event/{TEST_TEAM_1}",
                         params={"event_message": "Mission 2"})
@@ -77,9 +77,9 @@ def main():
     session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
     session.fetch_token(TOKEN_URL)
 
-    resp = session.get(f"{GAMEBRAIN_URL}/gamestate/team_data")
+    # resp = session.get(f"{GAMEBRAIN_URL}/gamestate/team_data")
 
-    print(resp.json())
+    # print(resp.json())
 
 
 if __name__ == "__main__":
