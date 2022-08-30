@@ -15,6 +15,7 @@ from .model import (
     CurrentLocationGameplayDataTeamSpecific,
     LocationUnlockResponse,
     GenericResponse,
+    ScanResponse,
 )
 
 
@@ -180,3 +181,27 @@ class GameStateManager:
             team_data.currentStatus = new_status
 
             return GenericResponse(success=True, message=location_id)
+
+    @classmethod
+    async def scan(cls, team_id: TeamID) -> ScanResponse:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            location_data = cls._cache.location_map.__root__[
+                team_data.currentStatus.currentLocation
+            ]
+            first_contact_event = cls._cache.comm_map.__root__[
+                location_data.FirstContactEvent
+            ]
+
+            team_data.currentStatus.incomingTransmission = True
+            team_data.currentStatus.incomingTransmissionObject = first_contact_event
+
+            return ScanResponse(
+                success=True,
+                message=location_data.LocationID,
+                EventWaiting=True,
+                CommID=first_contact_event,
+            )

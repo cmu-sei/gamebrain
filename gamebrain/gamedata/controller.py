@@ -84,13 +84,16 @@ async def get_retractantenna(
     )
 
 
-@router.get("/GameData/ScanLocation")
+@router.get("/GameData/ScanLocation/{team_id}")
 async def get_scanlocation(
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> ScanResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    try:
+        return await GameStateManager.scan(team_id)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
 
 
 @router.get("/GameData/PowerMode/{status}")

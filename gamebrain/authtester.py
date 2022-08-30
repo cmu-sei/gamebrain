@@ -113,6 +113,10 @@ def main():
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location2/team1")
     pprint.pprint(resp.json())
 
+    print("Scan new location (expect success)")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/team1")
+    pprint.pprint(resp.json())
+
 
 if __name__ == "__main__":
     main()
