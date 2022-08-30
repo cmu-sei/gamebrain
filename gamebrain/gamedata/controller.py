@@ -66,22 +66,20 @@ async def get_init(
     )
 
 
-@router.get("/GameData/ExtendAntenna")
+@router.get("/GameData/ExtendAntenna/{team_id}")
 async def get_extendantenna(
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
 
-@router.get("/GameData/RetractAntenna")
+@router.get("/GameData/RetractAntenna/{team_id}")
 async def get_retractantenna(
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
 
 @router.get("/GameData/ScanLocation/{team_id}")
