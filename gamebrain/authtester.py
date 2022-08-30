@@ -85,6 +85,18 @@ def main():
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
     pprint.pprint(resp.json())
 
+    print("Unlocking location 0 (alreadyunlocked)")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/000000/team1")
+    pprint.pprint(resp.json())
+
+    print("Unlocking location 1 (success)")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/111111/team1")
+    pprint.pprint(resp.json())
+
+    print("Invalid unlock (invalid)")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/team1")
+    pprint.pprint(resp.json())
+
 
 if __name__ == "__main__":
     main()

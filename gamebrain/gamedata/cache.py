@@ -127,7 +127,10 @@ class GameStateManager:
                 raise NonExistentTeam()
 
             team_unlocked_locations = set(
-                map(lambda loc: loc.Unlocked, team_data.locations)
+                map(
+                    lambda loc: loc.LocationID,
+                    filter(lambda loc: loc.Unlocked, team_data.locations),
+                )
             )
             for location_id, location_data in cls._cache.location_map.__root__.items():
                 if location_data.UnlockCode != unlock_code:
