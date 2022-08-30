@@ -62,10 +62,10 @@ class LocationData(BaseModel):
 
 class LocationDataTeamSpecific(BaseModel):
     LocationID: str
-    Unlocked: bool
-    Visited: bool
-    Scanned: bool
-    NetworkEstablished: bool
+    Unlocked: bool = True
+    Visited: bool = False
+    Scanned: bool = False
+    NetworkEstablished: bool = False
 
 
 class LocationDataFull(LocationData, LocationDataTeamSpecific):
