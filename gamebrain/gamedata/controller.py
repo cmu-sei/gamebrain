@@ -37,9 +37,7 @@ async def get_locationunlock(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> LocationUnlockResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.unlock_location(team_id, coordinates)
     except NonExistentTeam:
