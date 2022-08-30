@@ -154,6 +154,9 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
+            if team_data.currentStatus.currentLocation == location_id:
+                return GenericResponse(success=False, message=location_id)
+
             location_data = cls._cache.location_map.__root__.get(location_id)
             if not location_data:
                 return GenericResponse(success=False, message=location_id)

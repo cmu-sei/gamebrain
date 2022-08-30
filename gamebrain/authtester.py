@@ -97,6 +97,10 @@ def main():
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/team1")
     pprint.pprint(resp.json())
 
+    print("Jump to current location (expect failure")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location1/team1")
+    pprint.pprint(resp.json())
+
     print("Jump to invalid location (expect failure")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/team1")
     pprint.pprint(resp.json())
