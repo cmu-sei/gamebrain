@@ -114,11 +114,11 @@ class GameStateManager:
     async def unlock_location(
         cls, team_id: TeamID, unlock_code: str
     ) -> LocationUnlockResponse:
-        def response(status, location, code):
+        def response(status, location=""):
             return LocationUnlockResponse(
                 ResponseStatus=status,
                 LocationID=location,
-                EnteredCoordinates=code,
+                EnteredCoordinates=unlock_code,
             )
 
         async with cls._lock:
@@ -136,20 +136,14 @@ class GameStateManager:
                 if location_data.UnlockCode != unlock_code:
                     continue
                 if location_id in team_unlocked_locations:
-                    return response(
-                        "alreadyunlocked",
-                        "",
-                        unlock_code,
-                    )
+                    return response("alreadyunlocked")
                 else:
                     newly_unlocked = LocationDataTeamSpecific(
                         LocationID=location_id,
                     )
                     team_data.locations.append(newly_unlocked)
-                    return response(
-                        "success",
-                        location_id,
-                        unlock_code,
-                    )
+                    return response("success", location_id)
+
+            return response("invalid")
 
             return response("invalid", "", unlock_code)
