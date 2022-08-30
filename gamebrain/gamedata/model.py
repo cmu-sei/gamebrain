@@ -99,15 +99,15 @@ class CommEventData(BaseModel):
 
 class CurrentLocationGameplayDataTeamSpecific(BaseModel):
     currentLocation: str
-    currentLocationScanned: bool
+    currentLocationScanned: bool = False
     currentLocationSurroundings: str
-    antennaExtended: bool
-    networkConnected: bool
+    antennaExtended: bool = False
+    networkConnected: bool = False
     networkName: str
-    firstContactComplete: bool
+    firstContactComplete: bool = False
     powerStatus: str
-    incomingTransmission: bool
-    incomingTransmissionObject: CommEventData | None
+    incomingTransmission: bool = False
+    incomingTransmissionObject: CommEventData | None = None
 
 
 class GameDataTeamSpecific(BaseModel):
