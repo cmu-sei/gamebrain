@@ -21,6 +21,10 @@ TaskID = str
 TeamID = str
 
 
+class NonExistentTeam(Exception):
+    ...
+
+
 class CommMap(BaseModel):
     __root__: dict[CommID, CommEventData]
 
@@ -79,7 +83,7 @@ class GameStateManager:
         async with cls._lock:
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
-                return None
+                raise NonExistentTeam()
 
             full_loc_data = []
             for location in team_data.locations:
