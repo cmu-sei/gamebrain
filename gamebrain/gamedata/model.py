@@ -16,8 +16,8 @@ class TaskData(BaseModel):
 
 class TaskDataTeamSpecific(BaseModel):
     TaskID: str
-    Visible: bool
-    Complete: bool
+    Visible: bool = True
+    Complete: bool = False
 
 
 class TaskDataFull(TaskData, TaskDataTeamSpecific):
@@ -32,7 +32,7 @@ class MissionData(BaseModel):
     MissionIcon: str
     IsSpecial: bool
     RuleList: list[str]
-    TaskList: list[TaskData] = None
+    TaskList: list[TaskData]
 
 
 class MissionDataTeamSpecific(BaseModel):
@@ -40,10 +40,11 @@ class MissionDataTeamSpecific(BaseModel):
     Unlocked: bool
     Visible: bool
     Complete: bool
+    TaskList: list[TaskDataTeamSpecific]
 
 
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
-    ...
+    TaskList: list[TaskDataFull]
 
 
 class LocationData(BaseModel):

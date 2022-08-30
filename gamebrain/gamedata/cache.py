@@ -11,6 +11,7 @@ from .model import (
     MissionData,
     MissionDataFull,
     TaskData,
+    TaskDataFull,
     CommEventData,
     CurrentLocationGameplayDataTeamSpecific,
     LocationUnlockResponse,
@@ -99,7 +100,15 @@ class GameStateManager:
             full_mission_data = []
             for mission in team_data.missions:
                 mission_global = cls._cache.mission_map.__root__[mission.MissionID]
-                mission_full = MissionDataFull(**mission_global.dict() | mission.dict())
+                task_list = [
+                    TaskDataFull(
+                        **cls._cache.task_map.__root__[task.TaskID].dict() | task.dict()
+                    )
+                    for task in mission.TaskList
+                ]
+                mission_full = MissionDataFull(
+                    **mission_global.dict() | mission.dict() | {"TaskList": task_list}
+                )
                 full_mission_data.append(mission_full)
 
             full_team_data = GameDataResponse(

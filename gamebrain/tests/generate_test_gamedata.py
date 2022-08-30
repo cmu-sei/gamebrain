@@ -215,6 +215,7 @@ def construct_team_specific_data(
     first_mission: cache.MissionID,
     locations: cache.LocationMap,
     missions: cache.MissionMap,
+    tasks: cache.TaskMap,
 ) -> model.GameDataTeamSpecific:
     team_name = f"Team {team_id[-1]}"
 
@@ -233,6 +234,11 @@ def construct_team_specific_data(
             }
         )
     ]
+
+    tasks_team_specific = [
+        model.TaskDataTeamSpecific(TaskID=task.TaskID)
+        for task in tasks.__root__.values()
+    ]
     unlocked_missions = [
         model.MissionDataTeamSpecific(
             **{
@@ -240,6 +246,12 @@ def construct_team_specific_data(
                 "Unlocked": True,
                 "Visible": False,
                 "Complete": False,
+                "TaskList": list(
+                    filter(
+                        lambda t: tasks.__root__[t.TaskID].MissionID == first_mission,
+                        tasks_team_specific,
+                    )
+                ),
             }
         )
     ]
@@ -262,6 +274,7 @@ def construct_teams(
     first_mission: cache.MissionID,
     locations: cache.LocationMap,
     missions: cache.MissionMap,
+    tasks: cache.TaskMap,
     params: GenerationParameters,
 ) -> cache.TeamMap:
     team_data = {}
@@ -270,7 +283,7 @@ def construct_teams(
         team_id = f"team{i+1}"
 
         game_data = construct_team_specific_data(
-            team_id, first_location, first_mission, locations, missions
+            team_id, first_location, first_mission, locations, missions, tasks
         )
 
         team_data[team_id] = game_data
@@ -288,6 +301,7 @@ def construct_data(params: GenerationParameters = None) -> cache.GameDataCache:
         "mission1",
         global_data.location_map,
         global_data.mission_map,
+        global_data.task_map,
         params,
     )
 
