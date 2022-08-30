@@ -26,7 +26,7 @@ def construct_global_locations(
                 "ImageID": f"{location_id}_image",
                 "BackdropID": f"{location_id}_backdrop",
                 "Surroundings": f"{name} surroundings",
-                "UnlockCode": "000000",
+                "UnlockCode": f"{i}"*6,
                 "TrajectoryLaunch": i,
                 "TrajectoryCorrection": i,
                 "TrajectoryCube": i,
