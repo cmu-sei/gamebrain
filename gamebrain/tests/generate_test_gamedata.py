@@ -4,7 +4,7 @@ from gamebrain.gamedata import model, cache
 
 
 class GenerationParameters(BaseModel):
-    location_count: int = 2
+    location_count: int = 3
     comm_event_count: int = 2
     mission_count: int = 2
     team_count: int = 2

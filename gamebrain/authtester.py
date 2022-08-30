@@ -85,16 +85,28 @@ def main():
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
     pprint.pprint(resp.json())
 
-    print("Unlocking location 0 (alreadyunlocked)")
+    print("Unlocking location 0 (expect alreadyunlocked)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/000000/team1")
     pprint.pprint(resp.json())
 
-    print("Unlocking location 1 (success)")
+    print("Unlocking location 1 (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/111111/team1")
     pprint.pprint(resp.json())
 
-    print("Invalid unlock (invalid)")
+    print("Invalid unlock (expect invalid)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/team1")
+    pprint.pprint(resp.json())
+
+    print("Jump to invalid location (expect failure")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/team1")
+    pprint.pprint(resp.json())
+
+    print("Jump to locked location (expect failure")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location3/team1")
+    pprint.pprint(resp.json())
+
+    print("Jump to unlocked location (expect success)")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location2/team1")
     pprint.pprint(resp.json())
 
 

@@ -1,5 +1,4 @@
 import asyncio
-import enum
 
 from pydantic import BaseModel
 
@@ -13,7 +12,9 @@ from .model import (
     MissionDataFull,
     TaskData,
     CommEventData,
+    CurrentLocationGameplayDataTeamSpecific,
     LocationUnlockResponse,
+    GenericResponse,
 )
 
 
@@ -146,4 +147,33 @@ class GameStateManager:
 
             return response("invalid")
 
-            return response("invalid", "", unlock_code)
+    @classmethod
+    async def jump(cls, team_id: TeamID, location_id: LocationID) -> GenericResponse:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            location_data = cls._cache.location_map.__root__.get(location_id)
+            if not location_data:
+                return GenericResponse(success=False, message=location_id)
+
+            destination = [
+                loc for loc in team_data.locations if loc.LocationID == location_id
+            ]
+            if not destination:
+                return GenericResponse(success=False, message=location_id)
+
+            location_team_specific = destination.pop()
+
+            new_status = CurrentLocationGameplayDataTeamSpecific(
+                currentLocation=location_id,
+                currentLocationScanned=location_team_specific.Scanned,
+                currentLocationSurroundings=location_data.Surroundings,
+                networkName=location_data.NetworkName,
+                firstContactComplete=location_team_specific.Visited,
+                powerStatus="launchMode",
+            )
+            team_data.currentStatus = new_status
+
+            return GenericResponse(success=True, message=location_id)
