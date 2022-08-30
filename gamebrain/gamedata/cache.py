@@ -1,4 +1,5 @@
 import asyncio
+import enum
 
 from pydantic import BaseModel
 
@@ -6,11 +7,13 @@ from .model import (
     GameDataTeamSpecific,
     GameDataResponse,
     LocationData,
+    LocationDataTeamSpecific,
     LocationDataFull,
     MissionData,
     MissionDataFull,
     TaskData,
     CommEventData,
+    LocationUnlockResponse,
 )
 
 
@@ -106,3 +109,44 @@ class GameStateManager:
             )
 
             return full_team_data
+
+    @classmethod
+    async def unlock_location(
+        cls, team_id: TeamID, unlock_code: str
+    ) -> LocationUnlockResponse:
+        def response(status, location, code):
+            return LocationUnlockResponse(
+                ResponseStatus=status,
+                LocationID=location,
+                EnteredCoordinates=code,
+            )
+
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            team_unlocked_locations = set(
+                map(lambda loc: loc.Unlocked, team_data.locations)
+            )
+            for location_id, location_data in cls._cache.location_map.__root__.items():
+                if location_data.UnlockCode != unlock_code:
+                    continue
+                if location_id in team_unlocked_locations:
+                    return response(
+                        "alreadyunlocked",
+                        "",
+                        unlock_code,
+                    )
+                else:
+                    newly_unlocked = LocationDataTeamSpecific(
+                        LocationID=location_id,
+                    )
+                    team_data.locations.append(newly_unlocked)
+                    return response(
+                        "success",
+                        location_id,
+                        unlock_code,
+                    )
+
+            return response("invalid", "", unlock_code)

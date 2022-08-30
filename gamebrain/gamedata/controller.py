@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import constr
 
 from ..auth import check_jwt
-from .cache import GameStateManager, NonExistentTeam, TeamID, LocationID
+from .cache import GameStateManager, NonExistentTeam, TeamID
 from ..config import get_settings
 from .model import (
     GameDataResponse,
@@ -24,23 +24,26 @@ async def get_gamedata(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GameDataResponse:
-    check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.get_team_data(team_id)
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
 
-@router.get("/GameData/LocationUnlock/{coordinates}")
+@router.get("/GameData/LocationUnlock/{coordinates}/{team_id}")
 async def get_locationunlock(
     coordinates: Coordinates,
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> LocationUnlockResponse:
     payload = check_jwt(
         auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
     )
+    try:
+        return await GameStateManager.unlock_location(team_id, coordinates)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
 
 
 @router.get("/GameData/Jump/{location}")
