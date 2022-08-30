@@ -7,9 +7,9 @@ class TaskData(BaseModel):
     TaskID: str
     MissionID: str
     DescriptionText: str
-    InfoPresent: bool
+    InfoPresent: bool = True
     InfoText: str
-    VideoPresent: bool
+    VideoPresent: bool = True
     VideoURL: str
     CommID: str
 
@@ -30,16 +30,16 @@ class MissionData(BaseModel):
     SummaryShort: str
     SummaryLong: str
     MissionIcon: str
-    IsSpecial: bool
+    IsSpecial: bool = False
     RuleList: list[str]
     TaskList: list[TaskData]
 
 
 class MissionDataTeamSpecific(BaseModel):
     MissionID: str
-    Unlocked: bool
-    Visible: bool
-    Complete: bool
+    Unlocked: bool = True
+    Visible: bool = False
+    Complete: bool = False
     TaskList: list[TaskDataTeamSpecific]
 
 
