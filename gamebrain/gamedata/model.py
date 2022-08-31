@@ -98,6 +98,9 @@ class CommEventData(BaseModel):
     LocationID: str
 
 
+PowerMode = Literal["launchMode", "explorationMode", "standby"]
+
+
 class CurrentLocationGameplayDataTeamSpecific(BaseModel):
     currentLocation: str
     currentLocationScanned: bool = False
@@ -106,7 +109,7 @@ class CurrentLocationGameplayDataTeamSpecific(BaseModel):
     networkConnected: bool = False
     networkName: str
     firstContactComplete: bool = False
-    powerStatus: str
+    powerStatus: PowerMode = "launchMode"
     incomingTransmission: bool = False
     incomingTransmissionObject: CommEventData | None = None
 

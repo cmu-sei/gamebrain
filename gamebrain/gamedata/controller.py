@@ -12,6 +12,7 @@ from .model import (
     GenericResponse,
     LocationUnlockResponse,
     ScanResponse,
+    PowerMode,
 )
 
 Coordinates = constr(to_lower=True, regex=r"[0-9A-Za-z]{6}")
@@ -94,14 +95,17 @@ async def get_scanlocation(
         raise HTTPException(status_code=404, detail="Team not found.")
 
 
-@router.get("/GameData/PowerMode/{status}")
+@router.get("/GameData/PowerMode/{status}/{team_id}")
 async def get_powermode(
-    status: Literal["launchMode", "explorationMode", "standby"],
+    status: PowerMode,
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    try:
+        return await GameStateManager.set_power_mode(team_id, status)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
 
 
 @router.get("/GameData/CommEventCompleted")

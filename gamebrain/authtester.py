@@ -117,6 +117,10 @@ def main():
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/team1")
     pprint.pprint(resp.json())
 
+    print("Changing power mode (expect success)")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/PowerMode/explorationMode/team1")
+    pprint.pprint(resp.json())
+
 
 if __name__ == "__main__":
     main()

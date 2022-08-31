@@ -13,6 +13,7 @@ from .model import (
     TaskData,
     TaskDataFull,
     CommEventData,
+    PowerMode,
     CurrentLocationGameplayDataTeamSpecific,
     LocationUnlockResponse,
     GenericResponse,
@@ -185,7 +186,7 @@ class GameStateManager:
                 currentLocationSurroundings=location_data.Surroundings,
                 networkName=location_data.NetworkName,
                 firstContactComplete=location_team_specific.Visited,
-                powerStatus="launchMode",
+                powerStatus=team_data.currentStatus.powerStatus,
             )
             team_data.currentStatus = new_status
 
@@ -214,3 +215,16 @@ class GameStateManager:
                 EventWaiting=True,
                 CommID=first_contact_event,
             )
+
+    @classmethod
+    async def set_power_mode(
+        cls, team_id: TeamID, new_mode: PowerMode
+    ) -> GenericResponse:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            team_data.currentStatus.powerStatus = new_mode
+
+            return GenericResponse(success=True, message=new_mode)
