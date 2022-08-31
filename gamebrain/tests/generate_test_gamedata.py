@@ -6,7 +6,7 @@ from gamebrain.gamedata import model, cache
 class GenerationParameters(BaseModel):
     location_count: int = 3
     comm_event_count: int = 2
-    mission_count: int = 2
+    missions_per_location: int = 1
     team_count: int = 2
 
 
@@ -90,18 +90,18 @@ def construct_global_tasks(
 
 
 def construct_global_missions_comm_events_and_tasks(
-    location: cache.LocationID,
+    location_id: cache.LocationID,
     params: GenerationParameters,
 ) -> (cache.CommMap, cache.MissionMap, cache.TaskMap,):
     comm_events = {}
     missions = {}
     tasks = {}
 
-    for i in range(params.mission_count):
-        mission_id = f"mission{i+1}"
-        title = f"Mission {i+1}"
+    for i in range(params.missions_per_location):
+        mission_id = f"{location_id}mission{i + 1}"
+        title = f"Mission {i+1} for {location_id}"
 
-        location_comm_events = construct_global_comm_events(location, params)
+        location_comm_events = construct_global_comm_events(location_id, params)
         mission_tasks = construct_global_tasks(
             mission_id, list(location_comm_events.__root__.values())
         )
@@ -264,7 +264,7 @@ def construct_data(params: GenerationParameters = None) -> cache.GameDataCache:
     global_data = construct_global_data(params)
     team_data = construct_teams(
         "location1",
-        "mission1",
+        "location1mission1",
         global_data.location_map,
         global_data.mission_map,
         global_data.task_map,

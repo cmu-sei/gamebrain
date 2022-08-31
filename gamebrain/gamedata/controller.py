@@ -108,13 +108,16 @@ async def get_powermode(
         raise HTTPException(status_code=404, detail="Team not found.")
 
 
-@router.get("/GameData/CommEventCompleted")
+@router.get("/GameData/CommEventCompleted/{team_id}")
 async def get_commeventcompleted(
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    try:
+        return await GameStateManager.complete_comm_event(team_id)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
 
 
 @router.get("/GameData/InjectCommEvent/{commID}")

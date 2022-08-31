@@ -121,6 +121,10 @@ def main():
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/PowerMode/explorationMode/team1")
     pprint.pprint(resp.json())
 
+    print("Marking comm event complete (expect success)")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/team1")
+    pprint.pprint(resp.json())
+
 
 if __name__ == "__main__":
     main()

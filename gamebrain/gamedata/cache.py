@@ -228,3 +228,58 @@ class GameStateManager:
             team_data.currentStatus.powerStatus = new_mode
 
             return GenericResponse(success=True, message=new_mode)
+
+    @classmethod
+    async def complete_comm_event(cls, team_id: TeamID) -> GenericResponse:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            current_comm_event = team_data.currentStatus.incomingTransmissionObject
+            print(current_comm_event)
+            if not current_comm_event:
+                return GenericResponse(
+                    success=False,
+                    message="noIncomingComm",
+                )
+            associated_global_task = list(
+                filter(
+                    lambda t: t.CommID == current_comm_event.CommID,
+                    cls._cache.task_map.__root__.values(),
+                )
+            ).pop()
+
+            print(associated_global_task)
+
+            team_specific_task = None
+            for mission in team_data.missions:
+                if team_specific_task:
+                    break
+                for task in mission.TaskList:
+                    print(task)
+                    if task.TaskID == associated_global_task.TaskID:
+                        team_specific_task = task
+                        break
+            else:
+                return GenericResponse(success=False, message="noTaskFound")
+
+            if current_comm_event.FirstContact:
+                team_data.currentStatus.firstContactComplete = True
+                for location in team_data.locations:
+                    if current_comm_event.LocationID == location.LocationID:
+                        location.Visited = True
+                        break
+                else:
+                    raise GameDataIntegrityError(
+                        (
+                            "Team sent a First Contact Complete event",
+                            " but the associated location was not unlocked.",
+                        )
+                    )
+
+            team_specific_task.Complete = True
+            team_data.currentStatus.incomingTransmissionObject = None
+            team_data.currentStatus.incomingTransmission = False
+
+            return GenericResponse(success=True, message="incomingCommComplete")
