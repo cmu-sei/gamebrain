@@ -209,13 +209,6 @@ class GameStateManager:
 
                     team_data.missions.extend(team_specific_missions)
 
-                    # Now add the first contact event into the current status.
-                    team_data.currentStatus.incomingTransmissionObject = (
-                        cls._cache.comm_map.__root__[location_data.FirstContactEvent]
-                    )
-                    print(cls._cache.comm_map.__root__[location_data.FirstContactEvent])
-                    team_data.currentStatus.incomingTransmission = True
-
                     return response("success", location_id)
 
             return response("invalid")
@@ -299,30 +292,26 @@ class GameStateManager:
                 raise NonExistentTeam()
 
             current_comm_event = team_data.currentStatus.incomingTransmissionObject
-            print(current_comm_event)
             if not current_comm_event:
                 return GenericResponse(
                     success=False,
                     message="noIncomingComm",
                 )
-            associated_global_task = list(
+            associated_global_task = next(
                 filter(
                     lambda t: t.CommID == current_comm_event.CommID,
                     cls._cache.task_map.__root__.values(),
                 )
-            ).pop()
-
-            print(associated_global_task)
+            )
 
             team_specific_task = None
             for mission in team_data.missions:
-                if team_specific_task:
-                    break
                 for task in mission.TaskList:
-                    print(task)
                     if task.TaskID == associated_global_task.TaskID:
                         team_specific_task = task
                         break
+                if team_specific_task:
+                    break
             else:
                 return GenericResponse(success=False, message="noTaskFound")
 
@@ -333,11 +322,9 @@ class GameStateManager:
                         location.Visited = True
                         break
                 else:
-                    raise GameDataIntegrityError(
-                        (
-                            "Team sent a First Contact Complete event",
-                            " but the associated location was not unlocked.",
-                        )
+                    return GenericResponse(
+                        success=False,
+                        message="locationNotUnlocked",
                     )
 
             team_specific_task.Complete = True

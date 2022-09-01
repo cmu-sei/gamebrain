@@ -113,10 +113,6 @@ def main():
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location2/team1")
     pprint.pprint(resp.json())
 
-    print("Getting GameData")
-    resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
-    pprint.pprint(resp.json())
-
     print("Scan new location (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/team1")
     pprint.pprint(resp.json())
@@ -127,6 +123,10 @@ def main():
 
     print("Marking comm event complete (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/team1")
+    pprint.pprint(resp.json())
+
+    print("Getting GameData")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
     pprint.pprint(resp.json())
 
 
