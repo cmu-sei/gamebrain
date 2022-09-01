@@ -9,8 +9,10 @@ from .model import (
     LocationDataTeamSpecific,
     LocationDataFull,
     MissionData,
+    MissionDataTeamSpecific,
     MissionDataFull,
     TaskData,
+    TaskDataTeamSpecific,
     TaskDataFull,
     CommEventData,
     PowerMode,
@@ -154,6 +156,66 @@ class GameStateManager:
                         LocationID=location_id,
                     )
                     team_data.locations.append(newly_unlocked)
+
+                    # Each Comm Event has a LocationID, so gather the ones associated with the new location.
+                    unlocked_comm_event_ids = set(
+                        map(
+                            lambda c: c.CommID,
+                            (
+                                filter(
+                                    lambda c: c.LocationID == location_id,
+                                    cls._cache.comm_map.__root__.values(),
+                                )
+                            ),
+                        )
+                    )
+                    # Next gather the tasks that are associated with a Comm Event in the previous set.
+                    unlocked_task_ids = set(
+                        map(
+                            lambda t: t.TaskID,
+                            filter(
+                                lambda t: t.CommID in unlocked_comm_event_ids,
+                                cls._cache.task_map.__root__.values(),
+                            ),
+                        )
+                    )
+                    # Finally gather the missions associated with the previous set of tasks.
+                    unlocked_mission_ids = set(
+                        map(
+                            lambda m: m.MissionID,
+                            filter(
+                                lambda m: set(map(lambda t: t.TaskID, m.TaskList))
+                                & unlocked_task_ids,
+                                cls._cache.mission_map.__root__.values(),
+                            ),
+                        )
+                    )
+
+                    # Now use the gathered sets to actually update the cache.
+                    team_specific_missions = [
+                        MissionDataTeamSpecific(
+                            MissionID=mission_id,
+                            TaskList=[
+                                TaskDataTeamSpecific(
+                                    TaskID=task_id,
+                                )
+                                for task_id in unlocked_task_ids
+                                if mission_id
+                                == cls._cache.task_map.__root__[task_id].MissionID
+                            ],
+                        )
+                        for mission_id in unlocked_mission_ids
+                    ]
+
+                    team_data.missions.extend(team_specific_missions)
+
+                    # Now add the first contact event into the current status.
+                    team_data.currentStatus.incomingTransmissionObject = (
+                        cls._cache.comm_map.__root__[location_data.FirstContactEvent]
+                    )
+                    print(cls._cache.comm_map.__root__[location_data.FirstContactEvent])
+                    team_data.currentStatus.incomingTransmission = True
+
                     return response("success", location_id)
 
             return response("invalid")

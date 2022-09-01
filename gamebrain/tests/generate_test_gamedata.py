@@ -69,9 +69,8 @@ def construct_global_tasks(
 ) -> cache.TaskMap:
     tasks = {}
 
-    for i, event in enumerate(comm_events):
-        task_id = f"{mission_id}task{i+1}"
-        comm_id = event.CommID
+    for event in comm_events:
+        task_id = f"{mission_id}task_{event.CommID}"
 
         task_data = model.TaskData(
             TaskID=task_id,
@@ -81,7 +80,7 @@ def construct_global_tasks(
             InfoText=f"{mission_id} {task_id} info text",
             VideoPresent=True,
             VideoURL=f"https://example.com/{mission_id}/{task_id}",
-            CommID=comm_id,
+            CommID=event.CommID,
         )
 
         tasks[task_id] = task_data
