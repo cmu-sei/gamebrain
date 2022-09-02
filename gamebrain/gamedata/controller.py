@@ -13,6 +13,7 @@ from .model import (
     LocationUnlockResponse,
     ScanResponse,
     PowerMode,
+    CodexPowerStatus,
 )
 
 Coordinates = constr(to_lower=True, regex=r"[0-9A-Za-z]{6}")
@@ -131,17 +132,23 @@ async def get_injectcommevent(
 
 @router.get("/GameData/CodexStationPowerOn")
 async def get_codexstationpoweron(
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    try:
+        return await GameStateManager.codex_power(team_id, CodexPowerStatus.On)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
 
 
 @router.get("/GameData/CodexStationPowerOff")
 async def get_codexstationpoweroff(
+    team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    try:
+        return await GameStateManager.codex_power(team_id, CodexPowerStatus.Off)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")

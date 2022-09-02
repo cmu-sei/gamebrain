@@ -2,6 +2,7 @@ import asyncio
 
 from pydantic import BaseModel
 
+from ..clients.topomojo import change_vm_power, get_vm_desc
 from .model import (
     GameDataTeamSpecific,
     GameDataResponse,
@@ -16,6 +17,7 @@ from .model import (
     TaskDataFull,
     CommEventData,
     PowerMode,
+    CodexPowerStatus,
     CurrentLocationGameplayDataTeamSpecific,
     LocationUnlockResponse,
     GenericResponse,
@@ -332,3 +334,41 @@ class GameStateManager:
             team_data.currentStatus.incomingTransmission = False
 
             return GenericResponse(success=True, message="incomingCommComplete")
+
+    @staticmethod
+    async def check_vm_power_status(vm_id: str) -> CodexPowerStatus | None:
+        desc = await get_vm_desc(vm_id)
+        if not desc or "state" not in desc:
+            return
+
+        return CodexPowerStatus(desc["state"])
+
+    @staticmethod
+    async def change_vm_power_status(vm_id: str, new_setting: CodexPowerStatus):
+        # str to shut up linter
+        await change_vm_power(vm_id, str(new_setting.value))
+
+    @classmethod
+    async def codex_power(
+        cls, team_id: TeamID, new_setting: CodexPowerStatus
+    ) -> GenericResponse:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            vm_id = ""
+            current_power = await cls.check_vm_power_status(vm_id)
+            if current_power == new_setting:
+                return GenericResponse(
+                    success=False,
+                    message=f"codexAlready{new_setting.value.capitalize()}",
+                )
+            elif current_power is None:
+                return GenericResponse(
+                    success=False,
+                    message=f"TopoMojoAPIFailure",
+                )
+
+            await cls.change_vm_power_status(vm_id, new_setting)
+            return GenericResponse(success=True, message=f"{vm_id}_{new_setting}")

@@ -1,3 +1,4 @@
+import enum
 from typing import Literal
 
 from pydantic import BaseModel, AnyUrl
@@ -73,8 +74,14 @@ class LocationDataFull(LocationData, LocationDataTeamSpecific):
     ...
 
 
+class CodexPowerStatus(enum.Enum):
+    On = "on"
+    Off = "off"
+
+
 class ShipDataTeamSpecific(BaseModel):
     CodexURL: AnyUrl
+    CodexStationPower: CodexPowerStatus = CodexPowerStatus.Off
     Workstation1URL: AnyUrl
     Workstation2URL: AnyUrl
     Workstation3URL: AnyUrl
