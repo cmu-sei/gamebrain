@@ -2,12 +2,6 @@ import asyncio
 
 from pydantic import BaseModel
 
-from ..clients.topomojo import (
-    change_vm_power,
-    get_vm_desc,
-    change_vm_net,
-    get_gamespace,
-)
 from ..db import get_team
 from .model import (
     GameDataTeamSpecific,
@@ -81,6 +75,22 @@ class GameStateManager:
 
     _antenna_vm_name: str
 
+    change_vm_power = None
+    get_vm_desc = None
+    change_vm_net = None
+    get_gamespace = None
+
+    @classmethod
+    def late_import(cls):
+        """
+        Used to avoid a circular import between the clients package, config.py, and this module.
+        """
+        from ..clients.topomojo import change_vm_power, get_vm_desc, change_vm_net, get_gamespace
+        cls.change_vm_power = change_vm_power
+        cls.get_vm_desc = get_vm_desc
+        cls.change_vm_net = change_vm_net
+        cls.get_gamespace = get_gamespace
+
     @classmethod
     async def save_data(cls):
         if cls._test_mode:
@@ -140,6 +150,7 @@ class GameStateManager:
     @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
+            cls.late_import()
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 raise NonExistentTeam()
@@ -157,7 +168,7 @@ class GameStateManager:
                     success=False, message=f"No Gamespace for Team {team_id}"
                 )
 
-            vms = (await get_gamespace(gamespace_id)).get("vms")
+            vms = (await cls.get_gamespace(gamespace_id)).get("vms")
             if not vms:
                 return GenericResponse(
                     success=False,
@@ -179,7 +190,7 @@ class GameStateManager:
             ]
             new_net = location_data.NetworkName
 
-            await change_vm_net(vm_id, new_net)
+            await cls.change_vm_net(vm_id, new_net)
 
             team_data.currentStatus.antennaExtended = True
             team_data.currentStatus.networkConnected = True
@@ -407,24 +418,25 @@ class GameStateManager:
 
             return GenericResponse(success=True, message="incomingCommComplete")
 
-    @staticmethod
-    async def check_vm_power_status(vm_id: str) -> CodexPowerStatus | None:
-        desc = await get_vm_desc(vm_id)
+    @classmethod
+    async def check_vm_power_status(cls, vm_id: str) -> CodexPowerStatus | None:
+        desc = await cls.get_vm_desc(vm_id)
         if not desc or "state" not in desc:
             return
 
         return CodexPowerStatus(desc["state"])
 
-    @staticmethod
-    async def change_vm_power_status(vm_id: str, new_setting: CodexPowerStatus):
+    @classmethod
+    async def change_vm_power_status(cls, vm_id: str, new_setting: CodexPowerStatus):
         # str to shut up linter
-        await change_vm_power(vm_id, str(new_setting.value))
+        await cls.change_vm_power(vm_id, str(new_setting.value))
 
     @classmethod
     async def codex_power(
         cls, team_id: TeamID, new_setting: CodexPowerStatus
     ) -> GenericResponse:
         async with cls._lock:
+            cls.late_import()
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 raise NonExistentTeam()
