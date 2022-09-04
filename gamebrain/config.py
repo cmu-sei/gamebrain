@@ -117,7 +117,6 @@ class Global:
     jwks = None
     redis = None
 
-    task_queue = None
     updater_task = None
 
     @classmethod
@@ -149,12 +148,12 @@ class Global:
     @classmethod
     async def _updater_task(cls):
         while True:
-            update = await cls.task_queue.get()
-            # TODO: Do the actual update
+            await asyncio.sleep(10)
+            snapshot = await GameStateManager.snapshot_data()
+            await db.store_cache_snapshot(snapshot)
 
     @classmethod
     def _init_updater_task(cls):
-        cls.task_queue = asyncio.Queue()
         cls.updater_task = asyncio.create_task(cls._updater_task())
 
     @classmethod

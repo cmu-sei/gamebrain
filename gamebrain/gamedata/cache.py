@@ -31,6 +31,8 @@ MissionID = str
 TaskID = str
 TeamID = str
 
+JsonStr = str
+
 
 class NonExistentTeam(Exception):
     ...
@@ -92,9 +94,9 @@ class GameStateManager:
         cls.get_gamespace = get_gamespace
 
     @classmethod
-    async def save_data(cls):
-        if cls._test_mode:
-            return
+    async def snapshot_data(cls) -> JsonStr:
+        async with cls._lock:
+            return cls._cache.json()
 
     @classmethod
     async def init(cls, antenna_vm_name: str):
