@@ -36,3 +36,4 @@ game:
         action_type: dispatch
         vm_name: ubuntu
         command: touch /home/tmtest/it-worked
+  ship_network_vm_name: "placeholder"

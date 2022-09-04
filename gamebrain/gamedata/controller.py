@@ -74,6 +74,10 @@ async def get_extendantenna(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    try:
+        return await GameStateManager.extend_antenna(team_id)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
 
 
 @router.get("/GameData/RetractAntenna/{team_id}")
@@ -82,6 +86,10 @@ async def get_retractantenna(
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    try:
+        return await GameStateManager.retract_antenna(team_id)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
 
 
 @router.get("/GameData/ScanLocation/{team_id}")

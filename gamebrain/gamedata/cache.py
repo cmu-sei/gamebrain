@@ -2,7 +2,13 @@ import asyncio
 
 from pydantic import BaseModel
 
-from ..clients.topomojo import change_vm_power, get_vm_desc
+from ..clients.topomojo import (
+    change_vm_power,
+    get_vm_desc,
+    change_vm_net,
+    get_gamespace,
+)
+from ..db import get_team
 from .model import (
     GameDataTeamSpecific,
     GameDataResponse,
@@ -73,21 +79,26 @@ class GameStateManager:
 
     _cache: GameDataCache
 
+    _antenna_vm_name: str
+
     @classmethod
     async def save_data(cls):
         if cls._test_mode:
             return
 
-    async def extend_antenna(self, team_id: TeamID):
-        ...
+    @classmethod
+    async def init(cls, antenna_vm_name: str):
+        cls._antenna_vm_name = antenna_vm_name
 
     @classmethod
-    async def test_init(cls):
+    async def test_init(cls, antenna_vm_name: str):
         cls._test_mode = True
 
         from ..tests.generate_test_gamedata import construct_data
 
         cls._cache = construct_data()
+
+        await cls.init(antenna_vm_name)
 
     @classmethod
     async def get_team_data(cls, team_id: TeamID) -> GameDataResponse | None:
@@ -125,6 +136,67 @@ class GameStateManager:
             )
 
             return full_team_data
+
+    @classmethod
+    async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            if not team_data.currentStatus.firstContactComplete:
+                return GenericResponse(
+                    success=False, message="First Contact Event Incomplete"
+                )
+
+            team_db_data = await get_team(team_id)
+            gamespace_id = team_db_data.get("gamespace_id")
+
+            if not gamespace_id:
+                return GenericResponse(
+                    success=False, message=f"No Gamespace for Team {team_id}"
+                )
+
+            vms = (await get_gamespace(gamespace_id)).get("vms")
+            if not vms:
+                return GenericResponse(
+                    success=False,
+                    message=f"No VMs registered for Gamespace {gamespace_id}",
+                )
+
+            for vm in vms:
+                if vm["name"] == cls._antenna_vm_name:
+                    vm_id = vm["id"]
+                    break
+            else:
+                return GenericResponse(
+                    success=False,
+                    message=f"Antenna VM not found in Gamespace {gamespace_id}",
+                )
+
+            location_data = cls._cache.location_map.__root__[
+                team_data.currentStatus.currentLocation
+            ]
+            new_net = location_data.NetworkName
+
+            await change_vm_net(vm_id, new_net)
+
+            team_data.currentStatus.antennaExtended = True
+            team_data.currentStatus.networkConnected = True
+            team_data.currentStatus.networkName = new_net
+
+    @classmethod
+    async def retract_antenna(cls, team_id: TeamID) -> GenericResponse:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            team_data.currentStatus.antennaExtended = False
+            team_data.currentStatus.networkConnected = False
+            team_data.currentStatus.networkName = ""
+
+            return GenericResponse(success=True, message="antennaRetracted")
 
     @classmethod
     async def unlock_location(
