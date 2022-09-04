@@ -1,5 +1,3 @@
-from typing import Literal
-
 from fastapi import APIRouter, Security, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import constr
