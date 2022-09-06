@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from pydantic import BaseModel
 
@@ -71,8 +72,6 @@ class GameDataCache(GlobalData):
 
 class GameStateManager:
     _lock = asyncio.Lock()
-    _test_mode = False
-
     _cache: GameDataCache
 
     _antenna_vm_name: str
@@ -99,18 +98,20 @@ class GameStateManager:
             return cls._cache.json()
 
     @classmethod
-    async def init(cls, antenna_vm_name: str):
+    async def init(cls, antenna_vm_name: str, test_mode: bool = False, initial_state: JsonStr = ""):
+        if test_mode:
+            from ..tests.generate_test_gamedata import construct_data
+            cls._cache = construct_data()
+        elif initial_state:
+            cache = json.loads(initial_state)
+            cls._cache = GameDataCache(**cache)
+
         cls._antenna_vm_name = antenna_vm_name
 
     @classmethod
-    async def test_init(cls, antenna_vm_name: str):
-        cls._test_mode = True
-
-        from ..tests.generate_test_gamedata import construct_data
-
-        cls._cache = construct_data()
-
-        await cls.init(antenna_vm_name)
+    async def new_team(cls, team_id: TeamID):
+        async with cls._lock:
+            cls._cache.team_map.__root__[team_id] = GameDataTeamSpecific
 
     @classmethod
     async def get_team_data(cls, team_id: TeamID) -> GameDataResponse | None:

@@ -72,7 +72,8 @@ class GameSettingsModel(BaseModel):
     ship_workspace_id: str
     event_actions: list[EventActionsSettingsModel]
     gamespace_duration_minutes: Optional[int] = 60
-    ship_network_vm_name: str = ""
+    ship_network_vm_name: Optional[str] = ""
+    gamestate_test_mode: Optional[bool] = False
 
 
 class SettingsModel(BaseModel):
@@ -126,8 +127,7 @@ class Global:
         cls._init_jwks()
         cls._init_redis()
         cls._init_updater_task()
-        # TODO: Implement a check for test vs normal operation.
-        await GameStateManager.test_init(settings.game.ship_network_vm_name)
+        await GameStateManager.init(settings.game.ship_network_vm_name, test_mode=settings.game.gamestate_test_mode)
 
     @classmethod
     def _init_jwks(cls):
