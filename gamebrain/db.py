@@ -4,7 +4,18 @@ from ipaddress import IPv4Address, AddressValueError
 from typing import Dict, List, Optional
 
 from dateutil.parser import isoparse
-from sqlalchemy import Column, Integer, BigInteger, String, Boolean, JSON, ForeignKey, TIMESTAMP, inspect, select
+from sqlalchemy import (
+    Column,
+    Integer,
+    BigInteger,
+    String,
+    Boolean,
+    JSON,
+    ForeignKey,
+    TIMESTAMP,
+    inspect,
+    select,
+)
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -74,7 +85,9 @@ class DBManager:
         for column in inspect(obj).mapper.column_attrs.keys():
             result[column] = getattr(obj, column)
         for relation in inspect(obj).mapper.relationships.keys():
-            result[relation] = [cls._orm_obj_to_dict(item) for item in getattr(obj, relation)]
+            result[relation] = [
+                cls._orm_obj_to_dict(item) for item in getattr(obj, relation)
+            ]
         return result
 
     @classmethod
@@ -83,7 +96,9 @@ class DBManager:
             return
         cls.engine = create_async_engine(connection_string, echo=echo, future=True)
         # I don't know if expire_on_commit is necessary here, but the SQLAlchemy docs used it.
-        cls.session_factory = sessionmaker(cls.engine, expire_on_commit=False, class_=AsyncSession)
+        cls.session_factory = sessionmaker(
+            cls.engine, expire_on_commit=False, class_=AsyncSession
+        )
         async with cls.engine.begin() as connection:
             if drop_first:
                 await connection.run_sync(cls.orm_base.metadata.drop_all)
@@ -106,7 +121,9 @@ class DBManager:
 
 async def store_event(team_id: str, message: str):
     received_time = datetime.now(timezone.utc)
-    event = [DBManager.Event(team_id=team_id, message=message, received_time=received_time)]
+    event = [
+        DBManager.Event(team_id=team_id, message=message, received_time=received_time)
+    ]
     await DBManager.merge_rows(event)
     return received_time
 
@@ -122,15 +139,22 @@ async def store_virtual_machines(team_id: str, vms: List[Dict]):
     """
     vms: List of {"Id": str, "Url": str, "Name": str} dicts
     """
-    vm_data = [DBManager.VirtualMachine(id=vm["Id"], team_id=team_id, url=vm["Url"], name=vm["Name"]) for vm in vms]
+    vm_data = [
+        DBManager.VirtualMachine(
+            id=vm["Id"], team_id=team_id, url=vm["Url"], name=vm["Name"]
+        )
+        for vm in vms
+    ]
     await DBManager.merge_rows(vm_data)
 
 
-async def store_team(team_id: str,
-                     gamespace_id: Optional[str] = None,
-                     gamespace_expiration: Optional[str] = None,
-                     headless_ip: Optional[str] = None,
-                     team_name: Optional[str] = None):
+async def store_team(
+    team_id: str,
+    gamespace_id: Optional[str] = None,
+    gamespace_expiration: Optional[str] = None,
+    headless_ip: Optional[str] = None,
+    team_name: Optional[str] = None,
+):
     """
     gamespace_id: Maximum 36 character string.
     gamespace_expiration: https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse
@@ -149,19 +173,24 @@ async def store_team(team_id: str,
         kwargs["headless_ip"] = address
     if team_name:
         kwargs["team_name"] = team_name
-    team_data = DBManager.TeamData(id=team_id,
-                                   **kwargs)
+    team_data = DBManager.TeamData(id=team_id, **kwargs)
     await DBManager.merge_rows([team_data])
 
 
 async def expire_team_gamespace(team_id: str):
-    team_data = DBManager.TeamData(id=team_id, gamespace_id=None, gamespace_expiration=None)
+    team_data = DBManager.TeamData(
+        id=team_id, gamespace_id=None, gamespace_expiration=None
+    )
     await DBManager.merge_rows([team_data])
 
 
 async def get_team(team_id: str) -> Dict:
     try:
-        return (await DBManager.get_rows(DBManager.TeamData, DBManager.TeamData.id == team_id)).pop()
+        return (
+            await DBManager.get_rows(
+                DBManager.TeamData, DBManager.TeamData.id == team_id
+            )
+        ).pop()
     except IndexError:
         return {}
 
@@ -172,13 +201,19 @@ async def get_teams() -> List[Dict]:
 
 async def get_vm(vm_id: str) -> Dict:
     try:
-        return (await DBManager.get_rows(DBManager.VirtualMachine, DBManager.VirtualMachine.id == vm_id)).pop()
+        return (
+            await DBManager.get_rows(
+                DBManager.VirtualMachine, DBManager.VirtualMachine.id == vm_id
+            )
+        ).pop()
     except IndexError:
         return {}
 
 
 async def store_challenge_secrets(team_id: str, secrets: List[str]):
-    objects = [DBManager.ChallengeSecret(id=secret, team_id=team_id) for secret in secrets]
+    objects = [
+        DBManager.ChallengeSecret(id=secret, team_id=team_id) for secret in secrets
+    ]
     await DBManager.merge_rows(objects)
 
 
@@ -186,7 +221,10 @@ async def store_media_assets(asset_map: Dict):
     """
     asset_map: shortname: url key-value pairs
     """
-    objects = [DBManager.MediaAsset(id=short_name, url=url) for short_name, url in asset_map.items()]
+    objects = [
+        DBManager.MediaAsset(id=short_name, url=url)
+        for short_name, url in asset_map.items()
+    ]
     await DBManager.merge_rows(objects)
 
 
@@ -200,6 +238,10 @@ async def store_cache_snapshot(cache_snapshot: str):
 
 async def get_cache_snapshot():
     try:
-        return (await DBManager.get_rows(DBManager.CacheSnapshot, DBManager.CacheSnapshot.id == 0)).pop()
+        return (
+            await DBManager.get_rows(
+                DBManager.CacheSnapshot, DBManager.CacheSnapshot.id == 0
+            )
+        ).pop()
     except IndexError:
         return None

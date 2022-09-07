@@ -37,31 +37,38 @@ def main():
 
     session.fetch_token(TOKEN_URL)
 
-    resp = session.put(f"{GAMEBRAIN_URL}/admin/headlessip/{TEST_TEAM_1}",
-                       params={"headless_ip": "10.10.10.10"})
+    resp = session.put(
+        f"{GAMEBRAIN_URL}/admin/headlessip/{TEST_TEAM_1}",
+        params={"headless_ip": "10.10.10.10"},
+    )
     print(resp.json())
 
     # resp = session.put(f"{GAMEBRAIN_URL}/admin/headlessip/{TEST_TEAM_2}",
     #                    params={"headless_ip": "10.10.10.11"})
     # print(resp.json())
 
-    resp = session.post(f"{GAMEBRAIN_URL}/admin/secrets/{TEST_TEAM_1}",
-                        json=["secret_1", "secret_2", "secret_3"])
+    resp = session.post(
+        f"{GAMEBRAIN_URL}/admin/secrets/{TEST_TEAM_1}",
+        json=["secret_1", "secret_2", "secret_3"],
+    )
     print(resp.json())
 
     # resp = session.post(f"{GAMEBRAIN_URL}/admin/secrets/{TEST_TEAM_2}",
     #                     json=["secret_4", "secret_5", "secret_6"])
     # print(resp.json())
 
-    resp = session.post(f"{GAMEBRAIN_URL}/admin/media",
-                        json={"video1": "example.com/video1",
-                              "video2": "example.com/video2"})
+    resp = session.post(
+        f"{GAMEBRAIN_URL}/admin/media",
+        json={"video1": "example.com/video1", "video2": "example.com/video2"},
+    )
     print(resp.json())
 
     session = OAuth2Client(GB_CLIENT_ID_PRIV, GB_CLIENT_SECRET_PRIV, verify=False)
     session.fetch_token(TOKEN_URL)
 
-    resp = session.get(f"{GAMEBRAIN_URL}/privileged/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0)
+    resp = session.get(
+        f"{GAMEBRAIN_URL}/privileged/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
+    )
     print(resp.json())
 
     # resp = session.get(f"{GAMEBRAIN_URL}/privileged/deploy/{GAME_ID}/{TEST_TEAM_2}", timeout=60.0)
@@ -70,8 +77,10 @@ def main():
     # Give the target VM some time to come up and start the agent service.
     # time.sleep(60)
 
-    resp = session.post(f"{GAMEBRAIN_URL}/privileged/event/{TEST_TEAM_1}",
-                        params={"event_message": "Mission 2"})
+    resp = session.post(
+        f"{GAMEBRAIN_URL}/privileged/event/{TEST_TEAM_1}",
+        params={"event_message": "Mission 2"},
+    )
     print(resp.json())
 
     session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)

@@ -88,11 +88,12 @@ class SettingsModel(BaseModel):
     redis: Optional[RedisSettingsModel] = RedisSettingsModel()
     game: GameSettingsModel
 
-    @validator('ca_cert_path')
+    @validator("ca_cert_path")
     def path_exists(cls, v):
         if not os.path.isfile(v):
             raise ValueError(
-                f"ca_cert_path: {v} does not exist or is not a file. Check the path and try again.")
+                f"ca_cert_path: {v} does not exist or is not a file. Check the path and try again."
+            )
         return v
 
 
@@ -128,15 +129,22 @@ class Global:
         settings = get_settings()
         if settings.db.drop_app_tables:
             logging.info("db.drop_app_tables setting is ON, dropping tables.")
-        await db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
+        await db.DBManager.init_db(
+            settings.db.connection_string,
+            settings.db.drop_app_tables,
+            settings.db.echo_sql,
+        )
         cls._init_jwks()
         cls._init_redis()
         cls._init_updater_task()
 
         if settings.game.gamestate_test_mode:
             from .tests.generate_test_gamedata import construct_data
+
             initial_cache = construct_data()
-            logging.info("game.gamestate_test_mode setting is ON, constructing initial data from test constructor.")
+            logging.info(
+                "game.gamestate_test_mode setting is ON, constructing initial data from test constructor."
+            )
         elif stored_cache := await db.get_cache_snapshot():
             initial_cache = GameDataCache(**stored_cache)
             logging.info("Initializing game data cache from saved snapshot.")
@@ -151,7 +159,7 @@ class Global:
         settings = get_settings()
         cls.jwks = httpx.get(
             url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
-            verify=settings.ca_cert_path
+            verify=settings.ca_cert_path,
         ).json()
 
     @classmethod
@@ -176,4 +184,3 @@ class Global:
     @classmethod
     def get_jwks(cls):
         return cls.jwks
-
