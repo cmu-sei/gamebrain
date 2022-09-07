@@ -16,9 +16,6 @@ Settings.init_settings(Global.settings_path)
 APP = FastAPI(docs_url="/api", root_path=get_settings().app_root_prefix)
 APP.include_router(gd_router)
 
-for route in APP.routes:
-    print(route.path)
-
 
 def format_message(event_message, event_time: Optional[datetime] = None):
     if not event_time:
