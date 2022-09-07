@@ -68,6 +68,7 @@ class GlobalData(BaseModel):
 
 class GameDataCache(GlobalData):
     team_map: TeamMap
+    team_initial_state: GameDataTeamSpecific
 
 
 class GameStateManager:
@@ -86,7 +87,13 @@ class GameStateManager:
         """
         Used to avoid a circular import between the clients package, config.py, and this module.
         """
-        from ..clients.topomojo import change_vm_power, get_vm_desc, change_vm_net, get_gamespace
+        from ..clients.topomojo import (
+            change_vm_power,
+            get_vm_desc,
+            change_vm_net,
+            get_gamespace,
+        )
+
         cls.change_vm_power = change_vm_power
         cls.get_vm_desc = get_vm_desc
         cls.change_vm_net = change_vm_net
@@ -98,20 +105,19 @@ class GameStateManager:
             return cls._cache.json()
 
     @classmethod
-    async def init(cls, antenna_vm_name: str, test_mode: bool = False, initial_state: JsonStr = ""):
-        if test_mode:
-            from ..tests.generate_test_gamedata import construct_data
-            cls._cache = construct_data()
-        elif initial_state:
-            cache = json.loads(initial_state)
-            cls._cache = GameDataCache(**cache)
-
-        cls._antenna_vm_name = antenna_vm_name
+    async def init(cls, antenna_vm_name: str, initial_state: GameDataCache):
+        async with cls._lock:
+            cls._antenna_vm_name = antenna_vm_name
+            cls._cache = initial_state
 
     @classmethod
     async def new_team(cls, team_id: TeamID):
         async with cls._lock:
-            cls._cache.team_map.__root__[team_id] = GameDataTeamSpecific
+            new_team_state = GameDataTeamSpecific(
+                **cls._cache.team_initial_state.dict()
+            )
+            new_team_state.session.TeamInfoName = team_id
+            cls._cache.team_map.__root__[team_id] = new_team_state
 
     @classmethod
     async def get_team_data(cls, team_id: TeamID) -> GameDataResponse | None:

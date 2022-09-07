@@ -90,8 +90,8 @@ class ShipDataTeamSpecific(BaseModel):
 
 
 class SessionDataTeamSpecific(BaseModel):
-    TeamInfoName: str
-    TeamCodexCount: int
+    TeamInfoName: str = None
+    TeamCodexCount: int = 0
     JumpCutsceneURL: AnyUrl
 
 
@@ -114,7 +114,7 @@ class CurrentLocationGameplayDataTeamSpecific(BaseModel):
     currentLocationSurroundings: str
     antennaExtended: bool = False
     networkConnected: bool = False
-    networkName: str
+    networkName: str = ""
     firstContactComplete: bool = False
     powerStatus: PowerMode = "launchMode"
     incomingTransmission: bool = False

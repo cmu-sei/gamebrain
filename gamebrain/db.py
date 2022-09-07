@@ -199,4 +199,7 @@ async def store_cache_snapshot(cache_snapshot: str):
 
 
 async def get_cache_snapshot():
-    return (await DBManager.get_rows(DBManager.CacheSnapshot, DBManager.CacheSnapshot.id == 0)).pop()
+    try:
+        return (await DBManager.get_rows(DBManager.CacheSnapshot, DBManager.CacheSnapshot.id == 0)).pop()
+    except IndexError:
+        return None

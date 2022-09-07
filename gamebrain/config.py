@@ -1,4 +1,6 @@
 import asyncio
+import json
+import logging
 import os.path
 from typing import Optional, Literal
 
@@ -7,7 +9,7 @@ import redis.asyncio as redis
 import yaml
 from pydantic import BaseModel, validator
 
-from .gamedata.cache import GameStateManager
+from .gamedata.cache import GameStateManager, GameDataCache
 import gamebrain.db as db
 from .util import url_path_join
 
@@ -122,12 +124,27 @@ class Global:
 
     @classmethod
     async def init(cls):
+        logging.basicConfig(level=logging.INFO)
         settings = get_settings()
+        if settings.db.drop_app_tables:
+            logging.info("db.drop_app_tables setting is ON, dropping tables.")
         await db.DBManager.init_db(settings.db.connection_string, settings.db.drop_app_tables, settings.db.echo_sql)
         cls._init_jwks()
         cls._init_redis()
         cls._init_updater_task()
-        await GameStateManager.init(settings.game.ship_network_vm_name, test_mode=settings.game.gamestate_test_mode)
+
+        if settings.game.gamestate_test_mode:
+            from .tests.generate_test_gamedata import construct_data
+            initial_cache = construct_data()
+            logging.info("game.gamestate_test_mode setting is ON, constructing initial data from test constructor.")
+        elif stored_cache := await db.get_cache_snapshot():
+            initial_cache = GameDataCache(**stored_cache)
+            logging.info("Initializing game data cache from saved snapshot.")
+        else:
+            with open("initial_state.json") as f:
+                initial_cache = GameDataCache(**json.load(f))
+            logging.info("Initializing game data cache from initial_state.json.")
+        await GameStateManager.init(settings.game.ship_network_vm_name, initial_cache)
 
     @classmethod
     def _init_jwks(cls):

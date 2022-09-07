@@ -270,4 +270,15 @@ def construct_data(params: GenerationParameters = None) -> cache.GameDataCache:
         params,
     )
 
-    return cache.GameDataCache(**global_data.dict(), team_map=team_data)
+    return cache.GameDataCache(
+        **global_data.dict(),
+        team_map=team_data,
+        team_initial_state=construct_team_specific_data(
+            "initial_state",
+            "location1",
+            "location1mission1",
+            global_data.location_map,
+            global_data.mission_map,
+            global_data.task_map,
+        ),
+    )

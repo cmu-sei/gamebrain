@@ -37,3 +37,4 @@ game:
         vm_name: ubuntu
         command: touch /home/tmtest/it-worked
   ship_network_vm_name: "placeholder"
+  gamestate_test_mode: true
