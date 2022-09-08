@@ -120,6 +120,11 @@ class GameStateManager:
             cls._cache.team_map.__root__[team_id] = new_team_state
 
     @classmethod
+    async def check_team_exists(cls, team_id: TeamID) -> bool:
+        async with cls._lock:
+            return team_id in cls._cache.team_map.__root__
+
+    @classmethod
     async def get_team_data(cls, team_id: TeamID) -> GameDataResponse | None:
         async with cls._lock:
             team_data = cls._cache.team_map.__root__.get(team_id)

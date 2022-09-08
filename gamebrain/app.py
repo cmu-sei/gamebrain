@@ -80,7 +80,8 @@ async def deploy(
     # Originally it just checked if not team_data, but because headless clients are going to be manually added ahead
     # of the start of the round, team_data will be partially populated.
     if not team_data.get("gamespace_id"):
-        await GameStateManager.new_team(team_id)
+        if not GameStateManager.check_team_exists(team_id):
+            await GameStateManager.new_team(team_id)
         team = await gameboard.get_team(team_id)
 
         specs = (await gameboard.get_game_specs(game_id)).pop()
