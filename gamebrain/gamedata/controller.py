@@ -136,7 +136,7 @@ async def get_injectcommevent(
     )
 
 
-@router.get("/GameData/CodexStationPowerOn")
+@router.get("/GameData/CodexStationPowerOn/{team_id}")
 async def get_codexstationpoweron(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
@@ -148,7 +148,7 @@ async def get_codexstationpoweron(
         raise HTTPException(status_code=404, detail="Team not found.")
 
 
-@router.get("/GameData/CodexStationPowerOff")
+@router.get("/GameData/CodexStationPowerOff/{team_id}")
 async def get_codexstationpoweroff(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
