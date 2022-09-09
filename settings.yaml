@@ -38,3 +38,4 @@ game:
         command: touch /home/tmtest/it-worked
   ship_network_vm_name: "placeholder"
   gamestate_test_mode: true
+  game_id: f63c8e41fd994e16bad08075dd2a666c

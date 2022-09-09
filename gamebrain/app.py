@@ -59,6 +59,19 @@ async def get_headless_ip(
     return team_data.get("headless_ip")
 
 
+@APP.get("/privileged/get_team/{user_id}")
+async def get_team_from_user(
+    user_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+):
+    check_jwt(
+        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv
+    )
+
+    player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
+
+    return {"teamID": player["teamId"]}
+
+
 @APP.get("/privileged/deploy/{game_id}/{team_id}")
 async def deploy(
     game_id: str,

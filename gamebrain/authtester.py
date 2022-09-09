@@ -21,6 +21,7 @@ TOKEN_URL = "https://foundry.local/identity/connect/token"
 CA_CERT_PATH = "/usr/local/share/ca-certificates/foundry-appliance-root-ca.crt"
 
 TEST_USER_1 = "testplayer1@foundry.local"
+TEST_USER_1_ID = "0ee37ac5-7a64-4dca-9049-8a64f370d241"
 TEST_TEAM_1 = "a538cd94ef92416bbb547ee924056edb"
 TEST_USER_2 = "testplayer4@foundry.local"
 TEST_TEAM_2 = "30d5396dcb324a43a85368054622d09b"
@@ -68,6 +69,11 @@ def main():
 
     resp = session.get(
         f"{GAMEBRAIN_URL}/privileged/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
+    )
+    print(resp.json())
+
+    resp = session.get(
+        f"{GAMEBRAIN_URL}/privileged/get_team/{TEST_USER_1_ID}", timeout=60.0
     )
     print(resp.json())
 

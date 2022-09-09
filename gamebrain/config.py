@@ -76,6 +76,7 @@ class GameSettingsModel(BaseModel):
     gamespace_duration_minutes: Optional[int] = 60
     ship_network_vm_name: Optional[str] = ""
     gamestate_test_mode: Optional[bool] = False
+    game_id: str
 
 
 class SettingsModel(BaseModel):
