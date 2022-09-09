@@ -96,6 +96,10 @@ def main():
 
     # print(resp.json())
 
+    print("Getting initial GameData")
+    resp = session.get(f"{GAMEBRAIN_URL}/GameData")
+    pprint.pprint(resp.json())
+
     print("Getting GameData")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
     pprint.pprint(resp.json())

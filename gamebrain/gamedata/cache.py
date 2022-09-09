@@ -125,9 +125,12 @@ class GameStateManager:
             return team_id in cls._cache.team_map.__root__
 
     @classmethod
-    async def get_team_data(cls, team_id: TeamID) -> GameDataResponse | None:
+    async def get_team_data(cls, team_id: TeamID | None) -> GameDataResponse | None:
         async with cls._lock:
-            team_data = cls._cache.team_map.__root__.get(team_id)
+            if team_id is None:
+                team_data = cls._cache.team_initial_state
+            else:
+                team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 raise NonExistentTeam()
 

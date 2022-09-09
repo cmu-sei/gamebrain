@@ -19,9 +19,10 @@ Coordinates = constr(to_lower=True, regex=r"[0-9A-Za-z]{6}")
 router = APIRouter()
 
 
+@router.get("/GameData")
 @router.get("/GameData/{team_id}")
 async def get_gamedata(
-    team_id: TeamID,
+    team_id: TeamID | None = None,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GameDataResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
