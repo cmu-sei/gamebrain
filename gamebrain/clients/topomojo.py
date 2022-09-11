@@ -1,18 +1,75 @@
 import datetime
+from enum import Enum
 import json as jsonlib
 from typing import Any, Dict, List, Optional
 
-from .common import get_oauth2_session, _service_get
+from httpx import AsyncClient
+
 from ..config import get_settings
-from ..util import url_path_join
 
 
-async def _topomojo_get(endpoint: str, query_params: Optional[Dict] = None) -> Optional[Any]:
-    resp = await _service_get(get_settings().topomojo.base_api_url, endpoint, query_params)
+class HttpMethod(Enum):
+    GET = "GET"
+    PUT = "PUT"
+    POST = "POST"
+
+
+def _get_topomojo_client() -> AsyncClient:
+    settings = get_settings()
+    cert = settings.ca_cert_path
+    api_key = settings.topomojo.x_api_key
+
+    return AsyncClient(
+        base_url=settings.topomojo.base_api_url,
+        verify=cert,
+        headers={"X-API-KEY": api_key},
+    )
+
+
+async def _topomojo_request(
+    method: HttpMethod, endpoint: str, data: Optional[Any]
+) -> Optional[Any] | None:
+    async with _get_topomojo_client() as client:
+        args = {
+            "method": method.value,
+            "url": endpoint,
+            "timeout": 60.0,
+        }
+        if method in (HttpMethod.PUT, HttpMethod.POST):
+            args["json"] = data
+        elif method in (HttpMethod.GET,):
+            args["params"] = data
+        else:
+            raise ValueError("Unsupported HTTP method.")
+
+        request = client.build_request(**args)
+
+        response = await client.send(request)
+
+        print(response.status_code)
+
     try:
-        return resp.json()
+        return response.json()
     except jsonlib.JSONDecodeError:
         return None
+
+
+async def _topomojo_get(
+    endpoint: str, query_params: Optional[Dict] = None
+) -> Optional[Any] | None:
+    return await _topomojo_request(HttpMethod.GET, endpoint, query_params)
+
+
+async def _topomojo_post(
+    endpoint: str, json_data: Optional[Any]
+) -> Optional[Any] | None:
+    return await _topomojo_request(HttpMethod.POST, endpoint, json_data)
+
+
+async def _topomojo_put(
+    endpoint: str, json_data: Optional[Any]
+) -> Optional[Any] | None:
+    return await _topomojo_request(HttpMethod.PUT, endpoint, json_data)
 
 
 async def get_workspace(workspace_id: str) -> Optional[Any]:
@@ -40,10 +97,10 @@ async def register_gamespace(workspace_id: str, team_members: List[Dict]):
     team_members: Each dict contains 'id' and 'approvedName' keys.
     """
     settings = get_settings()
-    session = await get_oauth2_session()
 
-    expiration_time = datetime.datetime.now(datetime.timezone.utc) + \
-                      datetime.timedelta(minutes=settings.game.gamespace_duration_minutes)
+    expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+        minutes=settings.game.gamespace_duration_minutes
+    )
     post_data = {
         "resourceId": workspace_id,
         "graderKey": "",
@@ -56,31 +113,21 @@ async def register_gamespace(workspace_id: str, team_members: List[Dict]):
         "allowReset": True,
         "allowPreview": True,
         "startGamespace": True,
-        "expirationTime": expiration_time.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "expirationTime": expiration_time.isoformat(timespec="milliseconds").replace(
+            "+00:00", "Z"
+        ),
         "players": [
-            {"subjectId": player["id"],
-             "subjectName": player["approvedName"]} for player in team_members
-        ]
+            {"subjectId": player["id"], "subjectName": player["approvedName"]}
+            for player in team_members
+        ],
     }
     endpoint = "gamespace"
-    return (await session.post(
-        url_path_join(settings.topomojo.base_api_url, endpoint),
-        json=post_data,
-        # This call can take a while.
-        timeout=60.0
-    )).json()
+    return await _topomojo_post(endpoint, post_data)
 
 
 async def change_vm_params(vm_id: str, params: dict):
-    settings = get_settings()
-    session = await get_oauth2_session()
-
     endpoint = f"vm/{vm_id}/change"
-    return (await session.put(
-        url_path_join(settings.topomojo.base_api_url, endpoint),
-        json=params,
-        timeout=60.0
-    )).json()
+    return await _topomojo_put(endpoint, params)
 
 
 async def change_vm_net(vm_id: str, new_net: str):
@@ -94,16 +141,11 @@ async def change_vm_power(vm_id: str, new_state: str):
 
 
 async def create_dispatch(gamespace_id: str, vm_name: str, command: str):
-    settings = get_settings()
-    session = await get_oauth2_session()
-
     endpoint = "dispatch"
-    params = {"referenceId": "gamebrain",
-              "trigger": command,
-              "targetGroup": gamespace_id,
-              "targetName": vm_name}
-    return (await session.post(
-        url_path_join(settings.topomojo.base_api_url, endpoint),
-        json=params,
-        timeout=60.0
-    )).json()
+    params = {
+        "referenceId": "gamebrain",
+        "trigger": command,
+        "targetGroup": gamespace_id,
+        "targetName": vm_name,
+    }
+    return await _topomojo_post(endpoint, params)

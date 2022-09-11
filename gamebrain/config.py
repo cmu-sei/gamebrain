@@ -40,6 +40,7 @@ class GameboardSettingsModel(BaseModel):
 class TopomojoSettingsModel(BaseModel):
     base_url: str
     base_api_url: str
+    x_api_key: str
 
 
 class DbSettingsModel(BaseModel):
