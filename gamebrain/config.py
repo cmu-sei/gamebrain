@@ -123,7 +123,7 @@ class Global:
     jwks = None
     redis = None
 
-    updater_task = None
+    db_sync_task = None
 
     @classmethod
     async def init(cls):
@@ -138,7 +138,7 @@ class Global:
         )
         cls._init_jwks()
         cls._init_redis()
-        cls._init_updater_task()
+        cls._init_db_sync_task()
 
         if settings.game.gamestate_test_mode:
             from .tests.generate_test_gamedata import construct_data
@@ -173,15 +173,15 @@ class Global:
             cls.redis = redis.Redis()
 
     @classmethod
-    async def _updater_task(cls):
+    async def _db_sync_task(cls):
         while True:
             await asyncio.sleep(10)
             snapshot = await GameStateManager.snapshot_data()
             await db.store_cache_snapshot(snapshot)
 
     @classmethod
-    def _init_updater_task(cls):
-        cls.updater_task = asyncio.create_task(cls._updater_task())
+    def _init_db_sync_task(cls):
+        cls.db_sync_task = asyncio.create_task(cls._db_sync_task())
 
     @classmethod
     def get_jwks(cls):
