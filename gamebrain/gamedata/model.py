@@ -74,19 +74,23 @@ class LocationDataFull(LocationData, LocationDataTeamSpecific):
     ...
 
 
-class CodexPowerStatus(enum.Enum):
+class PowerStatus(enum.Enum):
     On = "on"
     Off = "off"
 
 
 class ShipDataTeamSpecific(BaseModel):
     CodexURL: AnyUrl
-    CodexStationPower: CodexPowerStatus = CodexPowerStatus.Off
     Workstation1URL: AnyUrl
     Workstation2URL: AnyUrl
     Workstation3URL: AnyUrl
     Workstation4URL: AnyUrl
     Workstation5URL: AnyUrl
+    CodexStationPower: PowerStatus = PowerStatus.Off
+    CommPower: PowerStatus = PowerStatus.Off
+    FlightPower: PowerStatus = PowerStatus.Off
+    NavPower: PowerStatus = PowerStatus.Off
+    PilotPower: PowerStatus = PowerStatus.Off
 
 
 class SessionDataTeamSpecific(BaseModel):

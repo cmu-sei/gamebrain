@@ -1,5 +1,5 @@
 import asyncio
-import json
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -18,13 +18,13 @@ from .model import (
     TaskDataFull,
     CommEventData,
     PowerMode,
-    CodexPowerStatus,
+    PowerStatus,
     CurrentLocationGameplayDataTeamSpecific,
     LocationUnlockResponse,
     GenericResponse,
     ScanResponse,
 )
-
+from ..clients import topomojo
 
 CommID = str
 LocationID = str
@@ -71,33 +71,33 @@ class GameDataCache(GlobalData):
     team_initial_state: GameDataTeamSpecific
 
 
+# I wasn't sure if the output models should really be here, but there wasn't really any other obvious place to put them.
+SuccessOrFail = Literal["success", "fail"]
+UpOrDown = Literal["up", "down"]
+
+
+class GamespaceStateOutput(BaseModel):
+    exoArch: SuccessOrFail = "fail"
+    redRaider: SuccessOrFail = "fail"
+    ancientRuins: SuccessOrFail = "fail"
+    xenoCult: SuccessOrFail = "fail"
+    museum: SuccessOrFail = "fail"
+    finalGoal: SuccessOrFail = "fail"
+    comms: UpOrDown = "down"
+    flight: UpOrDown = "down"
+    nav: UpOrDown = "down"
+    pilot: UpOrDown = "down"
+
+
+class RedRaiderOutput(BaseModel):
+    __root__: dict[str, SuccessOrFail]
+
+
 class GameStateManager:
     _lock = asyncio.Lock()
     _cache: GameDataCache
 
-    _antenna_vm_name: str
-
-    change_vm_power = None
-    get_vm_desc = None
-    change_vm_net = None
-    get_gamespace = None
-
-    @classmethod
-    def late_import(cls):
-        """
-        Used to avoid a circular import between the clients package, config.py, and this module.
-        """
-        from ..clients.topomojo import (
-            change_vm_power,
-            get_vm_desc,
-            change_vm_net,
-            get_gamespace,
-        )
-
-        cls.change_vm_power = change_vm_power
-        cls.get_vm_desc = get_vm_desc
-        cls.change_vm_net = change_vm_net
-        cls.get_gamespace = get_gamespace
+    _settings: "SettingsModel"
 
     @classmethod
     async def snapshot_data(cls) -> JsonStr:
@@ -105,10 +105,10 @@ class GameStateManager:
             return cls._cache.json()
 
     @classmethod
-    async def init(cls, antenna_vm_name: str, initial_state: GameDataCache):
+    async def init(cls, initial_state: GameDataCache, settings: "SettingsModel"):
         async with cls._lock:
-            cls._antenna_vm_name = antenna_vm_name
             cls._cache = initial_state
+            cls._settings = settings
 
     @classmethod
     async def new_team(cls, team_id: TeamID):
@@ -165,9 +165,29 @@ class GameStateManager:
             return full_team_data
 
     @classmethod
+    async def team_state_from_gamespace(
+        cls, team_id: TeamID, gamespace_state_output: GamespaceStateOutput
+    ):
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            team_data.session.TeamCodexCount = sum(
+                1
+                for _ in filter(
+                    lambda v: v == "success", gamespace_state_output.dict().values()
+                )
+            )
+
+            team_data.ship.CommPower = PowerStatus(gamespace_state_output.comms)
+            team_data.ship.FlightPower = PowerStatus(gamespace_state_output.flight)
+            team_data.ship.NavPower = PowerStatus(gamespace_state_output.nav)
+            team_data.ship.PilotPower = PowerStatus(gamespace_state_output.pilot)
+
+    @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
-            cls.late_import()
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 raise NonExistentTeam()
@@ -185,7 +205,7 @@ class GameStateManager:
                     success=False, message=f"No Gamespace for Team {team_id}"
                 )
 
-            vms = (await cls.get_gamespace(gamespace_id)).get("vms")
+            vms = (await topomojo.get_gamespace(gamespace_id)).get("vms")
             if not vms:
                 return GenericResponse(
                     success=False,
@@ -193,7 +213,7 @@ class GameStateManager:
                 )
 
             for vm in vms:
-                if vm["name"] == cls._antenna_vm_name:
+                if vm["name"] == cls._settings.game.antenna_vm_name:
                     vm_id = vm["id"]
                     break
             else:
@@ -207,7 +227,7 @@ class GameStateManager:
             ]
             new_net = location_data.NetworkName
 
-            await cls.change_vm_net(vm_id, new_net)
+            await topomojo.change_vm_net(vm_id, new_net)
 
             team_data.currentStatus.antennaExtended = True
             team_data.currentStatus.networkConnected = True
@@ -323,19 +343,50 @@ class GameStateManager:
                 raise NonExistentTeam()
 
             if team_data.currentStatus.currentLocation == location_id:
-                return GenericResponse(success=False, message=location_id)
+                return GenericResponse(
+                    success=False, message=f"Already at {location_id}."
+                )
 
             location_data = cls._cache.location_map.__root__.get(location_id)
             if not location_data:
-                return GenericResponse(success=False, message=location_id)
+                return GenericResponse(
+                    success=False,
+                    message=f"Unable to find {location_id} in global cache.",
+                )
 
             destination = [
                 loc for loc in team_data.locations if loc.LocationID == location_id
             ]
             if not destination:
-                return GenericResponse(success=False, message=location_id)
+                return GenericResponse(
+                    success=False,
+                    message=f"Location {location_id} is not yet unlocked.",
+                )
 
             location_team_specific = destination.pop()
+
+            if (
+                location_team_specific.LocationID
+                == cls._settings.game.final_destination_name
+            ):
+                if team_data.session.TeamCodexCount < 3:
+                    return GenericResponse(
+                        success=False, message="Not enough codices unlocked."
+                    )
+                else:
+                    team_db_data = await get_team(team_id)
+                    gamespace_id = team_db_data.get("gamespace_id")
+
+                    if not gamespace_id:
+                        return GenericResponse(
+                            success=False, message=f"No Gamespace for Team {team_id}"
+                        )
+
+                    await topomojo.create_dispatch(
+                        gamespace_id,
+                        cls._settings.game.grading_vm_name,
+                        f"touch {cls._settings.game.final_destination_file_path}",
+                    )
 
             new_status = CurrentLocationGameplayDataTeamSpecific(
                 currentLocation=location_id,
@@ -436,24 +487,23 @@ class GameStateManager:
             return GenericResponse(success=True, message="incomingCommComplete")
 
     @classmethod
-    async def check_vm_power_status(cls, vm_id: str) -> CodexPowerStatus | None:
-        desc = await cls.get_vm_desc(vm_id)
+    async def check_vm_power_status(cls, vm_id: str) -> PowerStatus | None:
+        desc = await topomojo.get_vm_desc(vm_id)
         if not desc or "state" not in desc:
             return
 
-        return CodexPowerStatus(desc["state"])
+        return PowerStatus(desc["state"])
 
     @classmethod
-    async def change_vm_power_status(cls, vm_id: str, new_setting: CodexPowerStatus):
+    async def change_vm_power_status(cls, vm_id: str, new_setting: PowerStatus):
         # str to shut up linter
-        await cls.change_vm_power(vm_id, str(new_setting.value))
+        await topomojo.change_vm_power(vm_id, str(new_setting.value))
 
     @classmethod
     async def codex_power(
-        cls, team_id: TeamID, new_setting: CodexPowerStatus
+        cls, team_id: TeamID, new_setting: PowerStatus
     ) -> GenericResponse:
         async with cls._lock:
-            cls.late_import()
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 raise NonExistentTeam()

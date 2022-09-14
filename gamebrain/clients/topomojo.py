@@ -5,7 +5,15 @@ from typing import Any, Dict, List, Optional
 
 from httpx import AsyncClient
 
-from ..config import get_settings
+
+class ModuleSettings:
+    settings = None
+
+
+def get_settings():
+    if ModuleSettings.settings is None:
+        raise AttributeError("TopoMojo settings are not initialized.")
+    return ModuleSettings.settings
 
 
 class HttpMethod(Enum):

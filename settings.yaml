@@ -37,6 +37,11 @@ game:
         action_type: dispatch
         vm_name: ubuntu
         command: touch /home/tmtest/it-worked
-  ship_network_vm_name: "placeholder"
+  grading_vm_name: "challenge-server"
+  grading_vm_file_path: "/home/user/challengeServer/custom_scripts/requestGrade.py"
+  red_raider_vm_name: "pirate-attacker"
+  red_raider_file_path: "/home/user/LanguageFile"
+  final_destination_name: "final"
+  final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
   gamestate_test_mode: true
   game_id: f63c8e41fd994e16bad08075dd2a666c

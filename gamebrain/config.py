@@ -9,7 +9,12 @@ import redis.asyncio as redis
 import yaml
 from pydantic import BaseModel, validator
 
-from .gamedata.cache import GameStateManager, GameDataCache
+from .clients import topomojo
+from .dispatch import GamespaceStatusTask
+from .gamedata.cache import (
+    GameStateManager,
+    GameDataCache,
+)
 import gamebrain.db as db
 from .util import url_path_join
 
@@ -76,6 +81,14 @@ class GameSettingsModel(BaseModel):
     event_actions: list[EventActionsSettingsModel]
     gamespace_duration_minutes: Optional[int] = 60
     ship_network_vm_name: Optional[str] = ""
+
+    grading_vm_name: Optional[str] = ""
+    grading_vm_script_path: Optional[str] = ""
+    red_raider_vm_name: Optional[str] = ""
+    red_raider_vm_script_path: Optional[str] = ""
+    final_destination_name: Optional[str] = ""
+    final_destination_file_path: Optional[str] = ""
+
     gamestate_test_mode: Optional[bool] = False
     game_id: str
 
@@ -136,9 +149,11 @@ class Global:
             settings.db.drop_app_tables,
             settings.db.echo_sql,
         )
+        topomojo.ModuleSettings.settings = settings
         cls._init_jwks()
         cls._init_redis()
         cls._init_db_sync_task()
+        cls._init_grader_task()
 
         if settings.game.gamestate_test_mode:
             from .tests.generate_test_gamedata import construct_data
@@ -154,7 +169,7 @@ class Global:
             with open("initial_state.json") as f:
                 initial_cache = GameDataCache(**json.load(f))
             logging.info("Initializing game data cache from initial_state.json.")
-        await GameStateManager.init(settings.game.ship_network_vm_name, initial_cache)
+        await GameStateManager.init(initial_cache, settings)
 
     @classmethod
     def _init_jwks(cls):
@@ -182,6 +197,10 @@ class Global:
     @classmethod
     def _init_db_sync_task(cls):
         cls.db_sync_task = asyncio.create_task(cls._db_sync_task())
+
+    @classmethod
+    def _init_grader_task(cls):
+        cls.grader_task = asyncio.create_task(GamespaceStatusTask.init(get_settings()))
 
     @classmethod
     def get_jwks(cls):

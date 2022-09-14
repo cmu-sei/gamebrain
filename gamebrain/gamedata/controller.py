@@ -11,7 +11,7 @@ from .model import (
     LocationUnlockResponse,
     ScanResponse,
     PowerMode,
-    CodexPowerStatus,
+    PowerStatus,
 )
 
 Coordinates = constr(to_lower=True, regex=r"[0-9A-Za-z]{6}")
@@ -144,7 +144,7 @@ async def get_codexstationpoweron(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.codex_power(team_id, CodexPowerStatus.On)
+        return await GameStateManager.codex_power(team_id, PowerStatus.On)
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
@@ -156,6 +156,6 @@ async def get_codexstationpoweroff(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.codex_power(team_id, CodexPowerStatus.Off)
+        return await GameStateManager.codex_power(team_id, PowerStatus.Off)
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
