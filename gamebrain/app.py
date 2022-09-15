@@ -155,6 +155,24 @@ async def deploy(
     return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
 
 
+@APP.get("/privileged/undeploy/{game_id}/{team_id}")
+async def undeploy(
+    team_id: str,
+    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
+):
+    check_jwt(
+        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv
+    )
+
+    team_data = await db.get_team(team_id)
+    if not team_data:
+        raise HTTPException(status_code=404, detail="Team not found.")
+
+    if gamespace_id := team_data.get("gamespace_id"):
+        await topomojo.stop_gamespace(gamespace_id)
+        await db.expire_team_gamespace(team_id)
+
+
 @APP.post("/privileged/event/{team_id}")
 async def push_event(
     team_id: str,

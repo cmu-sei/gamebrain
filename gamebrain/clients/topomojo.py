@@ -133,6 +133,11 @@ async def register_gamespace(workspace_id: str, team_members: List[Dict]):
     return await _topomojo_post(endpoint, post_data)
 
 
+async def stop_gamespace(gamespace_id: str):
+    endpoint = f"gamespace/{gamespace_id}/stop"
+    return await _topomojo_post(endpoint, {})
+
+
 async def change_vm_params(vm_id: str, params: dict):
     endpoint = f"vm/{vm_id}/change"
     return await _topomojo_put(endpoint, params)

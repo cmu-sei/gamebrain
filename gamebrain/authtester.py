@@ -98,55 +98,63 @@ def main():
 
     print("Getting initial GameData")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Getting GameData")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Unlocking location 0 (expect alreadyunlocked)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/000000/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Unlocking location 1 (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/111111/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Invalid unlock (expect invalid)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Jump to current location (expect failure")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location1/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Jump to invalid location (expect failure")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Jump to locked location (expect failure")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location3/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Jump to unlocked location (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location2/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Scan new location (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Changing power mode (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/PowerMode/explorationMode/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Marking comm event complete (expect success)")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
 
     print("Getting GameData")
     resp = session.get(f"{GAMEBRAIN_URL}/GameData/team1")
-    pprint.pprint(resp.json())
+    # pprint.pprint(resp.json())
+
+    session = OAuth2Client(GB_CLIENT_ID_PRIV, GB_CLIENT_SECRET_PRIV, verify=False)
+    session.fetch_token(TOKEN_URL)
+
+    resp = session.get(
+        f"{GAMEBRAIN_URL}/privileged/undeploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
+    )
+    print(resp.json())
 
 
 if __name__ == "__main__":

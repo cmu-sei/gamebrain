@@ -15,6 +15,7 @@ from sqlalchemy import (
     TIMESTAMP,
     inspect,
     select,
+    delete,
 )
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
@@ -118,6 +119,13 @@ class DBManager:
                 await session.merge(item)
             await session.commit()
 
+    @classmethod
+    async def delete_where(cls, orm_class: orm_base, *args):
+        async with cls.session_factory() as session:
+            query = delete(orm_class).where(*args)
+            await session.execute(query)
+            await session.commit()
+
 
 async def store_event(team_id: str, message: str):
     received_time = datetime.now(timezone.utc)
@@ -182,6 +190,9 @@ async def expire_team_gamespace(team_id: str):
         id=team_id, gamespace_id=None, gamespace_expiration=None
     )
     await DBManager.merge_rows([team_data])
+    await DBManager.delete_where(
+        DBManager.VirtualMachine, DBManager.VirtualMachine.team_id == team_id
+    )
 
 
 async def get_team(team_id: str) -> Dict:
