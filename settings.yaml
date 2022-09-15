@@ -1,3 +1,4 @@
+app_root_prefix: /
 ca_cert_path: /usr/local/share/ca-certificates/foundry-appliance-root-ca.crt
 identity:
   base_url: https://foundry.local/identity
