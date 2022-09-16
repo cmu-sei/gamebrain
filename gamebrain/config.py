@@ -1,4 +1,5 @@
 import asyncio
+from ipaddress import IPv4Address
 import json
 import logging
 import os.path
@@ -91,6 +92,8 @@ class GameSettingsModel(BaseModel):
 
     gamestate_test_mode: Optional[bool] = False
     game_id: str
+
+    headless_client_ips: list[IPv4Address]
 
 
 class SettingsModel(BaseModel):

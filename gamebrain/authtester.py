@@ -40,15 +40,27 @@ def main():
 
     session.fetch_token(TOKEN_URL)
 
-    resp = session.put(
-        f"{GAMEBRAIN_URL}/admin/headlessip/{TEST_TEAM_1}",
-        params={"headless_ip": "10.10.10.10"},
-    )
-    print(resp.json())
+    # resp = session.put(
+    #     f"{GAMEBRAIN_URL}/admin/headlessip/{TEST_TEAM_1}",
+    #     params={"headless_ip": "10.10.10.10"},
+    # )
+    # print(resp.json())
 
     # resp = session.put(f"{GAMEBRAIN_URL}/admin/headlessip/{TEST_TEAM_2}",
     #                    params={"headless_ip": "10.10.10.11"})
     # print(resp.json())
+
+    print("Getting Team 1 headless client assignment:")
+    resp = session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
+    )
+    print(resp.json())
+
+    print("Getting Team 2 headless client assignment:")
+    resp = session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_2}",
+    )
+    print(resp.json())
 
     resp = session.post(
         f"{GAMEBRAIN_URL}/admin/secrets/{TEST_TEAM_1}",

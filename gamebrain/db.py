@@ -256,3 +256,11 @@ async def get_cache_snapshot():
         ).pop()
     except IndexError:
         return None
+
+
+async def get_assigned_headless_ips() -> dict[str, IPv4Address]:
+    teams_with_ips = await DBManager.get_rows(
+        DBManager.TeamData, DBManager.TeamData.headless_ip is not None
+    )
+
+    return {team["id"]: IPv4Address(team["headless_ip"]) for team in teams_with_ips}

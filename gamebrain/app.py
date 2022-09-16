@@ -42,22 +42,26 @@ async def liveness_check():
     return
 
 
-@APP.get("/unprivileged/headless_client/{game_id}")
+@APP.get("/admin/headless_client/{team_id}")
 async def get_headless_ip(
-    game_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+    team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ):
-    payload = check_jwt(
+    check_jwt(
         auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_unpriv,
-        True,
+        get_settings().identity.jwt_audiences.gamebrain_api_admin,
     )
-    user_id = payload["sub"]
+    assigned_headless_ips = await db.get_assigned_headless_ips()
 
-    player = await gameboard.get_player_by_user_id(user_id, game_id)
+    if ip := assigned_headless_ips.get(team_id):
+        return str(ip)
 
-    team_id = player["teamId"]
-    team_data = await db.get_team(team_id)
-    return team_data.get("headless_ip")
+    all_headless_ips = set(get_settings().game.headless_client_ips)
+
+    available_headless_ips = all_headless_ips - set(assigned_headless_ips.values())
+    headless_ip = available_headless_ips.pop()
+
+    await db.store_team(team_id, headless_ip=str(headless_ip))
+    return str(headless_ip)
 
 
 class UserToken(BaseModel):
