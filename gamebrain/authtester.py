@@ -19,6 +19,8 @@ GS_CLIENT_ID = "gs-test-client"
 GS_CLIENT_SECRET = "43bcc0072ab54a349368b20f1c31b0cd"
 TOKEN_URL = "https://foundry.local/identity/connect/token"
 CA_CERT_PATH = "/usr/local/share/ca-certificates/foundry-appliance-root-ca.crt"
+GAME_CLIENT_ID = "game-client"
+GAME_CLIENT_SECRET = "a78ea5460fdd4293abe5c8e09f5bba57"
 
 TEST_USER_1 = "testplayer1@foundry.local"
 TEST_USER_1_ID = "0ee37ac5-7a64-4dca-9049-8a64f370d241"
@@ -72,8 +74,17 @@ def main():
     )
     print(resp.json())
 
-    resp = session.get(
-        f"{GAMEBRAIN_URL}/privileged/get_team/{TEST_USER_1_ID}", timeout=60.0
+    user_session = OAuth2Client(GAME_CLIENT_ID, GAME_CLIENT_SECRET, verify=False)
+    user_session.fetch_token(TOKEN_URL, username=TEST_USER_1, password=TEST_PASS)
+    # Used later for get_team test.
+    user_token = user_session.token["access_token"]
+
+    print("Testing get_team endpoint")
+    json_data = {"user_token": user_token}
+    print(json_data)
+    request = session.post(
+        f"{GAMEBRAIN_URL}/privileged/get_team",
+        json=json_data,
     )
     print(resp.json())
 

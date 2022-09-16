@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 
 from .auth import check_jwt
 from .gamedata.cache import GameStateManager
@@ -59,15 +60,33 @@ async def get_headless_ip(
     return team_data.get("headless_ip")
 
 
-@APP.get("/privileged/get_team/{user_id}")
+class UserToken(BaseModel):
+    user_token: str
+
+
+@APP.post("/privileged/get_team")
 async def get_team_from_user(
-    user_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+    post_data: UserToken, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ):
+    try:
+        payload = check_jwt(
+            post_data.user_token,
+            get_settings().identity.jwt_audiences.gamebrain_api_unpriv,
+            True,
+        )
+    except HTTPException as e:
+        e.detail = "User token could not be validated."
+        raise e
+
+    user_id = payload["sub"]
+
     check_jwt(
         auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv
     )
 
     player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
+
+    # TODO: Make sure the user is on the same team as the game server
 
     return {"teamID": player["teamId"]}
 
