@@ -1,268 +1,268 @@
 {
   "comm_map": {
     "location1commfc": {
-      "CommID": "location1commfc",
-      "VideoURL": "https://example.com/comms/location1commfc",
-      "CommTemplate": "badTranslation",
-      "TranslationMessage": "location1commfc translation message",
-      "ScanInfoMessage": "location1commfc scan info message",
-      "FirstContact": true,
-      "LocationID": "location1"
+      "commID": "location1commfc",
+      "videoURL": "https://example.com/comms/location1commfc",
+      "commTemplate": "badTranslation",
+      "translationMessage": "location1commfc translation message",
+      "scanInfoMessage": "location1commfc scan info message",
+      "firstContact": true,
+      "locationID": "location1"
     },
     "location1comm1": {
-      "CommID": "location1comm1",
-      "VideoURL": "https://example.com/comms/location1comm1",
-      "CommTemplate": "badTranslation",
-      "TranslationMessage": "location1comm1 translation message",
-      "ScanInfoMessage": "location1comm1 scan info message",
-      "FirstContact": false,
-      "LocationID": "location1"
+      "commID": "location1comm1",
+      "videoURL": "https://example.com/comms/location1comm1",
+      "commTemplate": "badTranslation",
+      "translationMessage": "location1comm1 translation message",
+      "scanInfoMessage": "location1comm1 scan info message",
+      "firstContact": false,
+      "locationID": "location1"
     },
     "location2commfc": {
-      "CommID": "location2commfc",
-      "VideoURL": "https://example.com/comms/location2commfc",
-      "CommTemplate": "badTranslation",
-      "TranslationMessage": "location2commfc translation message",
-      "ScanInfoMessage": "location2commfc scan info message",
-      "FirstContact": true,
-      "LocationID": "location2"
+      "commID": "location2commfc",
+      "videoURL": "https://example.com/comms/location2commfc",
+      "commTemplate": "badTranslation",
+      "translationMessage": "location2commfc translation message",
+      "scanInfoMessage": "location2commfc scan info message",
+      "firstContact": true,
+      "locationID": "location2"
     },
     "location2comm1": {
-      "CommID": "location2comm1",
-      "VideoURL": "https://example.com/comms/location2comm1",
-      "CommTemplate": "badTranslation",
-      "TranslationMessage": "location2comm1 translation message",
-      "ScanInfoMessage": "location2comm1 scan info message",
-      "FirstContact": false,
-      "LocationID": "location2"
+      "commID": "location2comm1",
+      "videoURL": "https://example.com/comms/location2comm1",
+      "commTemplate": "badTranslation",
+      "translationMessage": "location2comm1 translation message",
+      "scanInfoMessage": "location2comm1 scan info message",
+      "firstContact": false,
+      "locationID": "location2"
     },
     "location3commfc": {
-      "CommID": "location3commfc",
-      "VideoURL": "https://example.com/comms/location3commfc",
-      "CommTemplate": "badTranslation",
-      "TranslationMessage": "location3commfc translation message",
-      "ScanInfoMessage": "location3commfc scan info message",
-      "FirstContact": true,
-      "LocationID": "location3"
+      "commID": "location3commfc",
+      "videoURL": "https://example.com/comms/location3commfc",
+      "commTemplate": "badTranslation",
+      "translationMessage": "location3commfc translation message",
+      "scanInfoMessage": "location3commfc scan info message",
+      "firstContact": true,
+      "locationID": "location3"
     },
     "location3comm1": {
-      "CommID": "location3comm1",
-      "VideoURL": "https://example.com/comms/location3comm1",
-      "CommTemplate": "badTranslation",
-      "TranslationMessage": "location3comm1 translation message",
-      "ScanInfoMessage": "location3comm1 scan info message",
-      "FirstContact": false,
-      "LocationID": "location3"
+      "commID": "location3comm1",
+      "videoURL": "https://example.com/comms/location3comm1",
+      "commTemplate": "badTranslation",
+      "translationMessage": "location3comm1 translation message",
+      "scanInfoMessage": "location3comm1 scan info message",
+      "firstContact": false,
+      "locationID": "location3"
     }
   },
   "location_map": {
     "location1": {
-      "LocationID": "location1",
-      "Name": "Location 1",
-      "ImageID": "location1_image",
-      "BackdropID": "location1_backdrop",
-      "Surroundings": "Location 1 surroundings",
-      "UnlockCode": "000000",
-      "TrajectoryLaunch": 0,
-      "TrajectoryCorrection": 0,
-      "TrajectoryCube": 0,
-      "FirstContactEvent": "location1commfc",
-      "NetworkName": "location1net"
+      "locationID": "location1",
+      "name": "Location 1",
+      "imageID": "location1_image",
+      "backdropID": "location1_backdrop",
+      "surroundings": "Location 1 surroundings",
+      "unlockCode": "000000",
+      "trajectoryLaunch": 0,
+      "trajectoryCorrection": 0,
+      "trajectoryCube": 0,
+      "firstContactEvent": "location1commfc",
+      "networkName": "location1net"
     },
     "location2": {
-      "LocationID": "location2",
-      "Name": "Location 2",
-      "ImageID": "location2_image",
-      "BackdropID": "location2_backdrop",
-      "Surroundings": "Location 2 surroundings",
-      "UnlockCode": "111111",
-      "TrajectoryLaunch": 1,
-      "TrajectoryCorrection": 1,
-      "TrajectoryCube": 1,
-      "FirstContactEvent": "location2commfc",
-      "NetworkName": "location2net"
+      "locationID": "location2",
+      "name": "Location 2",
+      "imageID": "location2_image",
+      "backdropID": "location2_backdrop",
+      "surroundings": "Location 2 surroundings",
+      "unlockCode": "111111",
+      "trajectoryLaunch": 1,
+      "trajectoryCorrection": 1,
+      "trajectoryCube": 1,
+      "firstContactEvent": "location2commfc",
+      "networkName": "location2net"
     },
     "location3": {
-      "LocationID": "location3",
-      "Name": "Location 3",
-      "ImageID": "location3_image",
-      "BackdropID": "location3_backdrop",
-      "Surroundings": "Location 3 surroundings",
-      "UnlockCode": "222222",
-      "TrajectoryLaunch": 2,
-      "TrajectoryCorrection": 2,
-      "TrajectoryCube": 2,
-      "FirstContactEvent": "location3commfc",
-      "NetworkName": "location3net"
+      "locationID": "location3",
+      "name": "Location 3",
+      "imageID": "location3_image",
+      "backdropID": "location3_backdrop",
+      "surroundings": "Location 3 surroundings",
+      "unlockCode": "222222",
+      "trajectoryLaunch": 2,
+      "trajectoryCorrection": 2,
+      "trajectoryCube": 2,
+      "firstContactEvent": "location3commfc",
+      "networkName": "location3net"
     }
   },
   "mission_map": {
     "location1mission1": {
-      "MissionID": "location1mission1",
-      "Title": "Mission 1 for location1 Title",
-      "SummaryShort": "Mission 1 for location1 Short Summary",
-      "SummaryLong": "Mission 1 for location1 Long Summary",
-      "MissionIcon": "https://example.com/location1mission1/icon",
-      "IsSpecial": false,
-      "RuleList": [
+      "missionID": "location1mission1",
+      "title": "Mission 1 for location1 Title",
+      "summaryShort": "Mission 1 for location1 Short Summary",
+      "summaryLong": "Mission 1 for location1 Long Summary",
+      "missionIcon": "https://example.com/location1mission1/icon",
+      "isSpecial": false,
+      "ruleList": [
         "Mission 1 for location1 Rule 1",
         "Mission 1 for location1 Rule 2",
         "Mission 1 for location1 Rule 3"
       ],
-      "TaskList": [
+      "taskList": [
         {
-          "TaskID": "location1mission1task_location1commfc",
-          "MissionID": "location1mission1",
-          "DescriptionText": "location1mission1 location1mission1task_location1commfc description text",
-          "InfoPresent": true,
-          "InfoText": "location1mission1 location1mission1task_location1commfc info text",
-          "VideoPresent": true,
-          "VideoURL": "https://example.com/location1mission1/location1mission1task_location1commfc",
-          "CommID": "location1commfc"
+          "taskID": "location1mission1task_location1commfc",
+          "missionID": "location1mission1",
+          "descriptionText": "location1mission1 location1mission1task_location1commfc description text",
+          "infoPresent": true,
+          "infoText": "location1mission1 location1mission1task_location1commfc info text",
+          "videoPresent": true,
+          "videoURL": "https://example.com/location1mission1/location1mission1task_location1commfc",
+          "commID": "location1commfc"
         },
         {
-          "TaskID": "location1mission1task_location1comm1",
-          "MissionID": "location1mission1",
-          "DescriptionText": "location1mission1 location1mission1task_location1comm1 description text",
-          "InfoPresent": true,
-          "InfoText": "location1mission1 location1mission1task_location1comm1 info text",
-          "VideoPresent": true,
-          "VideoURL": "https://example.com/location1mission1/location1mission1task_location1comm1",
-          "CommID": "location1comm1"
+          "taskID": "location1mission1task_location1comm1",
+          "missionID": "location1mission1",
+          "descriptionText": "location1mission1 location1mission1task_location1comm1 description text",
+          "infoPresent": true,
+          "infoText": "location1mission1 location1mission1task_location1comm1 info text",
+          "videoPresent": true,
+          "videoURL": "https://example.com/location1mission1/location1mission1task_location1comm1",
+          "commID": "location1comm1"
         }
       ]
     },
     "location2mission1": {
-      "MissionID": "location2mission1",
-      "Title": "Mission 1 for location2 Title",
-      "SummaryShort": "Mission 1 for location2 Short Summary",
-      "SummaryLong": "Mission 1 for location2 Long Summary",
-      "MissionIcon": "https://example.com/location2mission1/icon",
-      "IsSpecial": false,
-      "RuleList": [
+      "missionID": "location2mission1",
+      "title": "Mission 1 for location2 Title",
+      "summaryShort": "Mission 1 for location2 Short Summary",
+      "summaryLong": "Mission 1 for location2 Long Summary",
+      "missionIcon": "https://example.com/location2mission1/icon",
+      "isSpecial": false,
+      "ruleList": [
         "Mission 1 for location2 Rule 1",
         "Mission 1 for location2 Rule 2",
         "Mission 1 for location2 Rule 3"
       ],
-      "TaskList": [
+      "taskList": [
         {
-          "TaskID": "location2mission1task_location2commfc",
-          "MissionID": "location2mission1",
-          "DescriptionText": "location2mission1 location2mission1task_location2commfc description text",
-          "InfoPresent": true,
-          "InfoText": "location2mission1 location2mission1task_location2commfc info text",
-          "VideoPresent": true,
-          "VideoURL": "https://example.com/location2mission1/location2mission1task_location2commfc",
-          "CommID": "location2commfc"
+          "taskID": "location2mission1task_location2commfc",
+          "missionID": "location2mission1",
+          "descriptionText": "location2mission1 location2mission1task_location2commfc description text",
+          "infoPresent": true,
+          "infoText": "location2mission1 location2mission1task_location2commfc info text",
+          "videoPresent": true,
+          "videoURL": "https://example.com/location2mission1/location2mission1task_location2commfc",
+          "commID": "location2commfc"
         },
         {
-          "TaskID": "location2mission1task_location2comm1",
-          "MissionID": "location2mission1",
-          "DescriptionText": "location2mission1 location2mission1task_location2comm1 description text",
-          "InfoPresent": true,
-          "InfoText": "location2mission1 location2mission1task_location2comm1 info text",
-          "VideoPresent": true,
-          "VideoURL": "https://example.com/location2mission1/location2mission1task_location2comm1",
-          "CommID": "location2comm1"
+          "taskID": "location2mission1task_location2comm1",
+          "missionID": "location2mission1",
+          "descriptionText": "location2mission1 location2mission1task_location2comm1 description text",
+          "infoPresent": true,
+          "infoText": "location2mission1 location2mission1task_location2comm1 info text",
+          "videoPresent": true,
+          "videoURL": "https://example.com/location2mission1/location2mission1task_location2comm1",
+          "commID": "location2comm1"
         }
       ]
     },
     "location3mission1": {
-      "MissionID": "location3mission1",
-      "Title": "Mission 1 for location3 Title",
-      "SummaryShort": "Mission 1 for location3 Short Summary",
-      "SummaryLong": "Mission 1 for location3 Long Summary",
-      "MissionIcon": "https://example.com/location3mission1/icon",
-      "IsSpecial": false,
-      "RuleList": [
+      "missionID": "location3mission1",
+      "title": "Mission 1 for location3 Title",
+      "summaryShort": "Mission 1 for location3 Short Summary",
+      "summaryLong": "Mission 1 for location3 Long Summary",
+      "missionIcon": "https://example.com/location3mission1/icon",
+      "isSpecial": false,
+      "ruleList": [
         "Mission 1 for location3 Rule 1",
         "Mission 1 for location3 Rule 2",
         "Mission 1 for location3 Rule 3"
       ],
-      "TaskList": [
+      "taskList": [
         {
-          "TaskID": "location3mission1task_location3commfc",
-          "MissionID": "location3mission1",
-          "DescriptionText": "location3mission1 location3mission1task_location3commfc description text",
-          "InfoPresent": true,
-          "InfoText": "location3mission1 location3mission1task_location3commfc info text",
-          "VideoPresent": true,
-          "VideoURL": "https://example.com/location3mission1/location3mission1task_location3commfc",
-          "CommID": "location3commfc"
+          "taskID": "location3mission1task_location3commfc",
+          "missionID": "location3mission1",
+          "descriptionText": "location3mission1 location3mission1task_location3commfc description text",
+          "infoPresent": true,
+          "infoText": "location3mission1 location3mission1task_location3commfc info text",
+          "videoPresent": true,
+          "videoURL": "https://example.com/location3mission1/location3mission1task_location3commfc",
+          "commID": "location3commfc"
         },
         {
-          "TaskID": "location3mission1task_location3comm1",
-          "MissionID": "location3mission1",
-          "DescriptionText": "location3mission1 location3mission1task_location3comm1 description text",
-          "InfoPresent": true,
-          "InfoText": "location3mission1 location3mission1task_location3comm1 info text",
-          "VideoPresent": true,
-          "VideoURL": "https://example.com/location3mission1/location3mission1task_location3comm1",
-          "CommID": "location3comm1"
+          "taskID": "location3mission1task_location3comm1",
+          "missionID": "location3mission1",
+          "descriptionText": "location3mission1 location3mission1task_location3comm1 description text",
+          "infoPresent": true,
+          "infoText": "location3mission1 location3mission1task_location3comm1 info text",
+          "videoPresent": true,
+          "videoURL": "https://example.com/location3mission1/location3mission1task_location3comm1",
+          "commID": "location3comm1"
         }
       ]
     }
   },
   "task_map": {
     "location1mission1task_location1commfc": {
-      "TaskID": "location1mission1task_location1commfc",
-      "MissionID": "location1mission1",
-      "DescriptionText": "location1mission1 location1mission1task_location1commfc description text",
-      "InfoPresent": true,
-      "InfoText": "location1mission1 location1mission1task_location1commfc info text",
-      "VideoPresent": true,
-      "VideoURL": "https://example.com/location1mission1/location1mission1task_location1commfc",
-      "CommID": "location1commfc"
+      "taskID": "location1mission1task_location1commfc",
+      "missionID": "location1mission1",
+      "descriptionText": "location1mission1 location1mission1task_location1commfc description text",
+      "infoPresent": true,
+      "infoText": "location1mission1 location1mission1task_location1commfc info text",
+      "videoPresent": true,
+      "videoURL": "https://example.com/location1mission1/location1mission1task_location1commfc",
+      "commID": "location1commfc"
     },
     "location1mission1task_location1comm1": {
-      "TaskID": "location1mission1task_location1comm1",
-      "MissionID": "location1mission1",
-      "DescriptionText": "location1mission1 location1mission1task_location1comm1 description text",
-      "InfoPresent": true,
-      "InfoText": "location1mission1 location1mission1task_location1comm1 info text",
-      "VideoPresent": true,
-      "VideoURL": "https://example.com/location1mission1/location1mission1task_location1comm1",
-      "CommID": "location1comm1"
+      "taskID": "location1mission1task_location1comm1",
+      "missionID": "location1mission1",
+      "descriptionText": "location1mission1 location1mission1task_location1comm1 description text",
+      "infoPresent": true,
+      "infoText": "location1mission1 location1mission1task_location1comm1 info text",
+      "videoPresent": true,
+      "videoURL": "https://example.com/location1mission1/location1mission1task_location1comm1",
+      "commID": "location1comm1"
     },
     "location2mission1task_location2commfc": {
-      "TaskID": "location2mission1task_location2commfc",
-      "MissionID": "location2mission1",
-      "DescriptionText": "location2mission1 location2mission1task_location2commfc description text",
-      "InfoPresent": true,
-      "InfoText": "location2mission1 location2mission1task_location2commfc info text",
-      "VideoPresent": true,
-      "VideoURL": "https://example.com/location2mission1/location2mission1task_location2commfc",
-      "CommID": "location2commfc"
+      "taskID": "location2mission1task_location2commfc",
+      "missionID": "location2mission1",
+      "descriptionText": "location2mission1 location2mission1task_location2commfc description text",
+      "infoPresent": true,
+      "infoText": "location2mission1 location2mission1task_location2commfc info text",
+      "videoPresent": true,
+      "videoURL": "https://example.com/location2mission1/location2mission1task_location2commfc",
+      "commID": "location2commfc"
     },
     "location2mission1task_location2comm1": {
-      "TaskID": "location2mission1task_location2comm1",
-      "MissionID": "location2mission1",
-      "DescriptionText": "location2mission1 location2mission1task_location2comm1 description text",
-      "InfoPresent": true,
-      "InfoText": "location2mission1 location2mission1task_location2comm1 info text",
-      "VideoPresent": true,
-      "VideoURL": "https://example.com/location2mission1/location2mission1task_location2comm1",
-      "CommID": "location2comm1"
+      "taskID": "location2mission1task_location2comm1",
+      "missionID": "location2mission1",
+      "descriptionText": "location2mission1 location2mission1task_location2comm1 description text",
+      "infoPresent": true,
+      "infoText": "location2mission1 location2mission1task_location2comm1 info text",
+      "videoPresent": true,
+      "videoURL": "https://example.com/location2mission1/location2mission1task_location2comm1",
+      "commID": "location2comm1"
     },
     "location3mission1task_location3commfc": {
-      "TaskID": "location3mission1task_location3commfc",
-      "MissionID": "location3mission1",
-      "DescriptionText": "location3mission1 location3mission1task_location3commfc description text",
-      "InfoPresent": true,
-      "InfoText": "location3mission1 location3mission1task_location3commfc info text",
-      "VideoPresent": true,
-      "VideoURL": "https://example.com/location3mission1/location3mission1task_location3commfc",
-      "CommID": "location3commfc"
+      "taskID": "location3mission1task_location3commfc",
+      "missionID": "location3mission1",
+      "descriptionText": "location3mission1 location3mission1task_location3commfc description text",
+      "infoPresent": true,
+      "infoText": "location3mission1 location3mission1task_location3commfc info text",
+      "videoPresent": true,
+      "videoURL": "https://example.com/location3mission1/location3mission1task_location3commfc",
+      "commID": "location3commfc"
     },
     "location3mission1task_location3comm1": {
-      "TaskID": "location3mission1task_location3comm1",
-      "MissionID": "location3mission1",
-      "DescriptionText": "location3mission1 location3mission1task_location3comm1 description text",
-      "InfoPresent": true,
-      "InfoText": "location3mission1 location3mission1task_location3comm1 info text",
-      "VideoPresent": true,
-      "VideoURL": "https://example.com/location3mission1/location3mission1task_location3comm1",
-      "CommID": "location3comm1"
+      "taskID": "location3mission1task_location3comm1",
+      "missionID": "location3mission1",
+      "descriptionText": "location3mission1 location3mission1task_location3comm1 description text",
+      "infoPresent": true,
+      "infoText": "location3mission1 location3mission1task_location3comm1 info text",
+      "videoPresent": true,
+      "videoURL": "https://example.com/location3mission1/location3mission1task_location3comm1",
+      "commID": "location3comm1"
     }
   },
   "team_map": {},
@@ -280,44 +280,48 @@
       "incomingTransmissionObject": null
     },
     "session": {
-      "TeamInfoName": "",
-      "TeamCodexCount": 0,
-      "JumpCutsceneURL": "https://example.com/jump"
+      "teamInfoName": "",
+      "teamCodexCount": 0,
+      "jumpCutsceneURL": "https://example.com/jump"
     },
     "ship": {
-      "CodexURL": "https://example.com/initial_state_ship/codex",
-      "CodexStationPower": "off",
-      "Workstation1URL": "https://example.com/initial_state_ship/ws1",
-      "Workstation2URL": "https://example.com/initial_state_ship/ws2",
-      "Workstation3URL": "https://example.com/initial_state_ship/ws3",
-      "Workstation4URL": "https://example.com/initial_state_ship/ws4",
-      "Workstation5URL": "https://example.com/initial_state_ship/ws5"
+      "codexURL": "https://example.com/initial_state_ship/codex",
+      "workstation1URL": "https://example.com/initial_state_ship/ws1",
+      "workstation2URL": "https://example.com/initial_state_ship/ws2",
+      "workstation3URL": "https://example.com/initial_state_ship/ws3",
+      "workstation4URL": "https://example.com/initial_state_ship/ws4",
+      "workstation5URL": "https://example.com/initial_state_ship/ws5",
+      "codexStationPower": "off",
+      "commPower": "off",
+      "flightPower": "off",
+      "navPower": "off",
+      "pilotPower": "off"
     },
     "locations": [
       {
-        "LocationID": "location1",
-        "Unlocked": true,
-        "Visited": false,
-        "Scanned": false,
-        "NetworkEstablished": false
+        "locationID": "location1",
+        "unlocked": true,
+        "visited": false,
+        "scanned": false,
+        "networkEstablished": false
       }
     ],
     "missions": [
       {
-        "MissionID": "location1mission1",
-        "Unlocked": true,
-        "Visible": false,
-        "Complete": false,
-        "TaskList": [
+        "missionID": "location1mission1",
+        "unlocked": true,
+        "visible": false,
+        "complete": false,
+        "taskList": [
           {
-            "TaskID": "location1mission1task_location1commfc",
-            "Visible": true,
-            "Complete": false
+            "taskID": "location1mission1task_location1commfc",
+            "visible": true,
+            "complete": false
           },
           {
-            "TaskID": "location1mission1task_location1comm1",
-            "Visible": true,
-            "Complete": false
+            "taskID": "location1mission1task_location1comm1",
+            "visible": true,
+            "complete": false
           }
         ]
       }
