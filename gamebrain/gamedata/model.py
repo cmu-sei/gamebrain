@@ -80,6 +80,9 @@ class PowerStatus(enum.Enum):
 
 
 class ShipDataTeamSpecific(BaseModel):
+    class Config:
+        use_enum_values = True
+
     codexURL: AnyUrl
     workstation1URL: AnyUrl
     workstation2URL: AnyUrl
