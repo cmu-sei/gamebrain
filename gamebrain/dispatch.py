@@ -24,7 +24,7 @@ class GamespaceStatusTask:
     async def init(cls, settings: "SettingsModel"):
         cls.settings = settings
 
-        return cls._grader_task()
+        return await cls._grader_task()
 
     @dataclass
     class TeamDispatches:
