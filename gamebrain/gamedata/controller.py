@@ -32,6 +32,15 @@ async def get_gamedata(
         raise HTTPException(status_code=404, detail="Team not found.")
 
 
+@router.post("/GameData/{team_id}")
+async def post_gamedata(
+        team_id: TeamID,
+        auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
+) -> None:
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    return await GameStateManager.new_team(team_id)
+
+
 @router.get("/GameData/LocationUnlock/{coordinates}/{team_id}")
 async def get_locationunlock(
     coordinates: Coordinates,
