@@ -150,7 +150,7 @@ class GameStateManager:
                     for task in mission.taskList
                 ]
                 mission_full = MissionDataFull(
-                    **mission_global.dict() | mission.dict() | {"TaskList": task_list}
+                    **mission_global.dict() | mission.dict() | {"taskList": task_list}
                 )
                 full_mission_data.append(mission_full)
 
@@ -252,9 +252,9 @@ class GameStateManager:
     ) -> LocationUnlockResponse:
         def response(status, location=""):
             return LocationUnlockResponse(
-                ResponseStatus=status,
-                LocationID=location,
-                EnteredCoordinates=unlock_code,
+                responseStatus=status,
+                locationID=location,
+                enteredCoordinates=unlock_code,
             )
 
         async with cls._lock:
@@ -275,7 +275,7 @@ class GameStateManager:
                     return response("alreadyunlocked")
                 else:
                     newly_unlocked = LocationDataTeamSpecific(
-                        LocationID=location_id,
+                        locationID=location_id,
                     )
                     team_data.locations.append(newly_unlocked)
 
@@ -316,10 +316,10 @@ class GameStateManager:
                     # Now use the gathered sets to actually update the cache.
                     team_specific_missions = [
                         MissionDataTeamSpecific(
-                            MissionID=mission_id,
-                            TaskList=[
+                            missionID=mission_id,
+                            taskList=[
                                 TaskDataTeamSpecific(
-                                    TaskID=task_id,
+                                    taskID=task_id,
                                 )
                                 for task_id in unlocked_task_ids
                                 if mission_id
@@ -420,8 +420,8 @@ class GameStateManager:
             return ScanResponse(
                 success=True,
                 message=location_data.locationID,
-                EventWaiting=True,
-                CommID=first_contact_event,
+                eventWaiting=True,
+                commID=first_contact_event,
             )
 
     @classmethod
