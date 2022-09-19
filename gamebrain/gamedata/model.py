@@ -5,20 +5,20 @@ from pydantic import BaseModel, AnyUrl
 
 
 class TaskData(BaseModel):
-    TaskID: str
-    MissionID: str
-    DescriptionText: str
-    InfoPresent: bool = True
-    InfoText: str
-    VideoPresent: bool = True
-    VideoURL: str
-    CommID: str
+    taskID: str
+    missionID: str
+    descriptionText: str
+    infoPresent: bool = True
+    infoText: str
+    videoPresent: bool = True
+    videoURL: str
+    commID: str
 
 
 class TaskDataTeamSpecific(BaseModel):
-    TaskID: str
-    Visible: bool = True
-    Complete: bool = False
+    taskID: str
+    visible: bool = True
+    complete: bool = False
 
 
 class TaskDataFull(TaskData, TaskDataTeamSpecific):
@@ -26,48 +26,48 @@ class TaskDataFull(TaskData, TaskDataTeamSpecific):
 
 
 class MissionData(BaseModel):
-    MissionID: str
-    Title: str
-    SummaryShort: str
-    SummaryLong: str
-    MissionIcon: str
-    IsSpecial: bool = False
-    RuleList: list[str]
-    TaskList: list[TaskData]
+    missionID: str
+    title: str
+    summaryShort: str
+    summaryLong: str
+    missionIcon: str
+    isSpecial: bool = False
+    ruleList: list[str]
+    taskList: list[TaskData]
 
 
 class MissionDataTeamSpecific(BaseModel):
-    MissionID: str
-    Unlocked: bool = True
-    Visible: bool = False
-    Complete: bool = False
-    TaskList: list[TaskDataTeamSpecific]
+    missionID: str
+    unlocked: bool = True
+    visible: bool = False
+    complete: bool = False
+    taskList: list[TaskDataTeamSpecific]
 
 
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
-    TaskList: list[TaskDataFull]
+    taskList: list[TaskDataFull]
 
 
 class LocationData(BaseModel):
-    LocationID: str
-    Name: str
-    ImageID: str
-    BackdropID: str
-    Surroundings: str
-    UnlockCode: str
-    TrajectoryLaunch: int
-    TrajectoryCorrection: int
-    TrajectoryCube: int
-    FirstContactEvent: str
-    NetworkName: str
+    locationID: str
+    name: str
+    imageID: str
+    backdropID: str
+    surroundings: str
+    unlockCode: str
+    trajectoryLaunch: int
+    trajectoryCorrection: int
+    trajectoryCube: int
+    firstContactEvent: str
+    networkName: str
 
 
 class LocationDataTeamSpecific(BaseModel):
-    LocationID: str
-    Unlocked: bool = True
-    Visited: bool = False
-    Scanned: bool = False
-    NetworkEstablished: bool = False
+    locationID: str
+    unlocked: bool = True
+    visited: bool = False
+    scanned: bool = False
+    networkEstablished: bool = False
 
 
 class LocationDataFull(LocationData, LocationDataTeamSpecific):
@@ -75,38 +75,38 @@ class LocationDataFull(LocationData, LocationDataTeamSpecific):
 
 
 class PowerStatus(enum.Enum):
-    On = "on"
-    Off = "off"
+    on = "on"
+    off = "off"
 
 
 class ShipDataTeamSpecific(BaseModel):
-    CodexURL: AnyUrl
-    Workstation1URL: AnyUrl
-    Workstation2URL: AnyUrl
-    Workstation3URL: AnyUrl
-    Workstation4URL: AnyUrl
-    Workstation5URL: AnyUrl
-    CodexStationPower: PowerStatus = PowerStatus.Off
-    CommPower: PowerStatus = PowerStatus.Off
-    FlightPower: PowerStatus = PowerStatus.Off
-    NavPower: PowerStatus = PowerStatus.Off
-    PilotPower: PowerStatus = PowerStatus.Off
+    codexURL: AnyUrl
+    workstation1URL: AnyUrl
+    workstation2URL: AnyUrl
+    workstation3URL: AnyUrl
+    workstation4URL: AnyUrl
+    workstation5URL: AnyUrl
+    codexStationPower: PowerStatus = PowerStatus.off
+    commPower: PowerStatus = PowerStatus.off
+    flightPower: PowerStatus = PowerStatus.off
+    navPower: PowerStatus = PowerStatus.off
+    pilotPower: PowerStatus = PowerStatus.off
 
 
 class SessionDataTeamSpecific(BaseModel):
-    TeamInfoName: str = None
-    TeamCodexCount: int = 0
-    JumpCutsceneURL: AnyUrl
+    teamInfoName: str = None
+    teamCodexCount: int = 0
+    jumpCutsceneURL: AnyUrl
 
 
 class CommEventData(BaseModel):
-    CommID: str
-    VideoURL: str
-    CommTemplate: Literal["incoming", "probe", "badTranslation"]
-    TranslationMessage: str
-    ScanInfoMessage: str
-    FirstContact: bool
-    LocationID: str
+    commID: str
+    videoURL: str
+    commTemplate: Literal["incoming", "probe", "badTranslation"]
+    translationMessage: str
+    scanInfoMessage: str
+    firstContact: bool
+    locationID: str
 
 
 PowerMode = Literal["launchMode", "explorationMode", "standby"]
@@ -144,11 +144,11 @@ class GenericResponse(BaseModel):
 
 
 class LocationUnlockResponse(BaseModel):
-    ResponseStatus: Literal["success", "invalid", "alreadyunlocked"]
-    LocationID: str
-    EnteredCoordinates: str
+    responseStatus: Literal["success", "invalid", "alreadyunlocked"]
+    locationID: str
+    enteredCoordinates: str
 
 
 class ScanResponse(GenericResponse):
-    EventWaiting: bool
-    CommID: CommEventData | None
+    eventWaiting: bool
+    commID: CommEventData | None

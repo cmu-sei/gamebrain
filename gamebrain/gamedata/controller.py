@@ -144,7 +144,7 @@ async def get_codexstationpoweron(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.codex_power(team_id, PowerStatus.On)
+        return await GameStateManager.codex_power(team_id, PowerStatus.on)
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
@@ -156,6 +156,6 @@ async def get_codexstationpoweroff(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.codex_power(team_id, PowerStatus.Off)
+        return await GameStateManager.codex_power(team_id, PowerStatus.off)
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")

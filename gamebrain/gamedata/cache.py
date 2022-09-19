@@ -116,7 +116,7 @@ class GameStateManager:
             new_team_state = GameDataTeamSpecific(
                 **cls._cache.team_initial_state.dict()
             )
-            new_team_state.session.TeamInfoName = team_id
+            new_team_state.session.teamInfoName = team_id
             cls._cache.team_map.__root__[team_id] = new_team_state
 
     @classmethod
@@ -136,18 +136,18 @@ class GameStateManager:
 
             full_loc_data = []
             for location in team_data.locations:
-                loc_global = cls._cache.location_map.__root__[location.LocationID]
+                loc_global = cls._cache.location_map.__root__[location.locationID]
                 loc_full = LocationDataFull(**loc_global.dict() | location.dict())
                 full_loc_data.append(loc_full)
 
             full_mission_data = []
             for mission in team_data.missions:
-                mission_global = cls._cache.mission_map.__root__[mission.MissionID]
+                mission_global = cls._cache.mission_map.__root__[mission.missionID]
                 task_list = [
                     TaskDataFull(
-                        **cls._cache.task_map.__root__[task.TaskID].dict() | task.dict()
+                        **cls._cache.task_map.__root__[task.taskID].dict() | task.dict()
                     )
-                    for task in mission.TaskList
+                    for task in mission.taskList
                 ]
                 mission_full = MissionDataFull(
                     **mission_global.dict() | mission.dict() | {"TaskList": task_list}
@@ -173,17 +173,17 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            team_data.session.TeamCodexCount = sum(
+            team_data.session.teamCodexCount = sum(
                 1
                 for _ in filter(
                     lambda v: v == "success", gamespace_state_output.dict().values()
                 )
             )
 
-            team_data.ship.CommPower = PowerStatus(gamespace_state_output.comms)
-            team_data.ship.FlightPower = PowerStatus(gamespace_state_output.flight)
-            team_data.ship.NavPower = PowerStatus(gamespace_state_output.nav)
-            team_data.ship.PilotPower = PowerStatus(gamespace_state_output.pilot)
+            team_data.ship.commPower = PowerStatus(gamespace_state_output.comms)
+            team_data.ship.flightPower = PowerStatus(gamespace_state_output.flight)
+            team_data.ship.navPower = PowerStatus(gamespace_state_output.nav)
+            team_data.ship.pilotPower = PowerStatus(gamespace_state_output.pilot)
 
     @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
@@ -225,7 +225,7 @@ class GameStateManager:
             location_data = cls._cache.location_map.__root__[
                 team_data.currentStatus.currentLocation
             ]
-            new_net = location_data.NetworkName
+            new_net = location_data.networkName
 
             await topomojo.change_vm_net(vm_id, new_net)
 
@@ -264,12 +264,12 @@ class GameStateManager:
 
             team_unlocked_locations = set(
                 map(
-                    lambda loc: loc.LocationID,
-                    filter(lambda loc: loc.Unlocked, team_data.locations),
+                    lambda loc: loc.locationID,
+                    filter(lambda loc: loc.unlocked, team_data.locations),
                 )
             )
             for location_id, location_data in cls._cache.location_map.__root__.items():
-                if location_data.UnlockCode != unlock_code:
+                if location_data.unlockCode != unlock_code:
                     continue
                 if location_id in team_unlocked_locations:
                     return response("alreadyunlocked")
@@ -282,10 +282,10 @@ class GameStateManager:
                     # Each Comm Event has a LocationID, so gather the ones associated with the new location.
                     unlocked_comm_event_ids = set(
                         map(
-                            lambda c: c.CommID,
+                            lambda c: c.commID,
                             (
                                 filter(
-                                    lambda c: c.LocationID == location_id,
+                                    lambda c: c.locationID == location_id,
                                     cls._cache.comm_map.__root__.values(),
                                 )
                             ),
@@ -294,9 +294,9 @@ class GameStateManager:
                     # Next gather the tasks that are associated with a Comm Event in the previous set.
                     unlocked_task_ids = set(
                         map(
-                            lambda t: t.TaskID,
+                            lambda t: t.taskID,
                             filter(
-                                lambda t: t.CommID in unlocked_comm_event_ids,
+                                lambda t: t.commID in unlocked_comm_event_ids,
                                 cls._cache.task_map.__root__.values(),
                             ),
                         )
@@ -304,9 +304,9 @@ class GameStateManager:
                     # Finally gather the missions associated with the previous set of tasks.
                     unlocked_mission_ids = set(
                         map(
-                            lambda m: m.MissionID,
+                            lambda m: m.missionID,
                             filter(
-                                lambda m: set(map(lambda t: t.TaskID, m.TaskList))
+                                lambda m: set(map(lambda t: t.taskID, m.taskList))
                                 & unlocked_task_ids,
                                 cls._cache.mission_map.__root__.values(),
                             ),
@@ -323,7 +323,7 @@ class GameStateManager:
                                 )
                                 for task_id in unlocked_task_ids
                                 if mission_id
-                                == cls._cache.task_map.__root__[task_id].MissionID
+                                == cls._cache.task_map.__root__[task_id].missionID
                             ],
                         )
                         for mission_id in unlocked_mission_ids
@@ -355,7 +355,7 @@ class GameStateManager:
                 )
 
             destination = [
-                loc for loc in team_data.locations if loc.LocationID == location_id
+                loc for loc in team_data.locations if loc.locationID == location_id
             ]
             if not destination:
                 return GenericResponse(
@@ -366,10 +366,10 @@ class GameStateManager:
             location_team_specific = destination.pop()
 
             if (
-                location_team_specific.LocationID
+                location_team_specific.locationID
                 == cls._settings.game.final_destination_name
             ):
-                if team_data.session.TeamCodexCount < 3:
+                if team_data.session.teamCodexCount < 3:
                     return GenericResponse(
                         success=False, message="Not enough codices unlocked."
                     )
@@ -390,10 +390,10 @@ class GameStateManager:
 
             new_status = CurrentLocationGameplayDataTeamSpecific(
                 currentLocation=location_id,
-                currentLocationScanned=location_team_specific.Scanned,
-                currentLocationSurroundings=location_data.Surroundings,
-                networkName=location_data.NetworkName,
-                firstContactComplete=location_team_specific.Visited,
+                currentLocationScanned=location_team_specific.scanned,
+                currentLocationSurroundings=location_data.surroundings,
+                networkName=location_data.networkName,
+                firstContactComplete=location_team_specific.visited,
                 powerStatus=team_data.currentStatus.powerStatus,
             )
             team_data.currentStatus = new_status
@@ -411,7 +411,7 @@ class GameStateManager:
                 team_data.currentStatus.currentLocation
             ]
             first_contact_event = cls._cache.comm_map.__root__[
-                location_data.FirstContactEvent
+                location_data.firstContactEvent
             ]
 
             team_data.currentStatus.incomingTransmission = True
@@ -419,7 +419,7 @@ class GameStateManager:
 
             return ScanResponse(
                 success=True,
-                message=location_data.LocationID,
+                message=location_data.locationID,
                 EventWaiting=True,
                 CommID=first_contact_event,
             )
@@ -452,15 +452,15 @@ class GameStateManager:
                 )
             associated_global_task = next(
                 filter(
-                    lambda t: t.CommID == current_comm_event.CommID,
+                    lambda t: t.commID == current_comm_event.commID,
                     cls._cache.task_map.__root__.values(),
                 )
             )
 
             team_specific_task = None
             for mission in team_data.missions:
-                for task in mission.TaskList:
-                    if task.TaskID == associated_global_task.TaskID:
+                for task in mission.taskList:
+                    if task.taskID == associated_global_task.taskID:
                         team_specific_task = task
                         break
                 if team_specific_task:
@@ -468,11 +468,11 @@ class GameStateManager:
             else:
                 return GenericResponse(success=False, message="noTaskFound")
 
-            if current_comm_event.FirstContact:
+            if current_comm_event.firstContact:
                 team_data.currentStatus.firstContactComplete = True
                 for location in team_data.locations:
-                    if current_comm_event.LocationID == location.LocationID:
-                        location.Visited = True
+                    if current_comm_event.locationID == location.locationID:
+                        location.visited = True
                         break
                 else:
                     return GenericResponse(
@@ -480,7 +480,7 @@ class GameStateManager:
                         message="locationNotUnlocked",
                     )
 
-            team_specific_task.Complete = True
+            team_specific_task.complete = True
             team_data.currentStatus.incomingTransmissionObject = None
             team_data.currentStatus.incomingTransmission = False
 

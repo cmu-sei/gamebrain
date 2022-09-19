@@ -20,17 +20,17 @@ def construct_global_locations(
         name = f"Location {i+1}"
 
         location_data = model.LocationData(
-            LocationID=location_id,
-            Name=name,
-            ImageID=f"{location_id}_image",
-            BackdropID=f"{location_id}_backdrop",
-            Surroundings=f"{name} surroundings",
-            UnlockCode=f"{i}" * 6,
-            TrajectoryLaunch=i,
-            TrajectoryCorrection=i,
-            TrajectoryCube=i,
-            FirstContactEvent=f"{location_id}commfc",
-            NetworkName=f"{location_id}net",
+            locationID=location_id,
+            name=name,
+            imageID=f"{location_id}_image",
+            backdropID=f"{location_id}_backdrop",
+            surroundings=f"{name} surroundings",
+            unlockCode=f"{i}" * 6,
+            trajectoryLaunch=i,
+            trajectoryCorrection=i,
+            trajectoryCube=i,
+            firstContactEvent=f"{location_id}commfc",
+            networkName=f"{location_id}net",
         )
 
         locations[location_id] = location_data
@@ -50,13 +50,13 @@ def construct_global_comm_events(
             comm_id = f"{location}commfc"
 
         comm_event = model.CommEventData(
-            CommID=comm_id,
-            VideoURL=f"https://example.com/comms/{comm_id}",
-            CommTemplate="badTranslation",
-            TranslationMessage=f"{comm_id} translation message",
-            ScanInfoMessage=f"{comm_id} scan info message",
-            FirstContact=i == 0,
-            LocationID=location,
+            commID=comm_id,
+            videoURL=f"https://example.com/comms/{comm_id}",
+            commTemplate="badTranslation",
+            translationMessage=f"{comm_id} translation message",
+            scanInfoMessage=f"{comm_id} scan info message",
+            firstContact=i == 0,
+            locationID=location,
         )
 
         comm_events[comm_id] = comm_event
@@ -70,17 +70,17 @@ def construct_global_tasks(
     tasks = {}
 
     for event in comm_events:
-        task_id = f"{mission_id}task_{event.CommID}"
+        task_id = f"{mission_id}task_{event.commID}"
 
         task_data = model.TaskData(
-            TaskID=task_id,
-            MissionID=mission_id,
-            DescriptionText=f"{mission_id} {task_id} description text",
-            InfoPresent=True,
-            InfoText=f"{mission_id} {task_id} info text",
-            VideoPresent=True,
-            VideoURL=f"https://example.com/{mission_id}/{task_id}",
-            CommID=event.CommID,
+            taskID=task_id,
+            missionID=mission_id,
+            descriptionText=f"{mission_id} {task_id} description text",
+            infoPresent=True,
+            infoText=f"{mission_id} {task_id} info text",
+            videoPresent=True,
+            videoURL=f"https://example.com/{mission_id}/{task_id}",
+            commID=event.commID,
         )
 
         tasks[task_id] = task_data
@@ -108,13 +108,13 @@ def construct_global_missions_comm_events_and_tasks(
         comm_events.update(location_comm_events.__root__)
 
         mission_data = model.MissionData(
-            MissionID=mission_id,
-            Title=f"{title} Title",
-            SummaryShort=f"{title} Short Summary",
-            SummaryLong=f"{title} Long Summary",
-            MissionIcon=f"https://example.com/{mission_id}/icon",
-            RuleList=[f"{title} Rule {j+1}" for j in range(3)],
-            TaskList=list(mission_tasks.__root__.values()),
+            missionID=mission_id,
+            title=f"{title} Title",
+            summaryShort=f"{title} Short Summary",
+            summaryLong=f"{title} Long Summary",
+            missionIcon=f"https://example.com/{mission_id}/icon",
+            ruleList=[f"{title} Rule {j+1}" for j in range(3)],
+            taskList=list(mission_tasks.__root__.values()),
         )
 
         missions[mission_id] = mission_data
@@ -159,10 +159,10 @@ def construct_team_ship_data(
 ) -> model.ShipDataTeamSpecific:
     return model.ShipDataTeamSpecific(
         **{
-            f"Workstation{i+1}URL": f"https://example.com/{team_id}_ship/ws{i + 1}"
+            f"workstation{i+1}URL": f"https://example.com/{team_id}_ship/ws{i + 1}"
             for i in range(5)
         },
-        CodexURL=f"https://example.com/{team_id}_ship/codex",
+        codexURL=f"https://example.com/{team_id}_ship/codex",
     )
 
 
@@ -170,9 +170,9 @@ def construct_team_session_data(
     team_name: str,
 ) -> model.SessionDataTeamSpecific:
     return model.SessionDataTeamSpecific(
-        TeamInfoName=team_name,
-        TeamCodexCount=0,
-        JumpCutsceneURL=f"https://example.com/jump",
+        teamInfoName=team_name,
+        teamCodexCount=0,
+        jumpCutsceneURL=f"https://example.com/jump",
     )
 
 
@@ -180,9 +180,9 @@ def construct_team_current_location(
     current_location: model.LocationData,
 ) -> model.CurrentLocationGameplayDataTeamSpecific:
     return model.CurrentLocationGameplayDataTeamSpecific(
-        currentLocation=current_location.LocationID,
-        currentLocationSurroundings=current_location.Surroundings,
-        networkName=f"{current_location.NetworkName}",
+        currentLocation=current_location.locationID,
+        currentLocationSurroundings=current_location.surroundings,
+        networkName=f"{current_location.networkName}",
         powerStatus="launchMode",
     )
 
@@ -203,20 +203,20 @@ def construct_team_specific_data(
 
     unlocked_locations = [
         model.LocationDataTeamSpecific(
-            LocationID=locations.__root__[first_location].LocationID,
+            locationID=locations.__root__[first_location].locationID,
         )
     ]
 
     tasks_team_specific = [
-        model.TaskDataTeamSpecific(TaskID=task.TaskID)
+        model.TaskDataTeamSpecific(taskID=task.taskID)
         for task in tasks.__root__.values()
     ]
     unlocked_missions = [
         model.MissionDataTeamSpecific(
-            MissionID=missions.__root__[first_mission].MissionID,
-            TaskList=list(
+            missionID=missions.__root__[first_mission].missionID,
+            taskList=list(
                 filter(
-                    lambda t: tasks.__root__[t.TaskID].MissionID == first_mission,
+                    lambda t: tasks.__root__[t.taskID].missionID == first_mission,
                     tasks_team_specific,
                 )
             ),
