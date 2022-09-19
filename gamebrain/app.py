@@ -85,7 +85,7 @@ async def get_team_from_user(
     user_id = payload["sub"]
 
     check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv
+        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
     )
 
     player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
