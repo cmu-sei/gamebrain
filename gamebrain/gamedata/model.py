@@ -32,7 +32,7 @@ class MissionData(BaseModel):
     summaryLong: str
     missionIcon: str
     isSpecial: bool = False
-    ruleList: list[str]
+    roleList: list[str]
     taskList: list[TaskData]
 
 
@@ -89,7 +89,6 @@ class ShipDataTeamSpecific(BaseModel):
     workstation3URL: AnyUrl
     workstation4URL: AnyUrl
     workstation5URL: AnyUrl
-    codexStationPower: PowerStatus = PowerStatus.off
     commPower: PowerStatus = PowerStatus.off
     flightPower: PowerStatus = PowerStatus.off
     navPower: PowerStatus = PowerStatus.off

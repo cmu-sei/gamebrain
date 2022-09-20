@@ -104,7 +104,7 @@
       "summaryLong": "Mission 1 for location1 Long Summary",
       "missionIcon": "https://example.com/location1mission1/icon",
       "isSpecial": false,
-      "ruleList": [
+      "roleList": [
         "Mission 1 for location1 Rule 1",
         "Mission 1 for location1 Rule 2",
         "Mission 1 for location1 Rule 3"
@@ -139,7 +139,7 @@
       "summaryLong": "Mission 1 for location2 Long Summary",
       "missionIcon": "https://example.com/location2mission1/icon",
       "isSpecial": false,
-      "ruleList": [
+      "roleList": [
         "Mission 1 for location2 Rule 1",
         "Mission 1 for location2 Rule 2",
         "Mission 1 for location2 Rule 3"
@@ -174,7 +174,7 @@
       "summaryLong": "Mission 1 for location3 Long Summary",
       "missionIcon": "https://example.com/location3mission1/icon",
       "isSpecial": false,
-      "ruleList": [
+      "roleList": [
         "Mission 1 for location3 Rule 1",
         "Mission 1 for location3 Rule 2",
         "Mission 1 for location3 Rule 3"
@@ -291,7 +291,6 @@
       "workstation3URL": "https://example.com/initial_state_ship/ws3",
       "workstation4URL": "https://example.com/initial_state_ship/ws4",
       "workstation5URL": "https://example.com/initial_state_ship/ws5",
-      "codexStationPower": "off",
       "commPower": "off",
       "flightPower": "off",
       "navPower": "off",

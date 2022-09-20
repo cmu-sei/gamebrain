@@ -113,7 +113,7 @@ def construct_global_missions_comm_events_and_tasks(
             summaryShort=f"{title} Short Summary",
             summaryLong=f"{title} Long Summary",
             missionIcon=f"https://example.com/{mission_id}/icon",
-            ruleList=[f"{title} Rule {j+1}" for j in range(3)],
+            roleList=[f"{title} Role {j+1}" for j in range(3)],
             taskList=list(mission_tasks.__root__.values()),
         )
 
