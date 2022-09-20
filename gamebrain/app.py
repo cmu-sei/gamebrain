@@ -84,9 +84,7 @@ async def get_team_from_user(
 
     user_id = payload["sub"]
 
-    check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
+    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
     player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
 
@@ -95,14 +93,15 @@ async def get_team_from_user(
     return {"teamID": player["teamId"]}
 
 
-@APP.get("/privileged/deploy/{game_id}/{team_id}")
+@APP.get("/admin/deploy/{game_id}/{team_id}")
 async def deploy(
     game_id: str,
     team_id: str,
     auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
     check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv
+        auth.credentials,
+        get_settings().identity.jwt_audiences.gamebrain_api_admin,
     )
 
     team_data = await db.get_team(team_id)
@@ -178,13 +177,14 @@ async def deploy(
     return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
 
 
-@APP.get("/privileged/undeploy/{game_id}/{team_id}")
+@APP.get("/admin/undeploy/{game_id}/{team_id}")
 async def undeploy(
     team_id: str,
     auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
     check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_priv
+        auth.credentials,
+        get_settings().identity.jwt_audiences.gamebrain_api_admin,
     )
 
     team_data = await db.get_team(team_id)
