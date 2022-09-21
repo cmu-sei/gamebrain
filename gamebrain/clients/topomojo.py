@@ -100,15 +100,14 @@ async def poll_dispatch(dispatch_id: str) -> Optional[Any]:
     return await _topomojo_get(f"dispatch/{dispatch_id}")
 
 
-async def register_gamespace(workspace_id: str, team_members: List[Dict]):
+async def register_gamespace(
+    workspace_id: str, expiration_time: str, team_members: List[Dict]
+):
     """
     team_members: Each dict contains 'id' and 'approvedName' keys.
     """
     settings = get_settings()
 
-    expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
-        minutes=settings.game.gamespace_duration_minutes
-    )
     post_data = {
         "resourceId": workspace_id,
         "graderKey": "",
@@ -121,9 +120,7 @@ async def register_gamespace(workspace_id: str, team_members: List[Dict]):
         "allowReset": True,
         "allowPreview": True,
         "startGamespace": True,
-        "expirationTime": expiration_time.isoformat(timespec="milliseconds").replace(
-            "+00:00", "Z"
-        ),
+        "expirationTime": expiration_time,
         "players": [
             {"subjectId": player["id"], "subjectName": player["approvedName"]}
             for player in team_members

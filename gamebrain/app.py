@@ -122,7 +122,10 @@ async def deploy(
         specs = (await gameboard.get_game_specs(game_id)).pop()
         external_id = specs["externalId"]
 
-        gamespace = await topomojo.register_gamespace(external_id, team["members"])
+        gamespace_expiration_time = team["sessionEnd"]
+        gamespace = await topomojo.register_gamespace(
+            external_id, gamespace_expiration_time, team["members"]
+        )
 
         gs_id = gamespace["id"]
 
