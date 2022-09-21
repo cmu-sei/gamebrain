@@ -39,7 +39,7 @@ class GamespaceStatusTask:
         return await create_dispatch(
             gamespace_id,
             cls.settings.game.grading_vm_name,
-            cls.settings.game.grading_vm_script_path,
+            cls.settings.game.grading_vm_file_path,
         )
 
     @classmethod
@@ -47,7 +47,7 @@ class GamespaceStatusTask:
         return await create_dispatch(
             gamespace_id,
             cls.settings.game.red_raider_vm_name,
-            cls.settings.game.red_raider_script_path,
+            cls.settings.game.red_raider_file_path,
         )
 
     @classmethod
