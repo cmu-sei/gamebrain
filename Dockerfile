@@ -10,3 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY gamebrain gamebrain
 
 CMD [ "uvicorn", "gamebrain.app:APP", "--host", "0.0.0.0", "--port", "8000"]
+
+LABEL org.opencontainers.image.source=https://github.com/cmu-sei/gamebrain
+
