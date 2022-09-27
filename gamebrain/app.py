@@ -12,6 +12,7 @@ import gamebrain.db as db
 from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
 from .gamedata.controller import router as gd_router
+from .pubsub import PubSub, Subscriber
 
 
 Settings.init_settings(Global.settings_path)
@@ -27,9 +28,7 @@ def format_message(event_message, event_time: Optional[datetime] = None):
 
 async def publish_event(team_id: str, event_message: str):
     event_time = await db.store_event(team_id, event_message)
-    await Global.redis.publish(
-        get_settings().redis.channel_name, format_message(event_message, event_time)
-    )
+    await PubSub.publish(format_message(event_message, event_time))
 
 
 @APP.on_event("startup")
@@ -345,8 +344,6 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
 
 @APP.websocket("/gamestate/websocket/events")
 async def subscribe_events(ws: WebSocket):
-    settings = get_settings()
-
     try:
         await ws.accept()
         try:
@@ -372,10 +369,10 @@ async def subscribe_events(ws: WebSocket):
     except WebSocketDisconnect:
         return
 
-    pubsub = Global.redis.pubsub(ignore_subscribe_messages=True)
-    await pubsub.subscribe(settings.redis.channel_name)
+    subscriber = Subscriber()
+    await subscriber.subscribe()
     while True:
-        message = await pubsub.get_message(timeout=10.0)
+        message = await subscriber.get(10.0)
         try:
             if not message:
                 # Check if the handled websocket is still connected.
@@ -384,7 +381,7 @@ async def subscribe_events(ws: WebSocket):
                 except asyncio.TimeoutError:
                     continue
             else:
-                await ws.send_text(message["data"].decode())
+                await ws.send_text(message)
         except WebSocketDisconnect:
             break
-    await pubsub.unsubscribe(settings.redis.channel_name)
+    await subscriber.unsubscribe()
