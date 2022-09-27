@@ -17,6 +17,7 @@ from .gamedata.cache import (
     GameDataCache,
 )
 import gamebrain.db as db
+from .pubsub import PubSub
 from .util import url_path_join
 
 
@@ -53,11 +54,6 @@ class DbSettingsModel(BaseModel):
     connection_string: str
     drop_app_tables: Optional[bool]
     echo_sql: Optional[bool]
-
-
-class RedisSettingsModel(BaseModel):
-    connection_string: Optional[str]
-    channel_name: Optional[str] = "gamebrain-default"
 
 
 class ChangeNetArgumentsModel(BaseModel):
@@ -103,7 +99,6 @@ class SettingsModel(BaseModel):
     topomojo: TopomojoSettingsModel
     gameboard: GameboardSettingsModel
     db: DbSettingsModel
-    redis: Optional[RedisSettingsModel] = RedisSettingsModel()
     game: GameSettingsModel
 
     @validator("ca_cert_path")
@@ -154,9 +149,9 @@ class Global:
         )
         topomojo.ModuleSettings.settings = settings
         cls._init_jwks()
-        cls._init_redis()
         cls._init_db_sync_task()
         cls._init_grader_task()
+        await PubSub.init(settings)
 
         if settings.game.gamestate_test_mode:
             from .tests.generate_test_gamedata import construct_data
@@ -181,14 +176,6 @@ class Global:
             url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
             verify=settings.ca_cert_path,
         ).json()
-
-    @classmethod
-    def _init_redis(cls):
-        settings = get_settings()
-        if settings.redis.connection_string:
-            cls.redis = redis.Redis.from_url(settings.redis.connection_string)
-        else:
-            cls.redis = redis.Redis()
 
     @classmethod
     async def _db_sync_task(cls):
