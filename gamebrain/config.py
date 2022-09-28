@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os.path
+import ssl
 from typing import Optional, Literal
 
 import httpx
@@ -91,7 +92,7 @@ class GameSettingsModel(BaseModel):
 
 
 class SettingsModel(BaseModel):
-    ca_cert_path: str
+    ca_cert_path: str = None
     app_root_prefix: Optional[str] = "/gamebrain"
     identity: IdentitySettingsModel
     topomojo: TopomojoSettingsModel
@@ -170,9 +171,12 @@ class Global:
     @classmethod
     def _init_jwks(cls):
         settings = get_settings()
+        ssl_context = ssl.create_default_context()
+        if settings.ca_cert_path:
+            ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
         cls.jwks = httpx.get(
             url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
-            verify=settings.ca_cert_path,
+            verify=ssl_context,
         ).json()
 
     @classmethod

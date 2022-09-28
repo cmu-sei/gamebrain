@@ -1,6 +1,6 @@
-import datetime
 from enum import Enum
 import json as jsonlib
+import ssl
 from typing import Any, Dict, List, Optional
 
 from httpx import AsyncClient
@@ -24,12 +24,14 @@ class HttpMethod(Enum):
 
 def _get_topomojo_client() -> AsyncClient:
     settings = get_settings()
-    cert = settings.ca_cert_path
+    ssl_context = ssl.create_default_context()
+    if settings.ca_cert_path:
+        ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
     api_key = settings.topomojo.x_api_key
 
     return AsyncClient(
         base_url=settings.topomojo.base_api_url,
-        verify=cert,
+        verify=ssl_context,
         headers={"X-API-KEY": api_key},
     )
 

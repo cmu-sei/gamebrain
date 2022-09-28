@@ -1,5 +1,6 @@
 import time
 from logging import error
+import ssl
 from typing import Optional, Dict
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
@@ -15,9 +16,12 @@ class SharedOAuth2Session:
     @classmethod
     async def _init_session(cls):
         settings = get_settings()
+        ssl_context = ssl.create_default_context()
+        if settings.ca_cert_path:
+            ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
         cls._session = AsyncOAuth2Client(settings.identity.client_id,
                                          settings.identity.client_secret,
-                                         verify=settings.ca_cert_path)
+                                         verify=ssl_context)
         await cls._new_token()
 
     @classmethod
