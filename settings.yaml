@@ -46,6 +46,6 @@ game:
   final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
   gamestate_test_mode: true
   game_id: f63c8e41fd994e16bad08075dd2a666c
-  headless_client_ips:
-    - "10.0.10.10"
-    - "10.0.10.11"
+  headless_client_urls:
+    - "https://foundry.local/gameserver/1"
+    - "https://foundry.local/gameserver/2"

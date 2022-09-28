@@ -1,13 +1,11 @@
 from datetime import datetime, timezone
 from functools import partial
-from ipaddress import IPv4Address, AddressValueError
 from typing import Dict, List, Optional
 
 from dateutil.parser import isoparse
 from sqlalchemy import (
     Column,
     Integer,
-    BigInteger,
     String,
     Boolean,
     JSON,
@@ -43,7 +41,7 @@ class DBManager:
         id = Column(String(36), primary_key=True)
         gamespace_id = Column(String(36))
         gamespace_expiration = Column(TIMESTAMP(timezone.utc))
-        headless_ip = Column(BigInteger)
+        headless_url = Column(String)
         team_name = Column(String)
 
         # lazy="joined" to prevent session errors.
@@ -160,25 +158,21 @@ async def store_team(
     team_id: str,
     gamespace_id: Optional[str] = None,
     gamespace_expiration: Optional[str] = None,
-    headless_ip: Optional[str] = None,
+    headless_url: Optional[str] = None,
     team_name: Optional[str] = None,
 ):
     """
     gamespace_id: Maximum 36 character string.
     gamespace_expiration: https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse
     """
-    try:
-        address = int(IPv4Address(headless_ip))
-    except AddressValueError:
-        address = None
     # Avoid clobbering existing values
     kwargs = {}
     if gamespace_id:
         kwargs["gamespace_id"] = gamespace_id
     if gamespace_expiration:
         kwargs["gamespace_expiration"] = isoparse(gamespace_expiration)
-    if address:
-        kwargs["headless_ip"] = address
+    if headless_url:
+        kwargs["headless_url"] = headless_url
     if team_name:
         kwargs["team_name"] = team_name
     team_data = DBManager.TeamData(id=team_id, **kwargs)
@@ -258,9 +252,9 @@ async def get_cache_snapshot():
         return None
 
 
-async def get_assigned_headless_ips() -> dict[str, IPv4Address]:
+async def get_assigned_headless_urls() -> dict[str, str]:
     teams_with_ips = await DBManager.get_rows(
-        DBManager.TeamData, DBManager.TeamData.headless_ip is not None
+        DBManager.TeamData, DBManager.TeamData.headless_url is not None
     )
 
-    return {team["id"]: IPv4Address(team["headless_ip"]) for team in teams_with_ips}
+    return {team["id"]: team["headless_url"] for team in teams_with_ips}
