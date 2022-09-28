@@ -2,10 +2,11 @@ FROM python:3.10
 
 WORKDIR /app
 
+COPY settings.yaml ./
 COPY requirements.txt ./
 COPY initial_state.json ./
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip --root-user-action=ignore
+RUN pip install --no-cache-dir -r requirements.txt --root-user-action=ignore
 
 COPY gamebrain gamebrain
 
