@@ -42,25 +42,25 @@ async def liveness_check():
 
 
 @APP.get("/admin/headless_client/{team_id}")
-async def get_headless_ip(
+async def get_headless_url(
     team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ):
     check_jwt(
         auth.credentials,
         get_settings().identity.jwt_audiences.gamebrain_api_admin,
     )
-    assigned_headless_ips = await db.get_assigned_headless_ips()
+    assigned_headless_urls = await db.get_assigned_headless_urls()
 
-    if ip := assigned_headless_ips.get(team_id):
+    if ip := assigned_headless_urls.get(team_id):
         return str(ip)
 
-    all_headless_ips = set(get_settings().game.headless_client_ips)
+    all_headless_urls = set(get_settings().game.headless_client_urls)
 
-    available_headless_ips = all_headless_ips - set(assigned_headless_ips.values())
-    headless_ip = available_headless_ips.pop()
+    available_headless_urls = all_headless_urls - set(assigned_headless_urls.values())
+    headless_url = available_headless_urls.pop()
 
-    await db.store_team(team_id, headless_ip=str(headless_ip))
-    return str(headless_ip)
+    await db.store_team(team_id, headless_url=str(headless_url))
+    return str(headless_url)
 
 
 class UserToken(BaseModel):
@@ -151,7 +151,7 @@ async def deploy(
             for vm in visible_vms
         ]
 
-        headless_ip = team_data.get("headless_ip")
+        headless_url = team_data.get("headless_url")
 
         gamespace_expiration = gamespace["expirationTime"]
         event_message = f"Launched gamespace {gs_id}"
@@ -174,9 +174,9 @@ async def deploy(
             }
             for vm in team_data["vm_data"]
         ]
-        headless_ip = team_data["headless_ip"]
+        headless_url = team_data["headless_url"]
 
-    return {"gamespaceId": gs_id, "headless_ip": headless_ip, "vms": console_urls}
+    return {"gamespaceId": gs_id, "headless_url": headless_url, "vms": console_urls}
 
 
 @APP.get("/admin/undeploy/{game_id}/{team_id}")
@@ -285,19 +285,6 @@ async def _change_vm_net(vm_id: str, new_net: str):
 
     event_message = f"Changed VM {vm_id} network to {new_net} for team {team_id}"
     await publish_event(team_id, event_message)
-
-
-@APP.put("/admin/headlessip/{team_id}")
-async def set_headless_ip(
-    team_id: str,
-    headless_ip: str,
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
-):
-    check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin
-    )
-
-    await db.store_team(team_id, headless_ip=headless_ip)
 
 
 @APP.post("/admin/secrets/{team_id}")

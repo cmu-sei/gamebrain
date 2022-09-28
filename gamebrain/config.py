@@ -1,12 +1,10 @@
 import asyncio
-from ipaddress import IPv4Address
 import json
 import logging
 import os.path
 from typing import Optional, Literal
 
 import httpx
-import redis.asyncio as redis
 import yaml
 from pydantic import BaseModel, validator
 
@@ -89,7 +87,7 @@ class GameSettingsModel(BaseModel):
     gamestate_test_mode: Optional[bool] = False
     game_id: str
 
-    headless_client_ips: list[IPv4Address]
+    headless_client_urls: list[str]
 
 
 class SettingsModel(BaseModel):
