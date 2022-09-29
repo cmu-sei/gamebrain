@@ -1,10 +1,12 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
+import yappi
 
 from .auth import check_jwt
 from .gamedata.cache import GameStateManager
@@ -14,9 +16,27 @@ from .config import Settings, get_settings, Global
 from .gamedata.controller import router as gd_router
 from .pubsub import PubSub, Subscriber
 
-
 Settings.init_settings(Global.settings_path)
-APP = FastAPI(docs_url="/api", root_path=get_settings().app_root_prefix)
+
+startup = []
+shutdown = []
+
+if get_settings().profiling:
+
+    def _profiling_output():
+        with open("profiling_result.prof", "w") as f:
+            yappi.get_func_stats().print_all(f)
+
+    logging.info("Profiling is ON")
+    startup.append(yappi.start)
+    shutdown.append(yappi.stop)
+    shutdown.append(_profiling_output)
+APP = FastAPI(
+    docs_url="/api",
+    root_path=get_settings().app_root_prefix,
+    on_startup=startup,
+    on_shutdown=shutdown,
+)
 APP.include_router(gd_router)
 
 

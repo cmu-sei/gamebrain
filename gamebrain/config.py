@@ -99,6 +99,7 @@ class SettingsModel(BaseModel):
     gameboard: GameboardSettingsModel
     db: DbSettingsModel
     game: GameSettingsModel
+    profiling: bool = False
 
     @validator("ca_cert_path")
     def path_exists(cls, v):

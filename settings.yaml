@@ -49,3 +49,4 @@ game:
   headless_client_urls:
     - "https://foundry.local/gameserver/1"
     - "https://foundry.local/gameserver/2"
+profiling: false
