@@ -98,7 +98,7 @@ def main():
     print("Testing get_team endpoint")
     json_data = {"user_token": user_token}
     print(json_data)
-    request = gamebrain_priv_session.post(
+    resp = gamestate_session.post(
         f"{GAMEBRAIN_URL}/privileged/get_team",
         json=json_data,
     )
