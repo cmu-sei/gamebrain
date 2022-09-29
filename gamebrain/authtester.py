@@ -104,11 +104,12 @@ def main():
     )
     print(resp.json())
 
-    resp = gamebrain_priv_session.post(
-        f"{GAMEBRAIN_URL}/privileged/event/{TEST_TEAM_1}",
-        params={"event_message": "Mission 2"},
-    )
-    print(resp.json())
+    # Revisit this later. Needs to be tested, but it's not really testable right now.
+    # resp = gamebrain_priv_session.post(
+    #     f"{GAMEBRAIN_URL}/privileged/event/{TEST_TEAM_1}",
+    #     params={"event_message": "Mission 2"},
+    # )
+    # print(resp.json())
 
     print("Getting initial GameData")
     resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData")

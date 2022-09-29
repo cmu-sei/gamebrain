@@ -210,7 +210,7 @@ async def push_event(
 
     team = await db.get_team(team_id)
     if not team:
-        return HTTPException(status_code=400, detail="Unknown Team ID")
+        raise HTTPException(status_code=400, detail="Unknown Team ID")
 
     for event_action in get_settings().game.event_actions:
         if event_action.event_message_partial not in event_message:
@@ -218,7 +218,7 @@ async def push_event(
         if event_action.action.action_type == "change-net":
             gs_id = team.get("gamespace_id")
             if gs_id is None:
-                return HTTPException(
+                raise HTTPException(
                     status_code=400,
                     detail="Unable to retrieve team's ship gamespace ID.",
                 )
@@ -228,7 +228,7 @@ async def push_event(
                     vm_id = vm["id"]
                     break
             else:
-                return HTTPException(
+                raise HTTPException(
                     status_code=400,
                     detail=f"Unable to find a VM with the name "
                     f"{event_action.action.vm_name}",
@@ -237,7 +237,7 @@ async def push_event(
         elif event_action.action.action_type == "dispatch":
             gs_id = team.get("gamespace_id")
             if gs_id is None:
-                return HTTPException(
+                raise HTTPException(
                     status_code=400,
                     detail="Unable to retrieve team's ship gamespace ID.",
                 )
