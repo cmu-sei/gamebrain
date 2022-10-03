@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 import yappi
@@ -59,6 +59,12 @@ async def startup():
 @APP.get("/live", include_in_schema=False)
 async def liveness_check():
     return
+
+
+@APP.get("/request_client")
+async def request_client(request: Request):
+    print(request.client)
+    return request.client
 
 
 @APP.get("/admin/headless_client/{team_id}")
