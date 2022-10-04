@@ -5,7 +5,7 @@ import warnings
 from authlib.integrations.httpx_client import OAuth2Client
 
 if os.getenv("LOCALHOST_TEST"):
-    GAMEBRAIN_URL = "https://localhost:8000"
+    GAMEBRAIN_URL = "http://localhost:8000"
 else:
     GAMEBRAIN_URL = "https://foundry.local/gamebrain"
 GAMEBOARD_URL = "https://foundry.local/gameboard/api"
