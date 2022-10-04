@@ -158,7 +158,7 @@ async def store_team(
     team_id: str,
     gamespace_id: Optional[str] = None,
     gamespace_expiration: Optional[str] = None,
-    headless_url: Optional[str] = None,
+    headless_url: Optional[str] | None = "",
     team_name: Optional[str] = None,
 ):
     """
@@ -171,7 +171,7 @@ async def store_team(
         kwargs["gamespace_id"] = gamespace_id
     if gamespace_expiration:
         kwargs["gamespace_expiration"] = isoparse(gamespace_expiration)
-    if headless_url:
+    if headless_url or headless_url is None:
         kwargs["headless_url"] = headless_url
     if team_name:
         kwargs["team_name"] = team_name

@@ -3,7 +3,14 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect, Request
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Security,
+    WebSocket,
+    WebSocketDisconnect,
+    Request,
+)
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 import yappi
@@ -87,6 +94,18 @@ async def get_headless_url(
 
     await db.store_team(team_id, headless_url=str(headless_url))
     return str(headless_url)
+
+
+@APP.get("/admin/headless_client_unassign/{team_id}")
+async def get_unassign_headless(
+    team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+):
+    check_jwt(
+        auth.credentials,
+        get_settings().identity.jwt_audiences.gamebrain_api_admin,
+    )
+    await db.store_team(team_id, headless_url=None)
+    return True
 
 
 class UserToken(BaseModel):

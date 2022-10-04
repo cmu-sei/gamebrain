@@ -223,6 +223,12 @@ def main():
     session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
     print(f"Deleted player {player_id}")
 
+    print("Unassigning Team 2 headless client:")
+    resp = gamebrain_admin_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client_unassign/{TEST_TEAM_2}",
+    )
+    print(resp.json())
+
 
 if __name__ == "__main__":
     main()
