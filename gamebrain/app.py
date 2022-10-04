@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import (
+    APIRouter,
     FastAPI,
     HTTPException,
     Security,
@@ -44,7 +45,11 @@ APP = FastAPI(
     on_startup=startup,
     on_shutdown=shutdown,
 )
-APP.include_router(gd_router)
+
+admin_router = APIRouter(prefix="/admin")
+# unpriv_router = APIRouter(prefix="/unprivileged")
+priv_router = APIRouter(prefix="/privileged")
+gamestate_router = APIRouter(prefix="/gamestate")
 
 
 def format_message(event_message, event_time: Optional[datetime] = None):
@@ -74,7 +79,7 @@ async def request_client(request: Request):
     return request.client
 
 
-@APP.get("/admin/headless_client/{team_id}")
+@admin_router.get("/headless_client/{team_id}")
 async def get_headless_url(
     team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ):
@@ -96,7 +101,7 @@ async def get_headless_url(
     return str(headless_url)
 
 
-@APP.get("/admin/headless_client_unassign/{team_id}")
+@admin_router.get("/headless_client_unassign/{team_id}")
 async def get_unassign_headless(
     team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ):
@@ -112,7 +117,7 @@ class UserToken(BaseModel):
     user_token: str
 
 
-@APP.post("/privileged/get_team")
+@priv_router.post("/get_team")
 async def get_team_from_user(
     post_data: UserToken, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
 ):
@@ -137,7 +142,7 @@ async def get_team_from_user(
     return {"teamID": player["teamId"]}
 
 
-@APP.get("/admin/deploy/{game_id}/{team_id}")
+@admin_router.get("/deploy/{game_id}/{team_id}")
 async def deploy(
     game_id: str,
     team_id: str,
@@ -224,7 +229,7 @@ async def deploy(
     return {"gamespaceId": gs_id, "headless_url": headless_url, "vms": console_urls}
 
 
-@APP.get("/admin/undeploy/{game_id}/{team_id}")
+@admin_router.get("/undeploy/{game_id}/{team_id}")
 async def undeploy(
     team_id: str,
     auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
@@ -243,7 +248,7 @@ async def undeploy(
         await db.expire_team_gamespace(team_id)
 
 
-@APP.post("/privileged/event/{team_id}")
+@priv_router.post("/event/{team_id}")
 async def push_event(
     team_id: str,
     event_message: str,
@@ -295,7 +300,7 @@ async def push_event(
     await publish_event(team_id, event_message)
 
 
-@APP.put("/privileged/changenet/{vm_id}")
+@priv_router.put("/changenet/{vm_id}")
 async def change_vm_net(
     vm_id: str,
     new_net: str,
@@ -332,7 +337,7 @@ async def _change_vm_net(vm_id: str, new_net: str):
     await publish_event(team_id, event_message)
 
 
-@APP.post("/admin/secrets/{team_id}")
+@admin_router.post("/secrets/{team_id}")
 async def create_challenge_secrets(
     team_id: str,
     secrets: List[str],
@@ -358,7 +363,7 @@ async def add_media_urls(
     await db.store_media_assets(media_map)
 
 
-@APP.get("/gamestate/team_data")
+@gamestate_router.get("/team_data", deprecated=True)
 async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
@@ -374,7 +379,7 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
     ]
 
 
-@APP.websocket("/gamestate/websocket/events")
+@gamestate_router.websocket("/websocket/events")
 async def subscribe_events(ws: WebSocket):
     try:
         await ws.accept()
@@ -417,3 +422,8 @@ async def subscribe_events(ws: WebSocket):
         except WebSocketDisconnect:
             break
     await subscriber.unsubscribe()
+
+APP.include_router(admin_router)
+APP.include_router(priv_router)
+APP.include_router(gamestate_router)
+APP.include_router(gd_router)
