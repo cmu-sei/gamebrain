@@ -83,9 +83,9 @@ class GameSettingsModel(BaseModel):
     ship_network_vm_name: Optional[str] = ""
 
     grading_vm_name: Optional[str] = ""
-    grading_vm_script_path: Optional[str] = ""
+    grading_vm_file_path: Optional[str] = ""
     red_raider_vm_name: Optional[str] = ""
-    red_raider_vm_script_path: Optional[str] = ""
+    red_raider_file_path: Optional[str] = ""
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
 
