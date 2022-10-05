@@ -82,6 +82,12 @@ def main():
     )
     print(resp.json())
 
+    print("Testing headless client pool expended (response should be null or None):")
+    resp = gamebrain_admin_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{'a'*32}",
+    )
+    print(resp.json())
+
     resp = gamebrain_admin_session.post(
         f"{GAMEBRAIN_URL}/admin/secrets/{TEST_TEAM_1}",
         json=["secret_1", "secret_2", "secret_3"],

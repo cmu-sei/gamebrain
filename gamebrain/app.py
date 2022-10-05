@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -98,6 +99,10 @@ async def get_headless_url(
     try:
         headless_url = available_headless_urls.pop()
     except KeyError:
+        logging.warning(
+            f"Team {team_id} tried to request a headless client assignment, but the pool is expended.\n"
+            f"The current assignments are: {json.dumps(assigned_headless_urls, indent=2)}"
+        )
         return None
 
     await db.store_team(team_id, headless_url=str(headless_url))
