@@ -82,7 +82,7 @@ async def request_client(request: Request):
 @admin_router.get("/headless_client/{team_id}")
 async def get_headless_url(
     team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
-):
+) -> str | None:
     check_jwt(
         auth.credentials,
         get_settings().identity.jwt_audiences.gamebrain_api_admin,
@@ -95,7 +95,10 @@ async def get_headless_url(
     all_headless_urls = set(get_settings().game.headless_client_urls.values())
 
     available_headless_urls = all_headless_urls - set(assigned_headless_urls.values())
-    headless_url = available_headless_urls.pop()
+    try:
+        headless_url = available_headless_urls.pop()
+    except KeyError:
+        return None
 
     await db.store_team(team_id, headless_url=str(headless_url))
     return str(headless_url)
