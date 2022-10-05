@@ -89,10 +89,10 @@ async def get_headless_url(
     )
     assigned_headless_urls = await db.get_assigned_headless_urls()
 
-    if ip := assigned_headless_urls.get(team_id):
-        return str(ip)
+    if url := assigned_headless_urls.get(team_id):
+        return str(url)
 
-    all_headless_urls = set(get_settings().game.headless_client_urls)
+    all_headless_urls = set(get_settings().game.headless_client_urls.values())
 
     available_headless_urls = all_headless_urls - set(assigned_headless_urls.values())
     headless_url = available_headless_urls.pop()
@@ -113,13 +113,15 @@ async def get_unassign_headless(
     return True
 
 
-class UserToken(BaseModel):
+class GetTeamPostData(BaseModel):
     user_token: str
+    server_container_hostname: str
 
 
 @priv_router.post("/get_team")
 async def get_team_from_user(
-    post_data: UserToken, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+    post_data: GetTeamPostData,
+    auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ):
     try:
         payload = check_jwt(
@@ -137,9 +139,22 @@ async def get_team_from_user(
 
     player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
 
-    # TODO: Make sure the user is on the same team as the game server
+    team_id = player["teamId"]
 
-    return {"teamID": player["teamId"]}
+    team_data = await db.get_team(team_id)
+
+    assigned_headless_url = team_data["headless_url"]
+    request_headless_url = get_settings().game.headless_client_urls.get(
+        post_data.server_container_hostname
+    )
+    if not assigned_headless_url == request_headless_url:
+        raise HTTPException(
+            status_code=401,
+            detail="Game client attempted to use a game server that it was not assigned to."
+            f" (It was assigned to {assigned_headless_url}.)",
+        )
+
+    return {"teamID": team_id}
 
 
 @admin_router.get("/deploy/{game_id}/{team_id}")
@@ -422,6 +437,7 @@ async def subscribe_events(ws: WebSocket):
         except WebSocketDisconnect:
             break
     await subscriber.unsubscribe()
+
 
 APP.include_router(admin_router)
 APP.include_router(priv_router)

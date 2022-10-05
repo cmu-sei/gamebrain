@@ -73,7 +73,8 @@ def main():
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
     )
-    print(resp.json())
+    team_1_headless_assignment = resp.json()
+    print(team_1_headless_assignment)
 
     print("Getting Team 2 headless client assignment:")
     resp = gamebrain_admin_session.get(
@@ -96,7 +97,22 @@ def main():
     user_token = user_session.token["access_token"]
 
     print("Testing get_team endpoint")
-    json_data = {"user_token": user_token}
+    json_data = {
+        "user_token": user_token,
+        "server_container_hostname": f"server-{team_1_headless_assignment[-1]}",
+    }
+    print(json_data)
+    resp = gamestate_session.post(
+        f"{GAMEBRAIN_URL}/privileged/get_team",
+        json=json_data,
+    )
+    print(resp.json())
+
+    print("Testing that get_team rejects users attempting to connect through an unauthorized server.")
+    json_data = {
+        "user_token": user_token,
+        "server_container_hostname": f"server-3",
+    }
     print(json_data)
     resp = gamestate_session.post(
         f"{GAMEBRAIN_URL}/privileged/get_team",

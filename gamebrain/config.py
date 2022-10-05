@@ -72,6 +72,10 @@ class EventActionsSettingsModel(BaseModel):
     action: ChangeNetArgumentsModel | DispatchCommandModel
 
 
+Hostname = str
+ServerPublicUrl = str
+
+
 class GameSettingsModel(BaseModel):
     ship_workspace_id: str
     event_actions: list[EventActionsSettingsModel]
@@ -88,7 +92,7 @@ class GameSettingsModel(BaseModel):
     gamestate_test_mode: Optional[bool] = False
     game_id: str
 
-    headless_client_urls: list[str]
+    headless_client_urls: dict[Hostname, ServerPublicUrl]
 
 
 class SettingsModel(BaseModel):

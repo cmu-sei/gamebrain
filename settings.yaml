@@ -47,6 +47,6 @@ game:
   gamestate_test_mode: true
   game_id: f63c8e41fd994e16bad08075dd2a666c
   headless_client_urls:
-    - "https://foundry.local/gameserver/1"
-    - "https://foundry.local/gameserver/2"
+    "server-1": "https://foundry.local/gameserver/1"
+    "server-2": "https://foundry.local/gameserver/2"
 profiling: false
