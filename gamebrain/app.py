@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 
 from fastapi import (
     APIRouter,
+    Depends,
     FastAPI,
     HTTPException,
     Security,
@@ -13,7 +14,7 @@ from fastapi import (
     WebSocketDisconnect,
     Request,
 )
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, APIKeyHeader
 from pydantic import BaseModel
 import yappi
 
@@ -47,7 +48,19 @@ APP = FastAPI(
     on_shutdown=shutdown,
 )
 
-admin_router = APIRouter(prefix="/admin")
+
+def admin_api_key_dependency(x_api_key: str = Depends(APIKeyHeader(name="X-API-Key"))):
+    expected_api_key = get_settings().gamebrain_admin_api_key
+    if x_api_key != expected_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Invalid X-API-Key header received. You sent: {x_api_key}.",
+        )
+
+
+admin_router = APIRouter(
+    prefix="/admin", dependencies=(Depends(admin_api_key_dependency),)
+)
 # unpriv_router = APIRouter(prefix="/unprivileged")
 priv_router = APIRouter(prefix="/privileged")
 gamestate_router = APIRouter(prefix="/gamestate")
@@ -81,13 +94,7 @@ async def request_client(request: Request):
 
 
 @admin_router.get("/headless_client/{team_id}")
-async def get_headless_url(
-    team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
-) -> str | None:
-    check_jwt(
-        auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_admin,
-    )
+async def get_headless_url(team_id: str) -> str | None:
     assigned_headless_urls = await db.get_assigned_headless_urls()
 
     if url := assigned_headless_urls.get(team_id):
@@ -110,13 +117,7 @@ async def get_headless_url(
 
 
 @admin_router.get("/headless_client_unassign/{team_id}")
-async def get_unassign_headless(
-    team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
-):
-    check_jwt(
-        auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_admin,
-    )
+async def get_unassign_headless(team_id: str):
     await db.store_team(team_id, headless_url=None)
     return True
 
@@ -169,12 +170,7 @@ async def get_team_from_user(
 async def deploy(
     game_id: str,
     team_id: str,
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_admin,
-    )
 
     team_data = await db.get_team(team_id)
 
@@ -255,12 +251,7 @@ async def deploy(
 @admin_router.get("/undeploy/{game_id}/{team_id}")
 async def undeploy(
     team_id: str,
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_admin,
-    )
 
     team_data = await db.get_team(team_id)
     if not team_data:
@@ -364,25 +355,16 @@ async def _change_vm_net(vm_id: str, new_net: str):
 async def create_challenge_secrets(
     team_id: str,
     secrets: List[str],
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin
-    )
 
     await db.store_team(team_id)
     await db.store_challenge_secrets(team_id, secrets)
 
 
-@APP.post("/admin/media")
+@admin_router.get("/admin/media")
 async def add_media_urls(
     media_map: Dict[str, str],
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin
-    )
-
     await db.store_media_assets(media_map)
 
 

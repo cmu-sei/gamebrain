@@ -23,7 +23,6 @@ from .util import url_path_join
 class JwtAudiencesModel(BaseModel):
     gamebrain_api_unpriv: str
     gamebrain_api_priv: str
-    gamebrain_api_admin: str
     gamestate_api: str
 
 
@@ -104,6 +103,7 @@ class SettingsModel(BaseModel):
     db: DbSettingsModel
     game: GameSettingsModel
     profiling: bool = False
+    gamebrain_admin_api_key: str
 
     @validator("ca_cert_path")
     def path_exists(cls, v):

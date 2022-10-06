@@ -2,6 +2,7 @@ import os
 import pprint
 import warnings
 
+from httpx import Client
 from authlib.integrations.httpx_client import OAuth2Client
 
 if os.getenv("LOCALHOST_TEST"):
@@ -14,8 +15,7 @@ GB_CLIENT_ID_UNPRIV = "gb-test-client-unpriv"
 GB_CLIENT_SECRET_UNPRIV = "46ec755e2bab4070a9634214620389b5"
 GB_CLIENT_ID_PRIV = "gb-test-client-priv"
 GB_CLIENT_SECRET_PRIV = "cbcf8df872684a82b370f461513ad0b3"
-GB_CLIENT_ID_ADMIN = "gb-test-client-admin"
-GB_CLIENT_SECRET_ADMIN = "accbc5dfa5a84aa9a9ce8ff26902a349"
+GB_ADMIN_API_KEY = "a" * 32
 GS_CLIENT_ID = "gs-test-client"
 GS_CLIENT_SECRET = "43bcc0072ab54a349368b20f1c31b0cd"
 TOKEN_URL = "https://foundry.local/identity/connect/token"
@@ -43,10 +43,11 @@ def main():
     # SSL warnings pollute the console too much.
     warnings.filterwarnings("ignore")
 
-    gamebrain_admin_session = OAuth2Client(
-        GB_CLIENT_ID_ADMIN, GB_CLIENT_SECRET_ADMIN, verify=False
+    missing_api_key_session = Client(verify=False)
+    invalid_api_key_session = Client(headers={"X-API-Key": "x" * 32}, verify=False)
+    gamebrain_admin_session = Client(
+        headers={"X-API-Key": GB_ADMIN_API_KEY}, verify=False
     )
-    gamebrain_admin_session.fetch_token(TOKEN_URL)
 
     gamestate_session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
     gamestate_session.fetch_token(TOKEN_URL)
@@ -66,8 +67,19 @@ def main():
         TOKEN_URL, username=FOUNDRY_ADMIN_EMAIL, password=FOUNDRY_ADMIN_PASSWORD
     )
 
-    # session_time_test_player = OAuth2Client(GAMEBOARD_SCRIPT_CLIENT, GAMEBOARD_SCRIPT_SECRET, verify=False)
-    # session_time_test_player.fetch_token(TOKEN_URL, username=TEST_SESSION_TIME, password=TEST_PASS)
+    print("Testing invalid API key:")
+    resp = missing_api_key_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
+    )
+    team_1_headless_assignment = resp.json()
+    print(team_1_headless_assignment)
+
+    print("Testing invalid API key:")
+    resp = invalid_api_key_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
+    )
+    team_1_headless_assignment = resp.json()
+    print(team_1_headless_assignment)
 
     print("Getting Team 1 headless client assignment:")
     resp = gamebrain_admin_session.get(
@@ -114,7 +126,9 @@ def main():
     )
     print(resp.json())
 
-    print("Testing that get_team rejects users attempting to connect through an unauthorized server.")
+    print(
+        "Testing that get_team rejects users attempting to connect through an unauthorized server."
+    )
     json_data = {
         "user_token": user_token,
         "server_container_hostname": f"server-3",
