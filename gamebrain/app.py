@@ -122,6 +122,14 @@ async def get_unassign_headless(team_id: str):
     return True
 
 
+@admin_router.get("/headless_client_unassign")
+async def get_unassign_all_headless():
+    assigned_headless_urls = await db.get_assigned_headless_urls()
+    for team_id in assigned_headless_urls:
+        await db.store_team(team_id, headless_url=None)
+    return True
+
+
 class GetTeamPostData(BaseModel):
     user_token: str
     server_container_hostname: str
