@@ -81,6 +81,7 @@ class GameSettingsModel(BaseModel):
     gamespace_duration_minutes: Optional[int] = 60
     ship_network_vm_name: Optional[str] = ""
 
+    antenna_vm_name: Optional[str] = ""
     grading_vm_name: Optional[str] = ""
     grading_vm_file_path: Optional[str] = ""
     red_raider_vm_name: Optional[str] = ""
