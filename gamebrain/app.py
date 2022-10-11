@@ -52,9 +52,11 @@ APP = FastAPI(
 def admin_api_key_dependency(x_api_key: str = Depends(APIKeyHeader(name="X-API-Key"))):
     expected_api_key = get_settings().gamebrain_admin_api_key
     if x_api_key != expected_api_key:
-        logging.error("Invalid X-API-Key header received.\n"
-                      f"Secret is expected to be: {expected_api_key}\n"
-                      f"Request included: {x_api_key}\n")
+        logging.error(
+            "Invalid X-API-Key header received.\n"
+            f"Secret is expected to be: {expected_api_key}\n"
+            f"Request included: {x_api_key}\n"
+        )
         raise HTTPException(
             status_code=401,
             detail=f"Invalid X-API-Key header received. You sent: \n{x_api_key}",
