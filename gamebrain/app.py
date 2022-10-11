@@ -170,6 +170,10 @@ async def get_team_from_user(
         post_data.server_container_hostname
     )
     if not assigned_headless_url == request_headless_url:
+        logging.warning(
+            "Game client attempted to use a game server that it was not assigned to."
+            f" (It was assigned to {assigned_headless_url}.)"
+        )
         raise HTTPException(
             status_code=401,
             detail="Game client attempted to use a game server that it was not assigned to."
