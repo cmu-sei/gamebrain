@@ -90,7 +90,7 @@ def main():
         location_map.__root__[location_id] for location_id in unlocked_location_ids
     ]
 
-    unlocked_mission_ids = ()
+    unlocked_mission_ids = tuple(mission_map.__root__.keys())
     unlocked_missions = [
         mission_map.__root__[mission_id] for mission_id in unlocked_mission_ids
     ]
