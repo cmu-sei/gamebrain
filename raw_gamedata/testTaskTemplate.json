@@ -1,0 +1,122 @@
+{
+  "m1t1": {
+    "taskID": "m1t1",
+    "missionID": "ep4",
+    "descriptionText": "Buy some robots",
+    "visible": true,
+    "complete": true,
+    "infoPresent": true,
+    "infoText": "These aren't the droids you're looking for.",
+    "videoPresent": true,
+    "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
+    "commID": ""
+  },
+  "m1t2": {
+    "taskID": "m1t2",
+    "missionID": "ep4",
+    "descriptionText": "Rescue a Princess",
+    "visible": true,
+    "complete": true,
+    "infoPresent": true,
+    "infoText": "Maclunkey!",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": "vid1"
+  },
+  "m1t3": {
+    "taskID": "m1t3",
+    "missionID": "ep4",
+    "descriptionText": "Use the Force",
+    "visible": false,
+    "complete": false,
+    "infoPresent": true,
+    "infoText": "If you can bullseye womprats, you can hit a target 2m wide.",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": ""
+  },
+  "m2t1": {
+    "taskID": "m2t1",
+    "missionID": "ep5",
+    "descriptionText": "Survive a night on Hoth",
+    "visible": true,
+    "complete": false,
+    "infoPresent": true,
+    "infoText": "I thought they smelled bad... on the inside.",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": ""
+  },
+  "m2t2": {
+    "taskID": "m2t2",
+    "missionID": "ep5",
+    "descriptionText": "Complain to a Muppet",
+    "visible": false,
+    "complete": false,
+    "infoPresent": true,
+    "infoText": "Whine a lot, you do.",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": ""
+  },
+  "m2t3": {
+    "taskID": "m2t3",
+    "missionID": "ep5",
+    "descriptionText": "Have dinner with your father",
+    "visible": false,
+    "complete": false,
+    "infoPresent": true,
+    "infoText": "Don't forget to give him a hand.",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": "vid4"
+  },
+  "m3t1": {
+    "taskID": "m3t1",
+    "missionID": "ep6",
+    "descriptionText": "Deliver a message to Jabba",
+    "visible": true,
+    "complete": false,
+    "infoPresent": true,
+    "infoText": "It's a Huttish message.  It means Jabba sleeps with the Sarlacc.",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": ""
+  },
+  "m3t2": {
+    "taskID": "m3t2",
+    "missionID": "ep6",
+    "descriptionText": "Make new freinds",
+    "visible": false,
+    "complete": false,
+    "infoPresent": true,
+    "infoText": "Today's the day you're going to be the Teddy Bear's picnic.",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": "vid5"
+  },
+  "m3t3": {
+    "taskID": "m3t3",
+    "missionID": "ep6",
+    "descriptionText": "Let the hate flow through you",
+    "visible": false,
+    "complete": false,
+    "infoPresent": false,
+    "infoText": "Consider a leadership offer in the family business.",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": ""
+  },
+  "m3t4": {
+    "taskID": "m3t4",
+    "missionID": "ep6",
+    "descriptionText": "Burn it all down",
+    "visible": false,
+    "complete": false,
+    "infoPresent": true,
+    "infoText": "You know, any contractor willing to work on that Death Star knew the risks. If they were killed, it was their own fault. ",
+    "videoPresent": false,
+    "videoURL": "",
+    "commID": ""
+  }
+}

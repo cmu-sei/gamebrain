@@ -1,0 +1,53 @@
+{
+  "dunesea": {
+    "locationID": "dunesea",
+    "name": "Lars Farm",
+    "imageID": "image1",
+    "backdropID": "backdrop1",
+    "unlockCode": "123456",
+    "unlocked": true,
+    "visited": false,
+    "scanned": false,
+    "surroundings": "Surroundings: Farmland",
+    "networkEstablished": true,
+    "networkName": "moisture_net",
+    "firstContactEvent": "vid1",
+    "trajectoryLaunch": 15,
+    "trajectoryCorrection": 140,
+    "trajectoryCube": 335
+  },
+  "cantina": {
+    "locationID": "cantina",
+    "name": "Mos Eisley",
+    "imageID": "image2",
+    "backdropID": "backdrop2",
+    "unlockCode": "abc123",
+    "unlocked": true,
+    "visited": false,
+    "scanned": false,
+    "surroundings": "Surroundings: Spaceport",
+    "networkEstablished": false,
+    "networkName": "scum_and_villany",
+    "firstContactEvent": "vid2",
+    "trajectoryLaunch": 275,
+    "trajectoryCorrection": 90,
+    "trajectoryCube": 145
+  },
+  "rebel": {
+    "locationID": "rebel",
+    "name": "Lothal",
+    "imageID": "image3",
+    "backdropID": "backdrop3",
+    "unlockCode": "654321",
+    "unlocked": false,
+    "visited": false,
+    "scanned": false,
+    "surroundings": "Surroundings: Imperial Shipyard",
+    "networkEstablished": false,
+    "networkName": "ZebNet",
+    "firstContactEvent": "vid3",
+    "trajectoryLaunch": 75,
+    "trajectoryCorrection": 70,
+    "trajectoryCube": 60
+  }
+}

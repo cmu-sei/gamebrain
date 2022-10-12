@@ -6,7 +6,13 @@ from collections import defaultdict
 import json
 from os.path import isfile, join
 
-from gamebrain.gamedata.cache import CommMap, TaskMap, MissionMap, LocationMap, GameDataCache
+from gamebrain.gamedata.cache import (
+    CommMap,
+    TaskMap,
+    MissionMap,
+    LocationMap,
+    GameDataCache,
+)
 from gamebrain.gamedata.model import (
     SessionDataTeamSpecific,
     ShipDataTeamSpecific,
@@ -14,13 +20,24 @@ from gamebrain.gamedata.model import (
     CurrentLocationGameplayDataTeamSpecific,
 )
 
+TEST_MODE = True
+
+FILE_PREFIX = "test" if TEST_MODE else "live"
+
+INITIAL_LOCATION = "dunesea" if TEST_MODE else "plto"
+INITIAL_UNLOCKED_LOCS = (
+    ("dunesea", "cantina", "rebel")
+    if TEST_MODE
+    else ("aurmusm", "vitlra", "j900", "aursys", "astfld_correct")
+)
+
 RAW_FILES_DIR = "raw_gamedata"
-COMMS_PATH = join(RAW_FILES_DIR, "liveCommStore.json")
-TASKS_PATH = join(RAW_FILES_DIR, "liveTaskTemplate.json")
-MISSIONS_PATH = join(RAW_FILES_DIR, "liveMissionTemplate.json")
-LOCS_PATH = join(RAW_FILES_DIR, "liveLocations.json")
-SESSION_PATH = join(RAW_FILES_DIR, "liveSessionTemplate.json")
-SHIP_PATH = join(RAW_FILES_DIR, "liveShipTemplate1.json")
+COMMS_PATH = join(RAW_FILES_DIR, f"{FILE_PREFIX}CommStore.json")
+TASKS_PATH = join(RAW_FILES_DIR, f"{FILE_PREFIX}TaskTemplate.json")
+MISSIONS_PATH = join(RAW_FILES_DIR, f"{FILE_PREFIX}MissionTemplate.json")
+LOCS_PATH = join(RAW_FILES_DIR, f"{FILE_PREFIX}Locations.json")
+SESSION_PATH = join(RAW_FILES_DIR, f"{FILE_PREFIX}SessionTemplate.json")
+SHIP_PATH = join(RAW_FILES_DIR, f"{FILE_PREFIX}ShipTemplate1.json")
 
 JsonStr = str
 
@@ -32,9 +49,7 @@ def get_comm_map(comm_file_content: JsonStr) -> CommMap:
 
 def get_task_map(task_file_content: JsonStr) -> TaskMap:
     data = json.loads(task_file_content)
-    # TODO: Remove this when the real data contains commID.
-    temp_patch = {k: v | {"commID": "placeholder"} for k, v in data.items()}
-    return TaskMap(__root__=temp_patch)
+    return TaskMap(__root__=data)
 
 
 def get_mission_map(task_data: TaskMap, mission_file_content: JsonStr) -> MissionMap:
@@ -81,13 +96,14 @@ def main():
         initial_ship = ShipDataTeamSpecific(**json.loads(f.read()))
 
     current_status = CurrentLocationGameplayDataTeamSpecific(
-        currentLocation="plto",
-        currentLocationSurroundings=location_map.__root__["plto"].surroundings,
+        currentLocation=INITIAL_LOCATION,
+        currentLocationSurroundings=location_map.__root__[
+            INITIAL_LOCATION
+        ].surroundings,
     )
 
-    unlocked_location_ids = ("aurmusm", "vitlra", "j900", "aursys", "astfld_correct")
     unlocked_locations = [
-        location_map.__root__[location_id] for location_id in unlocked_location_ids
+        location_map.__root__[location_id] for location_id in INITIAL_UNLOCKED_LOCS
     ]
 
     unlocked_mission_ids = tuple(mission_map.__root__.keys())
@@ -112,7 +128,7 @@ def main():
         team_initial_state=team_initial_state,
     )
 
-    with open("live_initial_state.json", "w") as f:
+    with open(f"{FILE_PREFIX}_initial_state.json", "w") as f:
         json.dump(initial_cache.dict(), f, indent=2)
 
 
