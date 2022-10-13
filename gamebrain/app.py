@@ -262,7 +262,7 @@ async def deploy(
         ]
         headless_url = team_data["headless_url"]
 
-    cached_urls = {vm["Name"]: vm["Id"] for vm in console_urls}
+    cached_urls = {vm["Name"]: vm["Url"] for vm in console_urls}
     await GameStateManager.update_team_urls(team_id, cached_urls)
 
     return {"gamespaceId": gs_id, "headless_url": headless_url, "vms": console_urls}
