@@ -29,11 +29,12 @@ def _get_topomojo_client() -> AsyncClient:
     if settings.ca_cert_path:
         ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
     api_key = settings.topomojo.x_api_key
+    api_client = settings.topomojo.x_api_client
 
     return AsyncClient(
         base_url=settings.topomojo.base_api_url,
         verify=ssl_context,
-        headers={"X-API-KEY": api_key},
+        headers={"x-api-key": api_key, "x-api-client": api_client},
     )
 
 

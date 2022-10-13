@@ -88,6 +88,12 @@ def main():
     team_1_headless_assignment = resp.json()
     print(team_1_headless_assignment)
 
+    print("Deploying for Team 1")
+    resp = gamebrain_admin_session.get(
+        f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}"
+    )
+    print(resp.json())
+
     print("Getting Team 2 headless client assignment:")
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_2}",

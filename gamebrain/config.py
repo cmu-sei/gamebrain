@@ -46,6 +46,7 @@ class TopomojoSettingsModel(BaseModel):
     base_url: str
     base_api_url: str
     x_api_key: str
+    x_api_client: str
 
 
 class DbSettingsModel(BaseModel):
