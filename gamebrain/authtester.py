@@ -90,7 +90,7 @@ def main():
 
     print("Deploying for Team 1")
     resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}"
+        f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
     )
     print(resp.json())
 
