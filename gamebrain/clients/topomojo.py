@@ -57,7 +57,12 @@ async def _topomojo_request(
 
         response = await client.send(request)
         if not response.is_success:
-            error(f"HTTP Request to {response.url} returned {response.status_code}")
+            error(
+                f"HTTP Request to {response.url} returned {response.status_code}"
+                f"HTTP Method was: {request.method}"
+                f"Headers were: {request.headers}"
+                f"Request Body was: {request.content}"
+            )
 
     try:
         return response.json()
