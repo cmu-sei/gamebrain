@@ -1,4 +1,6 @@
 import asyncio
+import json
+import logging
 from typing import Literal
 
 from pydantic import BaseModel
@@ -201,6 +203,10 @@ class GameStateManager:
             team_data.ship.workstation4URL = vm_urls.get("operator-terminal-4")
             team_data.ship.workstation5URL = vm_urls.get("operator-terminal-5")
             team_data.ship.codexURL = vm_urls.get("codex-decoder")
+
+            logging.info(
+                f"Team Data for team {team_id} updated: {json.dumps(team_data.ship.dict(), indent=2)}"
+            )
 
     @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
