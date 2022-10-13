@@ -34,6 +34,9 @@ TeamID = str
 
 JsonStr = str
 
+VmName = str
+VmURL = str
+
 
 class NonExistentTeam(Exception):
     ...
@@ -184,6 +187,20 @@ class GameStateManager:
             team_data.ship.flightPower = PowerStatus(gamespace_state_output.flight)
             team_data.ship.navPower = PowerStatus(gamespace_state_output.nav)
             team_data.ship.pilotPower = PowerStatus(gamespace_state_output.pilot)
+
+    @classmethod
+    async def update_team_urls(cls, team_id: TeamID, vm_urls: dict[VmName, VmURL]):
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            team_data.ship.workstation1URL = vm_urls.get("operator-terminal-1")
+            team_data.ship.workstation2URL = vm_urls.get("operator-terminal-2")
+            team_data.ship.workstation3URL = vm_urls.get("operator-terminal-3")
+            team_data.ship.workstation4URL = vm_urls.get("operator-terminal-4")
+            team_data.ship.workstation5URL = vm_urls.get("operator-terminal-5")
+            team_data.ship.codexURL = vm_urls.get("codex-decoder")
 
     @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:

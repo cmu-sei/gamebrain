@@ -158,8 +158,8 @@ def main():
     # pprint.pprint(resp.json())
 
     print("Getting GameData")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/team1")
-    # pprint.pprint(resp.json())
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
+    pprint.pprint(resp.json())
 
     print("Unlocking location 0 (expect alreadyunlocked)")
     resp = gamestate_session.get(
