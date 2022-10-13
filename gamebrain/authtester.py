@@ -2,10 +2,11 @@ import os
 import pprint
 import warnings
 
+from httpx import Client
 from authlib.integrations.httpx_client import OAuth2Client
 
 if os.getenv("LOCALHOST_TEST"):
-    GAMEBRAIN_URL = "https://localhost:8000"
+    GAMEBRAIN_URL = "http://localhost:8000"
 else:
     GAMEBRAIN_URL = "https://foundry.local/gamebrain"
 GAMEBOARD_URL = "https://foundry.local/gameboard/api"
@@ -14,8 +15,7 @@ GB_CLIENT_ID_UNPRIV = "gb-test-client-unpriv"
 GB_CLIENT_SECRET_UNPRIV = "46ec755e2bab4070a9634214620389b5"
 GB_CLIENT_ID_PRIV = "gb-test-client-priv"
 GB_CLIENT_SECRET_PRIV = "cbcf8df872684a82b370f461513ad0b3"
-GB_CLIENT_ID_ADMIN = "gb-test-client-admin"
-GB_CLIENT_SECRET_ADMIN = "accbc5dfa5a84aa9a9ce8ff26902a349"
+GB_ADMIN_API_KEY = "a" * 32
 GS_CLIENT_ID = "gs-test-client"
 GS_CLIENT_SECRET = "43bcc0072ab54a349368b20f1c31b0cd"
 TOKEN_URL = "https://foundry.local/identity/connect/token"
@@ -43,10 +43,11 @@ def main():
     # SSL warnings pollute the console too much.
     warnings.filterwarnings("ignore")
 
-    gamebrain_admin_session = OAuth2Client(
-        GB_CLIENT_ID_ADMIN, GB_CLIENT_SECRET_ADMIN, verify=False
+    missing_api_key_session = Client(verify=False)
+    invalid_api_key_session = Client(headers={"X-API-Key": "x" * 32}, verify=False)
+    gamebrain_admin_session = Client(
+        headers={"X-API-Key": GB_ADMIN_API_KEY}, verify=False
     )
-    gamebrain_admin_session.fetch_token(TOKEN_URL)
 
     gamestate_session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
     gamestate_session.fetch_token(TOKEN_URL)
@@ -66,18 +67,36 @@ def main():
         TOKEN_URL, username=FOUNDRY_ADMIN_EMAIL, password=FOUNDRY_ADMIN_PASSWORD
     )
 
-    # session_time_test_player = OAuth2Client(GAMEBOARD_SCRIPT_CLIENT, GAMEBOARD_SCRIPT_SECRET, verify=False)
-    # session_time_test_player.fetch_token(TOKEN_URL, username=TEST_SESSION_TIME, password=TEST_PASS)
+    print("Testing invalid API key:")
+    resp = missing_api_key_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
+    )
+    team_1_headless_assignment = resp.json()
+    print(team_1_headless_assignment)
+
+    print("Testing invalid API key:")
+    resp = invalid_api_key_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
+    )
+    team_1_headless_assignment = resp.json()
+    print(team_1_headless_assignment)
 
     print("Getting Team 1 headless client assignment:")
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
     )
-    print(resp.json())
+    team_1_headless_assignment = resp.json()
+    print(team_1_headless_assignment)
 
     print("Getting Team 2 headless client assignment:")
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_2}",
+    )
+    print(resp.json())
+
+    print("Testing headless client pool expended (response should be null or None):")
+    resp = gamebrain_admin_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client/{'a'*32}",
     )
     print(resp.json())
 
@@ -96,7 +115,24 @@ def main():
     user_token = user_session.token["access_token"]
 
     print("Testing get_team endpoint")
-    json_data = {"user_token": user_token}
+    json_data = {
+        "user_token": user_token,
+        "server_container_hostname": f"server-{team_1_headless_assignment[-1]}",
+    }
+    print(json_data)
+    resp = gamestate_session.post(
+        f"{GAMEBRAIN_URL}/privileged/get_team",
+        json=json_data,
+    )
+    print(resp.json())
+
+    print(
+        "Testing that get_team rejects users attempting to connect through an unauthorized server."
+    )
+    json_data = {
+        "user_token": user_token,
+        "server_container_hostname": f"server-3",
+    }
     print(json_data)
     resp = gamestate_session.post(
         f"{GAMEBRAIN_URL}/privileged/get_team",
@@ -222,6 +258,12 @@ def main():
     # Clean up.
     session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
     print(f"Deleted player {player_id}")
+
+    print("Unassigning Team 2 headless client:")
+    resp = gamebrain_admin_session.get(
+        f"{GAMEBRAIN_URL}/admin/headless_client_unassign/{TEST_TEAM_2}",
+    )
+    print(resp.json())
 
 
 if __name__ == "__main__":

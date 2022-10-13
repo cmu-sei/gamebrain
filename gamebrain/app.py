@@ -1,10 +1,22 @@
 import asyncio
+import json
+import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Security, WebSocket, WebSocketDisconnect
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Security,
+    WebSocket,
+    WebSocketDisconnect,
+    Request,
+)
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, APIKeyHeader
 from pydantic import BaseModel
+import yappi
 
 from .auth import check_jwt
 from .gamedata.cache import GameStateManager
@@ -14,10 +26,49 @@ from .config import Settings, get_settings, Global
 from .gamedata.controller import router as gd_router
 from .pubsub import PubSub, Subscriber
 
-
 Settings.init_settings(Global.settings_path)
-APP = FastAPI(docs_url="/api", root_path=get_settings().app_root_prefix)
-APP.include_router(gd_router)
+
+startup = []
+shutdown = []
+
+if get_settings().profiling:
+
+    def _profiling_output():
+        with open("profiling_result.prof", "w") as f:
+            yappi.get_func_stats().print_all(f)
+
+    logging.info("Profiling is ON")
+    startup.append(yappi.start)
+    shutdown.append(yappi.stop)
+    shutdown.append(_profiling_output)
+APP = FastAPI(
+    docs_url="/api",
+    root_path=get_settings().app_root_prefix,
+    on_startup=startup,
+    on_shutdown=shutdown,
+)
+
+
+def admin_api_key_dependency(x_api_key: str = Depends(APIKeyHeader(name="X-API-Key"))):
+    expected_api_key = get_settings().gamebrain_admin_api_key
+    if x_api_key != expected_api_key:
+        logging.error(
+            "Invalid X-API-Key header received.\n"
+            f"Secret is expected to be: {expected_api_key}\n"
+            f"Request included: {x_api_key}\n"
+        )
+        raise HTTPException(
+            status_code=401,
+            detail=f"Invalid X-API-Key header received. You sent: \n{x_api_key}",
+        )
+
+
+admin_router = APIRouter(
+    prefix="/admin", dependencies=(Depends(admin_api_key_dependency),)
+)
+# unpriv_router = APIRouter(prefix="/unprivileged")
+priv_router = APIRouter(prefix="/privileged")
+gamestate_router = APIRouter(prefix="/gamestate")
 
 
 def format_message(event_message, event_time: Optional[datetime] = None):
@@ -41,35 +92,58 @@ async def liveness_check():
     return
 
 
-@APP.get("/admin/headless_client/{team_id}")
-async def get_headless_url(
-    team_id: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
-):
-    check_jwt(
-        auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_admin,
-    )
+@APP.get("/request_client")
+async def request_client(request: Request):
+    print(request.client)
+    return request.client
+
+
+@admin_router.get("/headless_client/{team_id}")
+async def get_headless_url(team_id: str) -> str | None:
     assigned_headless_urls = await db.get_assigned_headless_urls()
 
-    if ip := assigned_headless_urls.get(team_id):
-        return str(ip)
+    if url := assigned_headless_urls.get(team_id):
+        return str(url)
 
-    all_headless_urls = set(get_settings().game.headless_client_urls)
+    all_headless_urls = set(get_settings().game.headless_client_urls.values())
 
     available_headless_urls = all_headless_urls - set(assigned_headless_urls.values())
-    headless_url = available_headless_urls.pop()
+    try:
+        headless_url = available_headless_urls.pop()
+    except KeyError:
+        logging.warning(
+            f"Team {team_id} tried to request a headless client assignment, but the pool is expended.\n"
+            f"The current assignments are: {json.dumps(assigned_headless_urls, indent=2)}"
+        )
+        return None
 
     await db.store_team(team_id, headless_url=str(headless_url))
     return str(headless_url)
 
 
-class UserToken(BaseModel):
+@admin_router.get("/headless_client_unassign/{team_id}")
+async def get_unassign_headless(team_id: str):
+    await db.store_team(team_id, headless_url=None)
+    return True
+
+
+@admin_router.get("/headless_client_unassign")
+async def get_unassign_all_headless():
+    assigned_headless_urls = await db.get_assigned_headless_urls()
+    for team_id in assigned_headless_urls:
+        await db.store_team(team_id, headless_url=None)
+    return True
+
+
+class GetTeamPostData(BaseModel):
     user_token: str
+    server_container_hostname: str
 
 
-@APP.post("/privileged/get_team")
+@priv_router.post("/get_team")
 async def get_team_from_user(
-    post_data: UserToken, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+    post_data: GetTeamPostData,
+    auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ):
     try:
         payload = check_jwt(
@@ -87,21 +161,33 @@ async def get_team_from_user(
 
     player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
 
-    # TODO: Make sure the user is on the same team as the game server
+    team_id = player["teamId"]
 
-    return {"teamID": player["teamId"]}
+    team_data = await db.get_team(team_id)
+
+    assigned_headless_url = team_data["headless_url"]
+    request_headless_url = get_settings().game.headless_client_urls.get(
+        post_data.server_container_hostname
+    )
+    if not assigned_headless_url == request_headless_url:
+        logging.warning(
+            "Game client attempted to use a game server that it was not assigned to."
+            f" (It was assigned to {assigned_headless_url}.)"
+        )
+        raise HTTPException(
+            status_code=401,
+            detail="Game client attempted to use a game server that it was not assigned to."
+            f" (It was assigned to {assigned_headless_url}.)",
+        )
+
+    return {"teamID": team_id}
 
 
-@APP.get("/admin/deploy/{game_id}/{team_id}")
+@admin_router.get("/deploy/{game_id}/{team_id}")
 async def deploy(
     game_id: str,
     team_id: str,
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_admin,
-    )
 
     team_data = await db.get_team(team_id)
 
@@ -179,15 +265,10 @@ async def deploy(
     return {"gamespaceId": gs_id, "headless_url": headless_url, "vms": console_urls}
 
 
-@APP.get("/admin/undeploy/{game_id}/{team_id}")
+@admin_router.get("/undeploy/{game_id}/{team_id}")
 async def undeploy(
     team_id: str,
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials,
-        get_settings().identity.jwt_audiences.gamebrain_api_admin,
-    )
 
     team_data = await db.get_team(team_id)
     if not team_data:
@@ -198,7 +279,7 @@ async def undeploy(
         await db.expire_team_gamespace(team_id)
 
 
-@APP.post("/privileged/event/{team_id}")
+@priv_router.post("/event/{team_id}")
 async def push_event(
     team_id: str,
     event_message: str,
@@ -250,7 +331,7 @@ async def push_event(
     await publish_event(team_id, event_message)
 
 
-@APP.put("/privileged/changenet/{vm_id}")
+@priv_router.put("/changenet/{vm_id}")
 async def change_vm_net(
     vm_id: str,
     new_net: str,
@@ -287,33 +368,24 @@ async def _change_vm_net(vm_id: str, new_net: str):
     await publish_event(team_id, event_message)
 
 
-@APP.post("/admin/secrets/{team_id}")
+@admin_router.post("/secrets/{team_id}")
 async def create_challenge_secrets(
     team_id: str,
     secrets: List[str],
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin
-    )
 
     await db.store_team(team_id)
     await db.store_challenge_secrets(team_id, secrets)
 
 
-@APP.post("/admin/media")
+@admin_router.get("/admin/media")
 async def add_media_urls(
     media_map: Dict[str, str],
-    auth: HTTPAuthorizationCredentials = Security(HTTPBearer()),
 ):
-    check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamebrain_api_admin
-    )
-
     await db.store_media_assets(media_map)
 
 
-@APP.get("/gamestate/team_data")
+@gamestate_router.get("/team_data", deprecated=True)
 async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
@@ -329,7 +401,7 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
     ]
 
 
-@APP.websocket("/gamestate/websocket/events")
+@gamestate_router.websocket("/websocket/events")
 async def subscribe_events(ws: WebSocket):
     try:
         await ws.accept()
@@ -372,3 +444,9 @@ async def subscribe_events(ws: WebSocket):
         except WebSocketDisconnect:
             break
     await subscriber.unsubscribe()
+
+
+APP.include_router(admin_router)
+APP.include_router(priv_router)
+APP.include_router(gamestate_router)
+APP.include_router(gd_router)

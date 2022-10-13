@@ -23,7 +23,6 @@ from .util import url_path_join
 class JwtAudiencesModel(BaseModel):
     gamebrain_api_unpriv: str
     gamebrain_api_priv: str
-    gamebrain_api_admin: str
     gamestate_api: str
 
 
@@ -72,23 +71,28 @@ class EventActionsSettingsModel(BaseModel):
     action: ChangeNetArgumentsModel | DispatchCommandModel
 
 
+Hostname = str
+ServerPublicUrl = str
+
+
 class GameSettingsModel(BaseModel):
     ship_workspace_id: str
     event_actions: list[EventActionsSettingsModel]
     gamespace_duration_minutes: Optional[int] = 60
     ship_network_vm_name: Optional[str] = ""
 
+    antenna_vm_name: Optional[str] = ""
     grading_vm_name: Optional[str] = ""
-    grading_vm_script_path: Optional[str] = ""
+    grading_vm_file_path: Optional[str] = ""
     red_raider_vm_name: Optional[str] = ""
-    red_raider_vm_script_path: Optional[str] = ""
+    red_raider_file_path: Optional[str] = ""
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
 
     gamestate_test_mode: Optional[bool] = False
     game_id: str
 
-    headless_client_urls: list[str]
+    headless_client_urls: dict[Hostname, ServerPublicUrl]
 
 
 class SettingsModel(BaseModel):
@@ -99,6 +103,8 @@ class SettingsModel(BaseModel):
     gameboard: GameboardSettingsModel
     db: DbSettingsModel
     game: GameSettingsModel
+    profiling: bool = False
+    gamebrain_admin_api_key: str
 
     @validator("ca_cert_path")
     def path_exists(cls, v):

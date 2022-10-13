@@ -1,3 +1,4 @@
+from logging import error
 from enum import Enum
 import json as jsonlib
 import ssl
@@ -55,8 +56,13 @@ async def _topomojo_request(
         request = client.build_request(**args)
 
         response = await client.send(request)
-
-        print(response.status_code)
+        if not response.is_success:
+            error(
+                f"HTTP Request to {response.url} returned {response.status_code}\n"
+                f"HTTP Method was: {request.method}\n"
+                f"Headers were: {request.headers}\n"
+                f"Request Body was: {request.content}\n"
+            )
 
     try:
         return response.json()

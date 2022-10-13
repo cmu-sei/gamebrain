@@ -1,5 +1,6 @@
 app_root_prefix: /
 ca_cert_path: /usr/local/share/ca-certificates/foundry-appliance-root-ca.crt
+gamebrain_admin_api_key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 identity:
   base_url: https://foundry.local/identity
   token_endpoint: connect/token
@@ -9,7 +10,6 @@ identity:
   jwt_audiences:
     gamebrain_api_unpriv: gamebrain-api-unpriv
     gamebrain_api_priv: gamebrain-api-priv
-    gamebrain_api_admin: gamebrain-api-admin
     gamestate_api: gamestate-api
   jwt_issuer: https://foundry.local/identity
   token_user: administrator@foundry.local
@@ -47,5 +47,6 @@ game:
   gamestate_test_mode: true
   game_id: f63c8e41fd994e16bad08075dd2a666c
   headless_client_urls:
-    - "https://foundry.local/gameserver/1"
-    - "https://foundry.local/gameserver/2"
+    "server-1": "https://foundry.local/gameserver/1"
+    "server-2": "https://foundry.local/gameserver/2"
+profiling: false

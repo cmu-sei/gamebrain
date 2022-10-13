@@ -1,0 +1,74 @@
+{
+  "ep4": {
+    "missionID": "ep4",
+    "unlocked": true,
+    "visible": true,
+    "complete": false,
+    "isSpecial": true,
+    "missionIcon": "lagrange",
+    "title": "A New Hope",
+    "summaryShort": "That's no moon...",
+    "summaryLong": "A young farmboy sets off for adventure with a pair of stolen robots and an old man who has been watching him his entire life.",
+    "roleList": ["Cyber Defense Forensics Analyst", "Exploitation Analyst", "Threat/Warning Analyst"]
+  },
+  "ep5": {
+    "missionID": "ep5",
+    "unlocked": true,
+    "visible": true,
+    "complete": false,
+    "isSpecial": false,
+    "missionIcon": "exo",
+    "title": "The Empire Strikes Back",
+    "summaryShort": "I am your father...",
+    "summaryLong": "This is the one with the AT-ATs.  That's all you need to know.",
+    "roleList": ["Cyber Defense Incident Responder", "Network Operations Specialist", "Threat/Warning Analyst"]
+  },
+  "ep6": {
+    "missionID": "ep6",
+    "unlocked": true,
+    "visible": true,
+    "complete": false,
+    "isSpecial": false,
+    "missionIcon": "raider",
+    "title": "Return of the Jedi",
+    "summaryShort": "Good.... good...",
+    "summaryLong": "Yoda, sick of Luke's questions, just gives up and dies.",
+    "roleList": ["Exploitation Analyst", "Network Operations Specialist"]
+  },
+  "ep7": {
+    "missionID": "ep7",
+    "unlocked": true,
+    "visible": true,
+    "complete": false,
+    "isSpecial": false,
+    "missionIcon": "ruins",
+    "title": "The Force Awakens",
+    "summaryShort": "A new hero arises...",
+    "summaryLong": "If you liked A NEW HOPE, you'll like this",
+    "roleList": ["Cyber Defense Forensics Analyst", "Exploitation Analyst", "Threat/Warning Analyst"]
+  },
+  "ep8": {
+    "missionID": "ep8",
+    "unlocked": true,
+    "visible": true,
+    "complete": false,
+    "isSpecial": false,
+    "missionIcon": "xeno",
+    "title": "The Last Jedi",
+    "summaryShort": "The devisive one...",
+    "summaryLong": "Honestly, I don't know what everyone is complaining about.  The idea of anyone can be embued with the Force was such a great idea.  Yeah, the casino planet was junk, but they blew a ship through a Star Destroyer!",
+    "roleList": ["Cyber Defense Incident Responder", "Network Operations Specialist", "Threat/Warning Analyst"]
+  },
+  "ep9": {
+    "missionID": "ep9",
+    "unlocked": true,
+    "visible": true,
+    "complete": false,
+    "isSpecial": false,
+    "missionIcon": "museum",
+    "title": "The Rise of Skywalker",
+    "summaryShort": "Somehow, Palpatine returned...",
+    "summaryLong": "Tell me you didn't have a plan for your trilogy without telling me you didn't have a plan for your trilogy.",
+    "roleList": ["Exploitation Analyst", "Network Operations Specialist"]
+  }
+}
