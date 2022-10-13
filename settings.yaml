@@ -44,7 +44,7 @@ game:
   red_raider_file_path: "/home/user/LanguageFile"
   final_destination_name: "final"
   final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
-  gamestate_test_mode: true
+  gamestate_test_mode: false
   game_id: f63c8e41fd994e16bad08075dd2a666c
   headless_client_urls:
     "server-1": "https://foundry.local/gameserver/1"
