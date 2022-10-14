@@ -16,8 +16,6 @@ from .clients.topomojo import create_dispatch, poll_dispatch
 
 
 class GamespaceStatusTask:
-    dispatcher_task = None
-
     settings: "SettingsModel"
 
     @classmethod
