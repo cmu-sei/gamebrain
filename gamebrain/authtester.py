@@ -214,7 +214,7 @@ def main():
     # pprint.pprint(resp.json())
 
     resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/undeploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
+        f"{GAMEBRAIN_URL}/admin/undeploy/{TEST_TEAM_1}", timeout=60.0
     )
     print(resp.json())
 
