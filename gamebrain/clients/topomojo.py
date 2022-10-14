@@ -45,7 +45,7 @@ async def _topomojo_request(
         args = {
             "method": method.value,
             "url": endpoint,
-            "timeout": 60.0,
+            "timeout": 300.0,
         }
         if method in (HttpMethod.PUT, HttpMethod.POST):
             args["json"] = data
