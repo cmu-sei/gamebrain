@@ -19,9 +19,11 @@ class SharedOAuth2Session:
         ssl_context = ssl.create_default_context()
         if settings.ca_cert_path:
             ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
-        cls._session = AsyncOAuth2Client(settings.identity.client_id,
-                                         settings.identity.client_secret,
-                                         verify=ssl_context)
+        cls._session = AsyncOAuth2Client(
+            settings.identity.client_id,
+            settings.identity.client_secret,
+            verify=ssl_context,
+        )
         await cls._new_token()
 
     @classmethod
@@ -30,7 +32,7 @@ class SharedOAuth2Session:
         await cls._session.fetch_token(
             url_path_join(settings.identity.base_url, settings.identity.token_endpoint),
             username=settings.identity.token_user,
-            password=settings.identity.token_password
+            password=settings.identity.token_password,
         )
 
     @classmethod
@@ -46,7 +48,9 @@ async def get_oauth2_session() -> AsyncOAuth2Client:
     return await SharedOAuth2Session.get_session()
 
 
-async def _service_get(service_api_url: str, endpoint: str, query_params: Optional[Dict] = None) -> Response:
+async def _service_get(
+    service_api_url: str, endpoint: str, query_params: Optional[Dict] = None
+) -> Response:
     if query_params is None:
         query_params = {}
 

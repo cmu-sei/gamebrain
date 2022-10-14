@@ -5,8 +5,12 @@ from .common import _service_get
 from ..config import get_settings
 
 
-async def _gameboard_get(endpoint: str, query_params: Optional[Dict] = None) -> Optional[Any]:
-    resp = await _service_get(get_settings().gameboard.base_api_url, endpoint, query_params)
+async def _gameboard_get(
+    endpoint: str, query_params: Optional[Dict] = None
+) -> Optional[Any]:
+    resp = await _service_get(
+        get_settings().gameboard.base_api_url, endpoint, query_params
+    )
     try:
         return resp.json()
     except jsonlib.JSONDecodeError:

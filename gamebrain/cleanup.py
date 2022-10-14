@@ -72,17 +72,20 @@ class BackgroundCleanupTask:
                     continue
                 # Explicitly test against False in case "isActive" is missing for whatever reason.
                 if gamespace_info.get("isActive") == False:
-                    logging.info(f"Team {team_id} had an inactive gamespace. "
-                                 "Removing internal tracking and unassigning their game server...")
+                    logging.info(
+                        f"Team {team_id} had an inactive gamespace. "
+                        "Removing internal tracking and unassigning their game server..."
+                    )
                     await cls._cleanup_team(team_id)
 
             for team_id in teams_without_gamespace:
                 if cls._revisit_dict[team_id] >= 10:
-                    logging.error(f"Team {team_id} had a game server assigned to them, "
-                                  "but had no gamespace assigned after many checks. "
-                                  "Unassigning the team's game server...")
+                    logging.error(
+                        f"Team {team_id} had a game server assigned to them, "
+                        "but had no gamespace assigned after many checks. "
+                        "Unassigning the team's game server..."
+                    )
                     await cls._cleanup_team(team_id)
                     del cls._revisit_dict[team_id]
                     continue
                 cls._revisit_dict[team_id] += 1
-

@@ -26,7 +26,9 @@ def check_jwt(token: str, scope: Optional[str] = None, require_sub: bool = False
             if not token_scopes:
                 raise JWTClaimsError(f"JWT Error. Required: {scope}. Provided: None. ")
             if scope not in token_scopes:
-                raise JWTClaimsError(f"JWT Error. Required: {scope}. Provided: {token_scopes}.")
+                raise JWTClaimsError(
+                    f"JWT Error. Required: {scope}. Provided: {token_scopes}."
+                )
         return payload
     except (JWTError, JWTClaimsError, ExpiredSignatureError) as e:
         logging.error(str(e))

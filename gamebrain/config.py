@@ -205,7 +205,9 @@ class Global:
 
     @classmethod
     def _init_cleanup_task(cls):
-        cls.cleanup_task = asyncio.create_task(BackgroundCleanupTask.init(get_settings()))
+        cls.cleanup_task = asyncio.create_task(
+            BackgroundCleanupTask.init(get_settings())
+        )
 
     @classmethod
     def get_jwks(cls):
