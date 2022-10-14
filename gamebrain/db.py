@@ -181,7 +181,7 @@ async def store_team(
 
 async def expire_team_gamespace(team_id: str):
     team_data = DBManager.TeamData(
-        id=team_id, gamespace_id=None, gamespace_expiration=None
+        id=team_id, gamespace_id=None, gamespace_expiration=None, headless_url=None
     )
     await DBManager.merge_rows([team_data])
     await DBManager.delete_where(
