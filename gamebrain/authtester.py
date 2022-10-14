@@ -165,45 +165,51 @@ def main():
 
     print("Unlocking location 0 (expect alreadyunlocked)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/000000/team1"
+        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/000000/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
     print("Unlocking location 1 (expect success)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/111111/team1"
+        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/111111/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
     print("Invalid unlock (expect invalid)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/team1"
+        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
     print("Jump to current location (expect failure")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location1/team1")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/Jump/location1/{TEST_TEAM_1}"
+    )
     # pprint.pprint(resp.json())
 
     print("Jump to invalid location (expect failure")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/team1")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     print("Jump to locked location (expect failure")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location3/team1")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/Jump/location3/{TEST_TEAM_1}"
+    )
     # pprint.pprint(resp.json())
 
     print("Jump to unlocked location (expect success)")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location2/team1")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/Jump/location2/{TEST_TEAM_1}"
+    )
     # pprint.pprint(resp.json())
 
     print("Scan new location (expect success)")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/team1")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     print("Changing power mode (expect success)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/PowerMode/explorationMode/team1"
+        f"{GAMEBRAIN_URL}/GameData/PowerMode/explorationMode/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
