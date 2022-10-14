@@ -32,11 +32,14 @@ async def get_gamedata(
         raise HTTPException(status_code=404, detail="Team not found.")
 
 
-@router.post("/GameData/{team_id}")
+@router.post("/GameData/{team_id}", deprecated=True)
 async def post_gamedata(
-        team_id: TeamID,
-        auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
+    team_id: TeamID,
+    auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> None:
+    raise HTTPException(
+        status_code=404, detail="This endpoint should no longer be used."
+    )
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     return await GameStateManager.new_team(team_id)
 
