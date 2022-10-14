@@ -14,6 +14,7 @@ from fastapi import (
     WebSocketDisconnect,
     Request,
 )
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, APIKeyHeader
 from pydantic import BaseModel
 import yappi
@@ -47,6 +48,12 @@ APP = FastAPI(
     on_startup=startup,
     on_shutdown=shutdown,
 )
+
+
+@APP.exception_handler(HTTPException)
+async def debug_exception_handler(request, exc):
+    logging.error(request.headers)
+    return await http_exception_handler(request, exc)
 
 
 def admin_api_key_dependency(x_api_key: str = Depends(APIKeyHeader(name="X-API-Key"))):
