@@ -280,11 +280,10 @@ async def deploy(
     return {"gamespaceId": gs_id, "headless_url": headless_url, "vms": console_urls}
 
 
-@admin_router.get("/undeploy/{game_id}/{team_id}")
+@admin_router.get("/undeploy/{team_id}")
 async def undeploy(
     team_id: str,
 ):
-
     team_data = await db.get_team(team_id)
     if not team_data:
         raise HTTPException(status_code=404, detail="Team not found.")
