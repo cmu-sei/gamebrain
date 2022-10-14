@@ -258,3 +258,11 @@ async def get_assigned_headless_urls() -> dict[str, str]:
     )
 
     return {team["id"]: team["headless_url"] for team in teams_with_ips}
+
+
+async def get_teams_with_gamespace_ids() -> dict[str, str]:
+    teams_with_gamespace_ids = await DBManager.get_rows(
+        DBManager.TeamData, DBManager.TeamData.gamespace_id is not None
+    )
+
+    return {team["id"]: team["gamespace_id"] for team in teams_with_gamespace_ids}

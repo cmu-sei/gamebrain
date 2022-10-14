@@ -15,6 +15,7 @@ from .gamedata.cache import (
     GameStateManager,
     GameDataCache,
 )
+from .cleanup import BackgroundCleanupTask
 import gamebrain.db as db
 from .pubsub import PubSub
 from .util import url_path_join
@@ -157,6 +158,7 @@ class Global:
         cls._init_jwks()
         cls._init_db_sync_task()
         cls._init_grader_task()
+        cls._init_cleanup_task()
         await PubSub.init(settings)
 
         if settings.game.gamestate_test_mode:
@@ -200,6 +202,10 @@ class Global:
     @classmethod
     def _init_grader_task(cls):
         cls.grader_task = asyncio.create_task(GamespaceStatusTask.init(get_settings()))
+
+    @classmethod
+    def _init_cleanup_task(cls):
+        cls.cleanup_task = asyncio.create_task(BackgroundCleanupTask.init(get_settings()))
 
     @classmethod
     def get_jwks(cls):

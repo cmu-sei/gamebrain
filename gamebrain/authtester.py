@@ -24,6 +24,8 @@ GAME_CLIENT_ID = "game-client"
 GAME_CLIENT_SECRET = "a78ea5460fdd4293abe5c8e09f5bba57"
 GAMEBOARD_SCRIPT_CLIENT = "gameboard-script-test"
 GAMEBOARD_SCRIPT_SECRET = "0887738d326547ae92f06f04b4d434e2"
+TOPOMOJO_API_BASE_URL = "https://foundry.local/topomojo/api"
+TOPOMOJO_X_API_KEY = "xaFmE0_YIo8QjDszdh0L79ySlpI79KfA"
 
 TEST_USER_1 = "testplayer1@foundry.local"
 TEST_USER_1_ID = "0ee37ac5-7a64-4dca-9049-8a64f370d241"
@@ -260,16 +262,24 @@ def main():
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{team_id}", timeout=60.0
     )
     print(resp.json())
+    gamespace_id = resp.json()["gamespaceId"]
 
     # Clean up.
-    session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
-    print(f"Deleted player {player_id}")
+    # session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
+    # print(f"Deleted player {player_id}")
 
-    print("Unassigning Team 2 headless client:")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client_unassign/{TEST_TEAM_2}",
+    # print("Unassigning Team 2 headless client:")
+    # resp = gamebrain_admin_session.get(
+    #     f"{GAMEBRAIN_URL}/admin/headless_client_unassign/{TEST_TEAM_2}",
+    # )
+    # print(resp.json())
+
+    # Or test automatic cleanup by marking the gamespace complete in TM:
+    topomojo_session = Client(
+        headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False
     )
-    print(resp.json())
+    topomojo_session.post(f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
+    # Then just wait a bit to see it happen in the gamebrain log... I should probably improve testing.
 
 
 if __name__ == "__main__":
