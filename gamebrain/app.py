@@ -190,6 +190,11 @@ async def get_team_from_user(
     return {"teamID": team_id}
 
 
+def construct_vm_url(gamespace_id: str, vm_name: str):
+    gameboard_base_url = get_settings().gameboard.base_url
+    return f"{gameboard_base_url}/mks/?f=1&s={gamespace_id}&v={vm_name}"
+
+
 @admin_router.get("/deploy/{game_id}/{team_id}")
 async def deploy(
     game_id: str,
@@ -238,7 +243,7 @@ async def deploy(
         console_urls = [
             {
                 "Id": vm["id"],
-                "Url": f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['name']}",
+                "Url": construct_vm_url(gs_id, vm["name"]),
                 "Name": vm["name"],
             }
             for vm in visible_vms
@@ -262,7 +267,7 @@ async def deploy(
         console_urls = [
             {
                 "Id": vm["id"],
-                "Url": f"{get_settings().topomojo.base_url}/mks/?f=1&s={gs_id}&v={vm['name']}",
+                "Url": construct_vm_url(gs_id, vm["name"]),
                 "Name": vm["name"],
             }
             for vm in team_data["vm_data"]

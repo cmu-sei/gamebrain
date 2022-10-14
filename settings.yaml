@@ -15,11 +15,11 @@ identity:
   token_user: administrator@foundry.local
   token_password: foundry
 topomojo:
-  base_url: https://foundry.local/topomojo
   base_api_url: https://foundry.local/topomojo/api/
   x_api_key: xaFmE0_YIo8QjDszdh0L79ySlpI79KfA
   x_api_client: user-bot-test
 gameboard:
+  base_url: https://foundry.local/gameboard/
   base_api_url: https://foundry.local/gameboard/api/
 db:
   connection_string: postgresql+asyncpg://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
