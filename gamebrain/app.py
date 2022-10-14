@@ -26,6 +26,7 @@ from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
 from .gamedata.controller import router as gd_router
 from .pubsub import PubSub, Subscriber
+from .util import url_path_join
 
 Settings.init_settings(Global.settings_path)
 
@@ -192,7 +193,7 @@ async def get_team_from_user(
 
 def construct_vm_url(gamespace_id: str, vm_name: str):
     gameboard_base_url = get_settings().gameboard.base_url
-    return f"{gameboard_base_url}/mks/?f=1&s={gamespace_id}&v={vm_name}"
+    return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
 
 
 @admin_router.get("/deploy/{game_id}/{team_id}")
