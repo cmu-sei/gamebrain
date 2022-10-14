@@ -167,7 +167,9 @@ class GameStateManager:
                 missions=full_mission_data,
             )
 
-            logging.error(f"GameData response: {json.dumps(full_team_data.dict(), indent=2)}")
+            logging.info(
+                f"Ship Data response: {json.dumps(team_data.ship.dict(), indent=2)}"
+            )
 
             return full_team_data
 
