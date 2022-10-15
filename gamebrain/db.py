@@ -1,5 +1,7 @@
+import logging
 from datetime import datetime, timezone
 from functools import partial
+import json
 from typing import Dict, List, Optional
 
 from dateutil.parser import isoparse
@@ -253,16 +255,24 @@ async def get_cache_snapshot():
 
 
 async def get_assigned_headless_urls() -> dict[str, str]:
+    # `is not` should be correct, but using it returns all teams in the DB instead of just the ones with headless URLs.
     teams_with_ips = await DBManager.get_rows(
-        DBManager.TeamData, DBManager.TeamData.headless_url is not None
+        DBManager.TeamData, DBManager.TeamData.headless_url != None
     )
 
-    return {team["id"]: team["headless_url"] for team in teams_with_ips}
+    result = {team["id"]: team["headless_url"] for team in teams_with_ips}
+    formatted_result = json.dumps(result, indent=2)
+    logging.debug(f"get_assigned_headless_urls result: {formatted_result}")
+    return result
 
 
 async def get_teams_with_gamespace_ids() -> dict[str, str]:
+    # `is not` should be correct, but using it returns all teams in the DB instead of just the ones with gamespace IDs.
     teams_with_gamespace_ids = await DBManager.get_rows(
-        DBManager.TeamData, DBManager.TeamData.gamespace_id is not None
+        DBManager.TeamData, DBManager.TeamData.gamespace_id != None
     )
 
-    return {team["id"]: team["gamespace_id"] for team in teams_with_gamespace_ids}
+    result = {team["id"]: team["gamespace_id"] for team in teams_with_gamespace_ids}
+    formatted_result = json.dumps(result, indent=2)
+    logging.debug(f"get_teams_with_gamespace_ids result: {formatted_result}")
+    return result
