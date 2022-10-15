@@ -40,8 +40,16 @@ game:
         command: touch /home/tmtest/it-worked
   grading_vm_name: "challenge-server"
   grading_vm_file_path: "/home/user/challengeServer/custom_scripts/requestGrade.py"
-  red_raider_vm_name: "pirate-attacker"
-  red_raider_file_path: "/home/user/LanguageFile"
+  challenge_tasks:
+    - task_id: "redraider"
+      vm_name: "pirate-attacker"
+      file_path: "/home/user/LanguageFile"
+    - task_id: "exoarch"
+      vm_name: "station-scada-system"
+      file_path: "/home/user/atmosphere"
+    - task_id: "museum"
+      vm_name:  "museum-approach"
+      file_path: "/home/user/audit"
   final_destination_name: "final"
   final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
   gamestate_test_mode: false

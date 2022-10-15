@@ -90,7 +90,7 @@ def main():
     team_1_headless_assignment = resp.json()
     print(team_1_headless_assignment)
 
-    print("Deploying for Team 1")
+    print(f"Deploying for Team {TEST_TEAM_1}")
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
     )
@@ -214,11 +214,11 @@ def main():
     # pprint.pprint(resp.json())
 
     print("Marking comm event complete (expect success)")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/team1")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     print("Getting GameData")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/team1")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     resp = gamebrain_admin_session.get(
@@ -281,8 +281,8 @@ def main():
     # print(resp.json())
 
     # Or test automatic cleanup by marking the gamespace complete in TM:
-    topomojo_session = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
-    topomojo_session.post(f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
+    # topomojo_session = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
+    # topomojo_session.post(f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
     # Then just wait a bit to see it happen in the gamebrain log... I should probably improve testing.
 
 

@@ -94,10 +94,6 @@ class GamespaceStateOutput(BaseModel):
     pilot: UpOrDown = "down"
 
 
-class RedRaiderOutput(BaseModel):
-    __root__: dict[str, SuccessOrFail]
-
-
 class GameStateManager:
     _lock = asyncio.Lock()
     _cache: GameDataCache
@@ -172,6 +168,34 @@ class GameStateManager:
             )
 
             return full_team_data
+
+    @classmethod
+    async def challenge_task_complete(cls, team_id: TeamID, task_id: str):
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                logging.error(
+                    f"Dispatch task reported team {team_id} completed a task, but that team does not exist."
+                )
+                return
+
+            global_task_data = cls._cache.task_map.__root__.get(task_id)
+            if not global_task_data:
+                logging.error(
+                    f"Dispatch task reported task {task_id} complete, but no such task exists."
+                )
+                return
+
+            for team_mission_data in team_data.missions:
+                if team_mission_data.missionID == global_task_data.missionID:
+                    for team_task_data in team_mission_data.taskList:
+                        if team_task_data.taskID == task_id:
+                            team_task_data.complete = True
+                            return
+            logging.error(
+                f"Dispatch task reported team {team_id} completed {task_id}, "
+                "but the team has not unlocked that task."
+            )
 
     @classmethod
     async def team_state_from_gamespace(

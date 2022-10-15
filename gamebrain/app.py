@@ -1,7 +1,8 @@
 import asyncio
 import json
-import logging
 from datetime import datetime, timezone
+import logging
+import os
 from typing import Dict, List, Optional
 
 from fastapi import (
@@ -29,6 +30,10 @@ from .pubsub import PubSub, Subscriber
 from .util import url_path_join
 
 Settings.init_settings(Global.settings_path)
+
+LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
+print(f"Got log level: {LOGLEVEL}")
+logging.basicConfig(level=LOGLEVEL)
 
 startup = []
 shutdown = []

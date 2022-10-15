@@ -78,6 +78,15 @@ Hostname = str
 ServerPublicUrl = str
 
 
+class ChallengeTask(BaseModel):
+    task_id: str
+    vm_name: str
+    file_path: str
+
+    def __hash__(self):
+        return hash((self.task_id, self.vm_name, self.file_path))
+
+
 class GameSettingsModel(BaseModel):
     event_actions: list[EventActionsSettingsModel]
     gamespace_duration_minutes: Optional[int] = 60
@@ -86,10 +95,10 @@ class GameSettingsModel(BaseModel):
     antenna_vm_name: Optional[str] = ""
     grading_vm_name: Optional[str] = ""
     grading_vm_file_path: Optional[str] = ""
-    red_raider_vm_name: Optional[str] = ""
-    red_raider_file_path: Optional[str] = ""
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
+
+    challenge_tasks: list[ChallengeTask]
 
     gamestate_test_mode: Optional[bool] = False
     game_id: str
