@@ -1,5 +1,6 @@
 import os
 import pprint
+import time
 import warnings
 
 from httpx import Client
@@ -281,9 +282,17 @@ def main():
     # print(resp.json())
 
     # Or test automatic cleanup by marking the gamespace complete in TM:
-    # topomojo_session = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
-    # topomojo_session.post(f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
+    topomojo_session = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
+    topomojo_session.post(f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
     # Then just wait a bit to see it happen in the gamebrain log... I should probably improve testing.
+
+    while True:
+        time.sleep(10.0)
+        resp = gamestate_session.get(f"{GAMEBRAIN_URL}/gamestate/team_active/{team_id}")
+        result = resp.json()
+        print(f"Checked if team {team_id} is active: {result}")
+        if not result:
+            break
 
 
 if __name__ == "__main__":
