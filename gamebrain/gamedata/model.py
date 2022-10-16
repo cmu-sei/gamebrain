@@ -173,9 +173,4 @@ class LocationUnlockResponse(BaseModel):
 
 class ScanResponse(GenericResponse):
     eventWaiting: bool
-    commID: str | None
-    videoURL: str
-    commTemplate: Literal["incoming", "probe", "badTranslation"]
-    translationMessage: str
-    scanInfoMessage: str
-    firstContact: bool
+    incomingTransmission: CommEventData | None
