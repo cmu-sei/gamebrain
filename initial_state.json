@@ -283,7 +283,11 @@
       "infoText": "These aren't the droids you're looking for.",
       "videoPresent": true,
       "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "jump",
+        "locationID": "dunesea"
+      }
     },
     "m1t2": {
       "taskID": "m1t2",
@@ -293,7 +297,11 @@
       "infoText": "Maclunkey!",
       "videoPresent": false,
       "videoURL": "",
-      "commID": "vid1"
+      "commID": "vid1",
+      "markCompleteWhen": {
+        "type": "explorationMode",
+        "locationID": "dunesea"
+      }
     },
     "m1t3": {
       "taskID": "m1t3",
@@ -303,7 +311,11 @@
       "infoText": "If you can bullseye womprats, you can hit a target 2m wide.",
       "videoPresent": false,
       "videoURL": "",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "launchMode",
+        "locationID": "dunesea"
+      }
     },
     "m2t1": {
       "taskID": "m2t1",
@@ -313,7 +325,11 @@
       "infoText": "I thought they smelled bad... on the inside.",
       "videoPresent": false,
       "videoURL": "",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "standby",
+        "locationID": "dunesea"
+      }
     },
     "m2t2": {
       "taskID": "m2t2",
@@ -323,7 +339,11 @@
       "infoText": "Whine a lot, you do.",
       "videoPresent": false,
       "videoURL": "",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "explorationMode",
+        "locationID": "dunesea"
+      }
     },
     "m2t3": {
       "taskID": "m2t3",
@@ -333,7 +353,11 @@
       "infoText": "Don't forget to give him a hand.",
       "videoPresent": false,
       "videoURL": "",
-      "commID": "vid4"
+      "commID": "vid4",
+      "markCompleteWhen": {
+        "type": "scan",
+        "locationID": "dunesea"
+      }
     },
     "m3t1": {
       "taskID": "m3t1",
@@ -343,7 +367,11 @@
       "infoText": "It's a Huttish message.  It means Jabba sleeps with the Sarlacc.",
       "videoPresent": false,
       "videoURL": "",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "antennaExtended",
+        "locationID": "dunesea"
+      }
     },
     "m3t2": {
       "taskID": "m3t2",
@@ -353,7 +381,11 @@
       "infoText": "Today's the day you're going to be the Teddy Bear's picnic.",
       "videoPresent": false,
       "videoURL": "",
-      "commID": "vid5"
+      "commID": "vid5",
+      "markCompleteWhen": {
+        "type": "antennaRetracted",
+        "locationID": "dunesea"
+      }
     },
     "m3t3": {
       "taskID": "m3t3",
@@ -363,7 +395,11 @@
       "infoText": "Consider a leadership offer in the family business.",
       "videoPresent": false,
       "videoURL": "",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "challenge",
+        "locationID": "dunesea"
+      }
     },
     "m3t4": {
       "taskID": "m3t4",
@@ -373,7 +409,11 @@
       "infoText": "You know, any contractor willing to work on that Death Star knew the risks. If they were killed, it was their own fault. ",
       "videoPresent": false,
       "videoURL": "",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "challenge",
+        "locationID": "dunesea"
+      }
     }
   },
   "team_map": {},

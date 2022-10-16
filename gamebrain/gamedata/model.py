@@ -4,6 +4,25 @@ from typing import Literal
 from pydantic import BaseModel, AnyUrl
 
 
+# "codex" used to be separate, but we decided to make "challenge" just appear twice
+# since there is currently no way to detect if the codex was transferred separately.
+TaskCompletionType = Literal[
+    "jump",
+    "explorationMode",
+    "launchMode",
+    "standby",
+    "scan",
+    "antennaExtended",
+    "antennaRetracted",
+    "challenge",
+]
+
+
+class TaskCompletion(BaseModel):
+    type: TaskCompletionType
+    locationID: str
+
+
 class TaskData(BaseModel):
     taskID: str
     missionID: str
@@ -13,6 +32,7 @@ class TaskData(BaseModel):
     videoPresent: bool = True
     videoURL: str
     commID: str
+    markCompleteWhen: TaskCompletion = None
 
 
 class TaskDataTeamSpecific(BaseModel):

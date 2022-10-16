@@ -15,6 +15,7 @@ from .model import (
     MissionData,
     MissionDataTeamSpecific,
     MissionDataFull,
+    TaskCompletionType,
     TaskData,
     TaskDataTeamSpecific,
     TaskDataFull,
@@ -101,6 +102,67 @@ class GameStateManager:
     _settings: "SettingsModel"
 
     @classmethod
+    def _mark_task_complete_if_current(
+        cls,
+        team_id: TeamID,
+        team_data: GameDataTeamSpecific,
+        task_type: TaskCompletionType,
+    ):
+        """
+        cache lock is assumed to be held
+        """
+        current_loc = team_data.currentStatus.currentLocation
+
+        tasks_at_location = {
+            task.taskID
+            for task in cls._cache.task_map.__root__.values()
+            if task.markCompleteWhen and task.markCompleteWhen.locationID == current_loc
+        }
+        for mission in team_data.missions:
+            for task in mission.taskList:
+                if task.taskID not in tasks_at_location:
+                    break
+                if task.complete:
+                    continue
+                completion_criteria = cls._cache.task_map.__root__[
+                    task.taskID
+                ].markCompleteWhen
+                if completion_criteria is None:
+                    logging.warning(
+                        f"Marking task {task.taskID} complete for team {team_id}, "
+                        f"despite the task not having a markCompleteWhen specified. (looking for: {task_type})"
+                    )
+                    task.complete = True
+                    continue
+                if completion_criteria.type == task_type:
+                    logging.info(
+                        f"Marking task {task.taskID} complete for team {team_id}. (looking for: {task_type})"
+                    )
+                    task.complete = True
+                    return
+        logging.debug(
+            f"Did not mark any specified tasks complete, but did complete a check for team {team_id}. "
+            f"(looking for: {task_type})"
+        )
+
+    @classmethod
+    def _basic_validation(cls, initial_state: GameDataCache):
+        for task_id, task in initial_state.task_map.__root__.items():
+            if task.markCompleteWhen is None:
+                logging.warning(
+                    f"Task {task_id} does not have a markCompleteWhen field specified."
+                )
+                continue
+            if (
+                bad_loc := task.markCompleteWhen.locationID
+                not in initial_state.location_map.__root__
+            ):
+                logging.warning(
+                    f"Task {task_id}'s markCompleteWhen field specifies location {bad_loc} "
+                    "which is not in the location map."
+                )
+
+    @classmethod
     async def snapshot_data(cls) -> JsonStr:
         async with cls._lock:
             return cls._cache.json()
@@ -108,6 +170,7 @@ class GameStateManager:
     @classmethod
     async def init(cls, initial_state: GameDataCache, settings: "SettingsModel"):
         async with cls._lock:
+            cls._basic_validation(initial_state)
             cls._cache = initial_state
             cls._settings = settings
 
@@ -186,16 +249,10 @@ class GameStateManager:
                 )
                 return
 
-            for team_mission_data in team_data.missions:
-                if team_mission_data.missionID == global_task_data.missionID:
-                    for team_task_data in team_mission_data.taskList:
-                        if team_task_data.taskID == task_id:
-                            team_task_data.complete = True
-                            return
-            logging.error(
-                f"Dispatch task reported team {team_id} completed {task_id}, "
-                "but the team has not unlocked that task."
-            )
+            # Currently, we're categorizing "codex" tasks as "challenge" tasks, since there is no way to
+            # detect when the codex is transferred.
+            cls._mark_task_complete_if_current(team_id, team_data, "challenge")
+            cls._mark_task_complete_if_current(team_id, team_data, "challenge")
 
     @classmethod
     async def team_state_from_gamespace(
@@ -284,6 +341,12 @@ class GameStateManager:
             team_data.currentStatus.networkConnected = True
             team_data.currentStatus.networkName = new_net
 
+            cls._mark_task_complete_if_current(team_id, team_data, "antennaExtended")
+
+            return GenericResponse(
+                success=True, message=f"Team {team_id} extended their antenna."
+            )
+
     @classmethod
     async def retract_antenna(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
@@ -294,6 +357,8 @@ class GameStateManager:
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False
             team_data.currentStatus.networkName = ""
+
+            cls._mark_task_complete_if_current(team_id, team_data, "antennaRetracted")
 
             return GenericResponse(success=True, message="antennaRetracted")
 
@@ -449,6 +514,8 @@ class GameStateManager:
             )
             team_data.currentStatus = new_status
 
+            cls._mark_task_complete_if_current(team_id, team_data, "jump")
+
             return GenericResponse(success=True, message=location_id)
 
     @classmethod
@@ -468,6 +535,8 @@ class GameStateManager:
             team_data.currentStatus.incomingTransmission = True
             team_data.currentStatus.incomingTransmissionObject = first_contact_event
 
+            cls._mark_task_complete_if_current(team_id, team_data, "scan")
+
             return ScanResponse(
                 success=True,
                 message=location_data.locationID,
@@ -485,6 +554,8 @@ class GameStateManager:
                 raise NonExistentTeam()
 
             team_data.currentStatus.powerStatus = new_mode
+
+            cls._mark_task_complete_if_current(team_id, team_data, new_mode)
 
             return GenericResponse(success=True, message=new_mode)
 
