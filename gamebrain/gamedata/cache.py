@@ -541,7 +541,12 @@ class GameStateManager:
                 success=True,
                 message=location_data.locationID,
                 eventWaiting=True,
-                commID=first_contact_event,
+                commID=first_contact_event.commID,
+                videoURL=first_contact_event.videoURL,
+                commTemplate=first_contact_event.commTemplate,
+                translationMessage=first_contact_event.translationMessage,
+                scanInfoMessage=first_contact_event.scanInfoMessage,
+                firstContact=first_contact_event.firstContact,
             )
 
     @classmethod
