@@ -31,6 +31,9 @@ from .util import url_path_join
 
 Settings.init_settings(Global.settings_path)
 
+# TODO: REMOVE THIS HACK
+Settings._settings.gameboard.base_url = "https://launchpad.cisa.gov/tm"
+
 LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
 print(f"Got log level: {LOGLEVEL}")
 logging.basicConfig(level=LOGLEVEL)
