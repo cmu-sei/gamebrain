@@ -534,6 +534,7 @@ class GameStateManager:
 
             team_data.currentStatus.incomingTransmission = True
             team_data.currentStatus.incomingTransmissionObject = first_contact_event
+            team_data.currentStatus.currentLocationScanned = True
 
             cls._mark_task_complete_if_current(team_id, team_data, "scan")
 
