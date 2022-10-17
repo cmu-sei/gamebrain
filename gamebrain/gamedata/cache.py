@@ -140,10 +140,11 @@ class GameStateManager:
                     )
                     task.complete = True
                     return
-        logging.debug(
-            f"Did not mark any specified tasks complete, but did complete a check for team {team_id}. "
-            f"(looking for: {task_type})"
-        )
+                logging.debug(
+                    f"Did not mark any specified tasks complete, but did complete a check for team {team_id}. "
+                    f"(looking for: {task_type})"
+                )
+                return
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCache):
