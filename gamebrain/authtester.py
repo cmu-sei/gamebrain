@@ -1,3 +1,4 @@
+import json
 import os
 import pprint
 import time
@@ -224,6 +225,9 @@ def main():
     print("Getting GameData")
     resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
+    game_data = resp.json()
+    current_status = game_data.get("currentStatus")
+    print(json.dumps(current_status, indent=2))
 
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/undeploy/{TEST_TEAM_1}", timeout=60.0
