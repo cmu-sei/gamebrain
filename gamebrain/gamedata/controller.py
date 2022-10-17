@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Security, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import constr
@@ -86,7 +88,9 @@ async def get_extendantenna(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.extend_antenna(team_id)
+        result = await GameStateManager.extend_antenna(team_id)
+        logging.info(f"ExtendAntenna result: \n{result.json(indent=2)}")
+        return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 

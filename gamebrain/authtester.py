@@ -218,6 +218,9 @@ def main():
     resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
+    print("Extend the antenna (expect success)")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/ExtendAntenna/{TEST_TEAM_1}")
+
     print("Getting GameData")
     resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
