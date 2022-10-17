@@ -4,8 +4,6 @@ from typing import Literal
 from pydantic import BaseModel, AnyUrl
 
 
-# "codex" used to be separate, but we decided to make "challenge" just appear twice
-# since there is currently no way to detect if the codex was transferred separately.
 TaskCompletionType = Literal[
     "jump",
     "explorationMode",
@@ -15,6 +13,7 @@ TaskCompletionType = Literal[
     "antennaExtended",
     "antennaRetracted",
     "challenge",
+    "codex"
 ]
 
 

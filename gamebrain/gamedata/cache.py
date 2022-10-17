@@ -250,8 +250,7 @@ class GameStateManager:
                 )
                 return
 
-            # Currently, we're categorizing "codex" tasks as "challenge" tasks, since there is no way to
-            # detect when the codex is transferred.
+            # Some challenge tasks have an immediate follow-up that we can't directly detect, so just mark it complete.
             cls._mark_task_complete_if_current(team_id, team_data, "challenge")
             cls._mark_task_complete_if_current(team_id, team_data, "challenge")
 
@@ -270,6 +269,21 @@ class GameStateManager:
                     lambda v: v == "success", gamespace_state_output.dict().values()
                 )
             )
+
+            # TODO: Generalize this.
+            location_mapping = {
+                "aursys": gamespace_state_output.exoArch,
+                "j900": gamespace_state_output.redRaider,
+                "vitlra": gamespace_state_output.ancientRuins,
+                "aurmusm": gamespace_state_output.museum,
+                "astfld_correct": gamespace_state_output.xenoCult,
+                "lgpt22": gamespace_state_output.finalGoal,
+            }
+            current_loc = team_data.currentStatus.currentLocation
+            if location_mapping.get(current_loc) == "success":
+                # Some codex tasks have an immediate follow-up that we can't directly detect, so just mark it complete.
+                cls._mark_task_complete_if_current(team_id, team_data, "codex")
+                cls._mark_task_complete_if_current(team_id, team_data, "codex")
 
             team_data.ship.commPower = PowerStatus(gamespace_state_output.comms)
             team_data.ship.flightPower = PowerStatus(gamespace_state_output.flight)
