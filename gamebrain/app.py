@@ -298,7 +298,7 @@ async def undeploy(
         raise HTTPException(status_code=404, detail="Team not found.")
 
     if gamespace_id := team_data.get("gamespace_id"):
-        await topomojo.stop_gamespace(gamespace_id)
+        await topomojo.complete_gamespace(gamespace_id)
         await db.expire_team_gamespace(team_id)
 
 

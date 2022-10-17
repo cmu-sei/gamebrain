@@ -144,6 +144,11 @@ async def stop_gamespace(gamespace_id: str):
     return await _topomojo_post(endpoint, {})
 
 
+async def complete_gamespace(gamespace_id: str):
+    endpoint = f"gamespace/{gamespace_id}/complete"
+    return await _topomojo_post(endpoint, {})
+
+
 async def change_vm_params(vm_id: str, params: dict):
     endpoint = f"vm/{vm_id}/change"
     return await _topomojo_put(endpoint, params)
