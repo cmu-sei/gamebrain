@@ -122,8 +122,8 @@ class GamespaceStatusTask:
             challenge_task_dispatch_dict.update(
                 await cls._submit_challenge_task_dispatch(
                     gamespace_id,
-                    challenge_task.task_vm_name,
-                    challenge_task.task_file_path,
+                    challenge_task.vm_name,
+                    challenge_task.file_path,
                 )
             )
             logging.info(
@@ -148,6 +148,9 @@ class GamespaceStatusTask:
             await asyncio.sleep(30)
 
             teams = await db.get_teams_with_gamespace_ids()
+            logging.info(
+                f"Dispatch cycle is running. The current teams are active: {json.dumps(teams, indent=2)}"
+            )
 
             for team_id, gamespace_id in teams.items():
 

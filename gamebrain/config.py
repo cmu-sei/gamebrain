@@ -151,6 +151,8 @@ class Global:
     redis = None
 
     db_sync_task = None
+    grader_task = None
+    cleanup_task = None
 
     @classmethod
     async def init(cls):
@@ -207,16 +209,28 @@ class Global:
     @classmethod
     def _init_db_sync_task(cls):
         cls.db_sync_task = asyncio.create_task(cls._db_sync_task())
+        cls.db_sync_task.add_done_callback(cls._handle_task_result)
 
     @classmethod
     def _init_grader_task(cls):
         cls.grader_task = asyncio.create_task(GamespaceStatusTask.init(get_settings()))
+        cls.grader_task.add_done_callback(cls._handle_task_result)
 
     @classmethod
     def _init_cleanup_task(cls):
         cls.cleanup_task = asyncio.create_task(
             BackgroundCleanupTask.init(get_settings())
         )
+        cls.cleanup_task.add_done_callback(cls._handle_task_result)
+
+    @staticmethod
+    def _handle_task_result(task: asyncio.Task) -> None:
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass  # Task cancellation should not be logged as an error.
+        except Exception:  # pylint: disable=broad-except
+            logging.exception("Exception raised by task = %r", task)
 
     @classmethod
     def get_jwks(cls):
