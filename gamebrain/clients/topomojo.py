@@ -97,6 +97,10 @@ async def get_gamespace(gamespace_id: str) -> Optional[Any]:
     return await _topomojo_get(f"gamespace/{gamespace_id}")
 
 
+async def get_vms_by_gamespace_id(gamespace_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"vms", {"filter": gamespace_id})
+
+
 async def get_vm_nets(vm_id: str) -> Optional[Any]:
     return await _topomojo_get(f"vm/{vm_id}/nets")
 

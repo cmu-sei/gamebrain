@@ -328,7 +328,7 @@ class GameStateManager:
                     success=False, message=f"No Gamespace for Team {team_id}"
                 )
 
-            vms = (await topomojo.get_gamespace(gamespace_id)).get("vms")
+            vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
             if not vms:
                 return GenericResponse(
                     success=False,
@@ -336,7 +336,13 @@ class GameStateManager:
                 )
 
             for vm in vms:
-                if vm["name"] == cls._settings.game.antenna_vm_name:
+                try:
+                    name, *gs_id = vm["name"].split("#")
+                except Exception as e:
+                    logging.info(f"{vms}")
+                    logging.exception(f"Exception when attempting to split a VM named {vm} in extend_antenna: {e}")
+                    continue
+                if name == cls._settings.game.antenna_vm_name:
                     vm_id = vm["id"]
                     break
             else:
