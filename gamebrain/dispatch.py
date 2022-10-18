@@ -96,6 +96,9 @@ class GamespaceStatusTask:
                 f"{str(e)}",
             )
             return
+        except Exception as e:
+            logging.exception(f"Got an unknown exception from trying to validate grading result: {str(e)}")
+            return
 
         if not grading_result:
             return
