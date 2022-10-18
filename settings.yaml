@@ -40,17 +40,17 @@ game:
         command: touch /home/tmtest/it-worked
   antenna_vm_name: "extend_antenna_test"
   grading_vm_name: "challenge-server"
-  grading_vm_file_path: "/home/user/challengeServer/custom_scripts/requestGrade.py"
+  grading_vm_dispatch_command: "cat /home/user/challengeServer/custom_scripts/requestGrade.py"
   challenge_tasks:
     - task_id: "redradr4"
       vm_name: "pirate-attacker"
-      file_path: "/home/user/LanguageFile"
+      dispatch_command: "cat /home/user/LanguageFile"
     - task_id: "exoarch6"
       vm_name: "station-scada-system"
-      file_path: "/home/user/atmosphere"
+      dispatch_command: "cat /home/user/atmosphere"
     - task_id: "cllctn6"
       vm_name:  "museum-approach"
-      file_path: "/home/user/audit"
+      dispatch_command: "cat /home/user/audit"
   final_destination_name: "final"
   final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
   gamestate_test_mode: false

@@ -81,10 +81,10 @@ ServerPublicUrl = str
 class ChallengeTask(BaseModel):
     task_id: str
     vm_name: str
-    file_path: str
+    dispatch_command: str
 
     def __hash__(self):
-        return hash((self.task_id, self.vm_name, self.file_path))
+        return hash((self.task_id, self.vm_name, self.dispatch_command))
 
 
 class GameSettingsModel(BaseModel):
@@ -94,7 +94,7 @@ class GameSettingsModel(BaseModel):
 
     antenna_vm_name: Optional[str] = ""
     grading_vm_name: Optional[str] = ""
-    grading_vm_file_path: Optional[str] = ""
+    grading_vm_dispatch_command: Optional[str] = ""
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
 

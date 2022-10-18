@@ -39,7 +39,7 @@ class GamespaceStatusTask:
         return await create_dispatch(
             gamespace_id,
             cls.settings.game.grading_vm_name,
-            cls.settings.game.grading_vm_file_path,
+            cls.settings.game.grading_vm_dispatch_command,
         )
 
     @classmethod
@@ -123,7 +123,7 @@ class GamespaceStatusTask:
                 await cls._submit_challenge_task_dispatch(
                     gamespace_id,
                     challenge_task.vm_name,
-                    challenge_task.file_path,
+                    challenge_task.dispatch_command,
                 )
             )
             logging.info(
