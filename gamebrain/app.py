@@ -20,13 +20,14 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, APIKeyHea
 from pydantic import BaseModel
 import yappi
 
-from .auth import check_jwt
+from .auth import check_jwt, admin_api_key_dependency
 from .gamedata.cache import GameStateManager
 import gamebrain.db as db
 from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
 from .gamedata.controller import router as gd_router
 from .pubsub import PubSub, Subscriber
+from .test_endpoints import test_router
 from .util import url_path_join
 
 Settings.init_settings(Global.settings_path)
@@ -65,20 +66,6 @@ async def debug_exception_handler(request, exc):
     return await http_exception_handler(request, exc)
 
 
-def admin_api_key_dependency(x_api_key: str = Depends(APIKeyHeader(name="X-API-Key"))):
-    expected_api_key = get_settings().gamebrain_admin_api_key
-    if x_api_key != expected_api_key:
-        logging.error(
-            "Invalid X-API-Key header received.\n"
-            f"Secret is expected to be: {expected_api_key}\n"
-            f"Request included: {x_api_key}\n"
-        )
-        raise HTTPException(
-            status_code=401,
-            detail=f"Invalid X-API-Key header received. You sent: \n{x_api_key}",
-        )
-
-
 admin_router = APIRouter(
     prefix="/admin", dependencies=(Depends(admin_api_key_dependency),)
 )
@@ -112,39 +99,6 @@ async def liveness_check():
 async def request_client(request: Request):
     print(request.client)
     return request.client
-
-
-# TODO: Disable in production or add auth.
-@APP.get("/test_net_change/{gamespace_id}/{vm_name}/{network}")
-async def test_net_change(gamespace_id: str, vm_name: str, network: str):
-    gamespace_id = gamespace_id.strip()
-    vm_name = vm_name.strip()
-    network = network.strip()
-    logging.info("Got the following in test_net_change: "
-                 f"Gamespace: {gamespace_id}, VM Name: {vm_name}, Network: {network}")
-    vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
-    if not vms:
-        result = "Could not retrieve VMs by gamespace ID."
-        logging.error(result)
-        raise HTTPException(status_code=500, detail=result)
-
-    for vm in vms:
-        try:
-            name, *gs_id = vm["name"].split("#")
-        except Exception as e:
-            logging.info(f"{vms}")
-            result = f"Exception when attempting to split a vm named {vm} in test_net_change: {e}"
-            logging.error(result)
-            raise HTTPException(status_code=500, detail=result)
-        if name == vm_name:
-            vm_id = vm["id"]
-            break
-    else:
-        result = f"Could not find a VM by the name {vm_name} in gamespace {gamespace_id}."
-        logging.error(result)
-        raise HTTPException(status_code=500, detail=result)
-
-    await topomojo.change_vm_net(vm_id, network)
 
 
 @admin_router.get("/headless_client/{team_id}")
@@ -514,3 +468,4 @@ APP.include_router(admin_router)
 APP.include_router(priv_router)
 APP.include_router(gamestate_router)
 APP.include_router(gd_router)
+APP.include_router(test_router)
