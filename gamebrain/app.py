@@ -416,7 +416,7 @@ async def get_is_team_active(team_id: str, auth: HTTPAuthorizationCredentials = 
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
     team = await db.get_team(team_id)
-    return bool(team.get("gamespace_id"))
+    return bool(team.get("headless_url"))
 
 
 @gamestate_router.websocket("/websocket/events")

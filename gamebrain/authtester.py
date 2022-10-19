@@ -272,6 +272,9 @@ def main():
     team_id = data["teamId"]
     print(f"Session expiration time: {expiration}")
 
+    resp = gamebrain_admin_session.get(f"{GAMEBRAIN_URL}/admin/headless_client/{team_id}")
+    print(resp.json())
+    headless_url = resp.json()
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{team_id}", timeout=60.0
     )
