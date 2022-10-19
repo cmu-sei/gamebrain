@@ -118,12 +118,26 @@ class GameStateManager:
             for task in cls._cache.task_map.__root__.values()
             if task.markCompleteWhen and task.markCompleteWhen.locationID == current_loc
         }
+
+        task_completed = False
         for mission in team_data.missions:
             for task in mission.taskList:
                 if task.taskID not in tasks_at_location:
                     break
                 if task.complete:
                     continue
+                if task_completed:
+                    global_task = cls._cache.task_map.__root__.get(task.taskID)
+                    if not global_task:
+                        logging.error(f"Team {team_id} had a task in its team-specific data that "
+                                      f"was not in the global data: {task.taskID}")
+                    comm_event = cls._cache.comm_map.__root__.get(global_task.commID)
+                    if global_task.commID != "" and not comm_event:
+                        logging.error(f"Team {team_id} had a comm event in its team-specific data that "
+                                      f"was not in the global data: {global_task.commID}")
+                    team_data.currentStatus.incomingTransmission = bool(comm_event)
+                    team_data.currentStatus.incomingTransmissionObject = comm_event
+                    return
                 completion_criteria = cls._cache.task_map.__root__[
                     task.taskID
                 ].markCompleteWhen
@@ -133,18 +147,21 @@ class GameStateManager:
                         f"despite the task not having a markCompleteWhen specified. (looking for: {task_type})"
                     )
                     task.complete = True
+                    task_completed = True
                     continue
                 if completion_criteria.type == task_type:
                     logging.info(
                         f"Marking task {task.taskID} complete for team {team_id}. (looking for: {task_type})"
                     )
                     task.complete = True
-                    return
+                    task_completed = True
+                    continue
                 logging.debug(
                     f"Did not mark any specified tasks complete, but did complete a check for team {team_id}. "
                     f"(looking for: {task_type})"
                 )
                 return
+            mission.complete = True
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCache):
@@ -555,11 +572,11 @@ class GameStateManager:
                 location_data.firstContactEvent
             ]
 
+            cls._mark_task_complete_if_current(team_id, team_data, "scan")
+
             team_data.currentStatus.incomingTransmission = True
             team_data.currentStatus.incomingTransmissionObject = first_contact_event
             team_data.currentStatus.currentLocationScanned = True
-
-            cls._mark_task_complete_if_current(team_id, team_data, "scan")
 
             return ScanResponse(
                 success=True,
