@@ -114,6 +114,36 @@ async def request_client(request: Request):
     return request.client
 
 
+# TODO: Disable in production or add auth.
+@APP.get("/test_net_change/{gamespace_id}/{vm_name}/{network}")
+async def test_net_change(gamespace_id: str, vm_name: str, network: str):
+    logging.info(f"Got the following in test_net_change: "
+                 "Gamespace: {gamespace_id}, VM Name: {vm_name}, Network: {network}")
+    vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
+    if not vms:
+        result = "Could not retrieve VMs by gamespace ID."
+        logging.error(result)
+        raise HTTPException(status_code=500, detail=result)
+
+    for vm in vms:
+        try:
+            name, *gs_id = vm["name"].split("#")
+        except Exception as e:
+            logging.info(f"{vms}")
+            result = f"Exception when attempting to split a vm named {vm} in test_net_change: {e}"
+            logging.error(result)
+            raise HTTPException(status_code=500, detail=result)
+        if name == vm_name:
+            vm_id = vm["id"]
+            break
+    else:
+        result = f"Could not find a VM by the name {vm_name} in gamespace {gamespace_id}."
+        logging.error(result)
+        raise HTTPException(status_code=500, detail=result)
+
+    await topomojo.change_vm_net(vm_id, network)
+
+
 @admin_router.get("/headless_client/{team_id}")
 async def get_headless_url(team_id: str) -> str | None:
     assigned_headless_urls = await db.get_assigned_headless_urls()
