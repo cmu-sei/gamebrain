@@ -143,7 +143,7 @@ class CurrentLocationGameplayDataTeamSpecific(BaseModel):
     firstContactComplete: bool = False
     powerStatus: PowerMode = "launchMode"
     incomingTransmission: bool = False
-    incomingTransmissionObject: CommEventData | None = None
+    incomingTransmissionObject: CommEventData | None | dict = {}
 
 
 class GameDataTeamSpecific(BaseModel):

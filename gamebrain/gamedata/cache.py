@@ -136,7 +136,7 @@ class GameStateManager:
                         logging.error(f"Team {team_id} had a comm event in its team-specific data that "
                                       f"was not in the global data: {global_task.commID}")
                     team_data.currentStatus.incomingTransmission = bool(comm_event)
-                    team_data.currentStatus.incomingTransmissionObject = comm_event
+                    team_data.currentStatus.incomingTransmissionObject = comm_event or {}
                     return
                 completion_criteria = cls._cache.task_map.__root__[
                     task.taskID
@@ -646,7 +646,7 @@ class GameStateManager:
                     )
 
             team_specific_task.complete = True
-            team_data.currentStatus.incomingTransmissionObject = None
+            team_data.currentStatus.incomingTransmissionObject = {}
             team_data.currentStatus.incomingTransmission = False
 
             return GenericResponse(success=True, message="incomingCommComplete")
