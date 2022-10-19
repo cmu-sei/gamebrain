@@ -285,10 +285,12 @@ class GameStateManager:
                 cls._mark_task_complete_if_current(team_id, team_data, "codex")
                 cls._mark_task_complete_if_current(team_id, team_data, "codex")
 
-            team_data.ship.commPower = PowerStatus(gamespace_state_output.comms)
-            team_data.ship.flightPower = PowerStatus(gamespace_state_output.flight)
-            team_data.ship.navPower = PowerStatus(gamespace_state_output.nav)
-            team_data.ship.pilotPower = PowerStatus(gamespace_state_output.pilot)
+            transform_map = {"up": PowerStatus.on, "down": PowerStatus.off}
+
+            team_data.ship.commPower = transform_map.get(gamespace_state_output.comms, PowerStatus.off)
+            team_data.ship.flightPower = transform_map.get(gamespace_state_output.flight, PowerStatus.off)
+            team_data.ship.navPower = transform_map.get(gamespace_state_output.nav, PowerStatus.off)
+            team_data.ship.pilotPower = transform_map.get(gamespace_state_output.pilot, PowerStatus.off)
 
     @classmethod
     async def update_team_urls(cls, team_id: TeamID, vm_urls: dict[VmName, VmURL]):
