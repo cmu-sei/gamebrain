@@ -117,8 +117,8 @@ async def request_client(request: Request):
 # TODO: Disable in production or add auth.
 @APP.get("/test_net_change/{gamespace_id}/{vm_name}/{network}")
 async def test_net_change(gamespace_id: str, vm_name: str, network: str):
-    logging.info(f"Got the following in test_net_change: "
-                 "Gamespace: {gamespace_id}, VM Name: {vm_name}, Network: {network}")
+    logging.info("Got the following in test_net_change: "
+                 f"Gamespace: {gamespace_id}, VM Name: {vm_name}, Network: {network}")
     vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
     if not vms:
         result = "Could not retrieve VMs by gamespace ID."
