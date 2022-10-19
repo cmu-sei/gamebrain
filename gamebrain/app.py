@@ -425,7 +425,7 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
 
 
 @gamestate_router.get("/team_active/{team_id}")
-async def get_is_team_active(team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
+async def get_is_team_active(team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())) -> bool:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
     team = await db.get_team(team_id)
