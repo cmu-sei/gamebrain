@@ -279,8 +279,8 @@ class GameStateManager:
                 "astfld_correct": gamespace_state_output.xenoCult,
                 "lgpt22": gamespace_state_output.finalGoal,
             }
-            current_loc = team_data.currentStatus.currentLocation
-            if location_mapping.get(current_loc) == "success":
+            current_loc = location_mapping.get(team_data.currentStatus.currentLocation)
+            if current_loc and "success" in current_loc.lower():
                 # Some codex tasks have an immediate follow-up that we can't directly detect, so just mark it complete.
                 cls._mark_task_complete_if_current(team_id, team_data, "codex")
                 cls._mark_task_complete_if_current(team_id, team_data, "codex")
