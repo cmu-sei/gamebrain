@@ -161,7 +161,9 @@ class GameStateManager:
                     f"(looking for: {task_type})"
                 )
                 return
-            mission.complete = True
+            if task_completed:
+                mission.complete = True
+                return
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCache):
