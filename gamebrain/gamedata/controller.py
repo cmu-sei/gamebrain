@@ -102,7 +102,9 @@ async def get_retractantenna(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.retract_antenna(team_id)
+        result = await GameStateManager.retract_antenna(team_id)
+        logging.info(f"RetractAntenna result: \n{result.json(indent=2)}")
+        return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 

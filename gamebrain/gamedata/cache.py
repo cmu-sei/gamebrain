@@ -120,6 +120,45 @@ class GameStateManager:
         else:
             logging.warning(message)
 
+    @staticmethod
+    async def _get_vm_id_from_name(team_id: TeamID, vm_name: str) -> GenericResponse:
+        team_db_data = await get_team(team_id)
+        gamespace_id = team_db_data.get("gamespace_id")
+
+        if not gamespace_id:
+            message = f"No Gamespace for Team {team_id}"
+            logging.error(message)
+            return GenericResponse(
+                success=False, message=message
+            )
+
+        vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
+        if not vms:
+            message = f"No VMs registered for Gamespace {gamespace_id}"
+            logging.error(message)
+            return GenericResponse(
+                success=False,
+                message=message,
+            )
+
+        for vm in vms:
+            try:
+                name, *gs_id = vm["name"].split("#")
+            except Exception as e:
+                logging.info(f"{vms}")
+                logging.exception(f"Exception when attempting to split a VM named {vm} in extend_antenna: {e}")
+                continue
+            if name == vm_name:
+                vm_id = vm["id"]
+                return GenericResponse(success=True, message=vm_id)
+        else:
+            message = f"Antenna VM not found in Gamespace {gamespace_id}"
+            logging.error(message)
+            return GenericResponse(
+                success=False,
+                message=message,
+            )
+
     @classmethod
     def _set_task_comm_event_active(cls, team_id: TeamID, team_data: GameDataTeamSpecific, task_id: TaskID):
         """
@@ -362,36 +401,10 @@ class GameStateManager:
                     success=False, message="First Contact Event Incomplete"
                 )
 
-            team_db_data = await get_team(team_id)
-            gamespace_id = team_db_data.get("gamespace_id")
-
-            if not gamespace_id:
-                return GenericResponse(
-                    success=False, message=f"No Gamespace for Team {team_id}"
-                )
-
-            vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
-            if not vms:
-                return GenericResponse(
-                    success=False,
-                    message=f"No VMs registered for Gamespace {gamespace_id}",
-                )
-
-            for vm in vms:
-                try:
-                    name, *gs_id = vm["name"].split("#")
-                except Exception as e:
-                    logging.info(f"{vms}")
-                    logging.exception(f"Exception when attempting to split a VM named {vm} in extend_antenna: {e}")
-                    continue
-                if name == cls._settings.game.antenna_vm_name:
-                    vm_id = vm["id"]
-                    break
-            else:
-                return GenericResponse(
-                    success=False,
-                    message=f"Antenna VM not found in Gamespace {gamespace_id}",
-                )
+            vm_id_response = await cls._get_vm_id_from_name(team_id, cls._settings.game.antenna_vm_name)
+            if not vm_id_response.success:
+                return vm_id_response
+            vm_id = vm_id_response.message
 
             location_data = cls._cache.location_map.__root__[
                 team_data.currentStatus.currentLocation
@@ -417,13 +430,22 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
+            vm_id_response = await cls._get_vm_id_from_name(team_id, cls._settings.game.antenna_vm_name)
+            if not vm_id_response.success:
+                return vm_id_response
+            vm_id = vm_id_response.message
+
+            await topomojo.change_vm_net(vm_id, cls._settings.game.antenna_retracted_network)
+
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False
-            team_data.currentStatus.networkName = ""
+            team_data.currentStatus.networkName = cls._settings.game.antenna_retracted_network
 
             cls._mark_task_complete_if_current(team_id, team_data, "antennaRetracted")
 
-            return GenericResponse(success=True, message="antennaRetracted")
+            return GenericResponse(
+                success=True, message=f"Team {team_id} retracted their antenna."
+            )
 
     @classmethod
     async def unlock_location(
