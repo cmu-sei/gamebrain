@@ -121,6 +121,24 @@ class GameStateManager:
             logging.warning(message)
 
     @classmethod
+    def _set_task_comm_event_active(cls, team_id: TeamID, team_data: GameDataTeamSpecific, task_id: TaskID):
+        """
+        cache lock is assumed to be held
+        """
+        global_task = cls._cache.task_map.__root__.get(task_id)
+        if not global_task:
+            logging.error(f"Team {team_id} had a task in its team-specific data that "
+                          f"was not in the global data: {task_id}")
+            return
+        comm_event = cls._cache.comm_map.__root__.get(global_task.commID)
+        if global_task.commID != "" and not comm_event:
+            logging.error(f"Team {team_id} had a comm event in its team-specific data that "
+                          f"was not in the global data: {global_task.commID}")
+            return
+        team_data.currentStatus.incomingTransmission = bool(comm_event)
+        team_data.currentStatus.incomingTransmissionObject = comm_event or {}
+
+    @classmethod
     def _mark_task_complete_if_current(
         cls,
         team_id: TeamID,
@@ -139,40 +157,33 @@ class GameStateManager:
         }
 
         # TODO: Internal data storage needs a major refactor at some point. Too much redundant iteration.
-        task_completed = False
         for mission in team_data.missions:
-            for task in mission.taskList:
+            for i, task in enumerate(mission.taskList):
                 if task.taskID not in tasks_at_location:
                     break
                 if task.complete:
                     continue
-                if task_completed:
-                    global_task = cls._cache.task_map.__root__.get(task.taskID)
-                    if not global_task:
-                        logging.error(f"Team {team_id} had a task in its team-specific data that "
-                                      f"was not in the global data: {task.taskID}")
-                    comm_event = cls._cache.comm_map.__root__.get(global_task.commID)
-                    if global_task.commID != "" and not comm_event:
-                        logging.error(f"Team {team_id} had a comm event in its team-specific data that "
-                                      f"was not in the global data: {global_task.commID}")
-                    team_data.currentStatus.incomingTransmission = bool(comm_event)
-                    team_data.currentStatus.incomingTransmissionObject = comm_event or {}
-                    return
                 completion_criteria = cls._cache.task_map.__root__[
                     task.taskID
                 ].markCompleteWhen
-                if completion_criteria is None or completion_criteria. type == task_type:
+                if completion_criteria is None or completion_criteria.type == task_type:
                     cls._log_completion(task.taskID, team_id, task_type, completion_criteria)
                     task.complete = True
-                    task_completed = True
-                    continue
+                    if i == (len(mission.taskList) - 1):
+                        # Mission complete.
+                        if not all(map(lambda t: t.complete, mission.taskList)):
+                            logging.error(f"Marked task {task.taskID} complete, which completed mission "
+                                          f"{mission.missionID}, but not all tasks were complete for the mission.")
+                        mission.complete = True
+                    else:
+                        # Set the comm event for the next task.
+                        next_task = mission.taskList[i + 1]
+                        cls._set_task_comm_event_active(team_id, team_data, next_task.taskID)
+                    return
                 logging.debug(
                     f"Did not mark any specified tasks complete, but did complete a check for team {team_id}. "
                     f"(looking for: {task_type})"
                 )
-                return
-            if task_completed:
-                mission.complete = True
                 return
 
     @classmethod
