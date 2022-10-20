@@ -38,7 +38,7 @@ game:
         action_type: dispatch
         vm_name: ubuntu
         command: touch /home/tmtest/it-worked
-  antenna_vm_name: "extend_antenna_test"
+  antenna_vm_name: "extend-antenna-test"
   grading_vm_name: "challenge-server"
   grading_vm_dispatch_command: "cat /home/user/challengeServer/custom_scripts/requestGrade.py"
   challenge_tasks:
