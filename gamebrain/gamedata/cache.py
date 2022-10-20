@@ -217,6 +217,13 @@ class GameStateManager:
                     else:
                         # Set the comm event for the next task.
                         next_task = mission.taskList[i + 1]
+                        # If the next task is the same type or has no completion criteria,
+                        # cycle around to mark it complete.
+                        completion_criteria = cls._cache.task_map.__root__[
+                            next_task.taskID
+                        ].markCompleteWhen
+                        if completion_criteria is None or completion_criteria.type == task_type:
+                            continue
                         cls._set_task_comm_event_active(team_id, team_data, next_task.taskID)
                     return
                 logging.debug(
