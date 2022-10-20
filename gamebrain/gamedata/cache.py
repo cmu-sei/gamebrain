@@ -16,6 +16,7 @@ from .model import (
     MissionDataTeamSpecific,
     MissionDataFull,
     TaskCompletionType,
+    TaskCompletion,
     TaskData,
     TaskDataTeamSpecific,
     TaskDataFull,
@@ -101,6 +102,24 @@ class GameStateManager:
 
     _settings: "SettingsModel"
 
+    @staticmethod
+    def _log_completion(
+        task_id: TaskID,
+        team_id: TeamID,
+        task_type: TaskCompletionType,
+        completion_criteria: TaskCompletion | None,
+    ):
+        missing_criteria = (
+            ", despite the task not having a markCompleteWhen specified"
+            if not completion_criteria
+            else ""
+        )
+        message = f"Marking task {task_id} complete for team {team_id}{missing_criteria}. (looking for: {task_type})"
+        if completion_criteria:
+            logging.info(message)
+        else:
+            logging.warning(message)
+
     @classmethod
     def _mark_task_complete_if_current(
         cls,
@@ -119,6 +138,7 @@ class GameStateManager:
             if task.markCompleteWhen and task.markCompleteWhen.locationID == current_loc
         }
 
+        # TODO: Internal data storage needs a major refactor at some point. Too much redundant iteration.
         task_completed = False
         for mission in team_data.missions:
             for task in mission.taskList:
@@ -141,18 +161,8 @@ class GameStateManager:
                 completion_criteria = cls._cache.task_map.__root__[
                     task.taskID
                 ].markCompleteWhen
-                if completion_criteria is None:
-                    logging.warning(
-                        f"Marking task {task.taskID} complete for team {team_id}, "
-                        f"despite the task not having a markCompleteWhen specified. (looking for: {task_type})"
-                    )
-                    task.complete = True
-                    task_completed = True
-                    continue
-                if completion_criteria.type == task_type:
-                    logging.info(
-                        f"Marking task {task.taskID} complete for team {team_id}. (looking for: {task_type})"
-                    )
+                if completion_criteria is None or completion_criteria. type == task_type:
+                    cls._log_completion(task.taskID, team_id, task_type, completion_criteria)
                     task.complete = True
                     task_completed = True
                     continue
