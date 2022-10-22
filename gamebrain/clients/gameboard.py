@@ -1,20 +1,132 @@
+import asyncio
 import json as jsonlib
-from typing import Any, Dict, Optional
+import time
+from enum import Enum
+from logging import error
+import ssl
+from typing import Any, Optional
 
-from .common import _service_get
-from ..config import get_settings
+from authlib.integrations.httpx_client.oauth2_client import AsyncOAuth2Client
+from httpx import AsyncClient
+
+from ..util import url_path_join
+
+
+class ModuleSettings:
+    settings = None
+
+
+def get_settings():
+    if ModuleSettings.settings is None:
+        raise AttributeError("Gameboard settings are not initialized.")
+    return ModuleSettings.settings
+
+
+class HttpMethod(Enum):
+    GET = "GET"
+    PUT = "PUT"
+    POST = "POST"
+
+
+class AuthTokenCache:
+    """
+    It's stupid, but the authlib httpx integration doesn't seem to insert the authorization header when using
+    client.send. I want to unify the Gameboard and Topomojo calls at some point and I'd like to just construct
+    an httpx.AsyncClient to give a function to use for calls.
+    """
+    token = None
+    token_lock = asyncio.Lock()
+
+    @classmethod
+    def _get_token_client(cls):
+        settings = get_settings()
+        ssl_context = ssl.create_default_context()
+        if settings.ca_cert_path:
+            ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
+
+        return AsyncOAuth2Client(
+            settings.identity.client_id,
+            settings.identity.client_secret,
+            verify=ssl_context,
+        )
+
+    @classmethod
+    async def get_access_token(cls, settings: "SettingsModel") -> str:
+        async with cls.token_lock:
+            if not cls.token or ((cls.token["expires_at"] - time.time()) < 30.0):
+                client = cls._get_token_client()
+                await client.fetch_token(url_path_join(settings.identity.base_url, settings.identity.token_endpoint),
+                                         username=settings.identity.token_user,
+                                         password=settings.identity.token_password,)
+                cls.token = client.token
+            return cls.token["access_token"]
+
+
+def _get_gameboard_client(access_token: str) -> AsyncClient:
+    settings = get_settings()
+    ssl_context = ssl.create_default_context()
+    if settings.ca_cert_path:
+        ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
+
+    return AsyncClient(
+        base_url=settings.gameboard.base_api_url,
+        verify=ssl_context,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+
+async def _gameboard_request(
+        method: HttpMethod, endpoint: str, data: Optional[Any]
+) -> Optional[Any] | None:
+    settings = get_settings()
+    access_token = await AuthTokenCache.get_access_token(settings)
+    async with _get_gameboard_client(access_token) as client:
+        args = {
+            "method": method.value,
+            "url": endpoint,
+            "timeout": 60.0,
+        }
+        if method in (HttpMethod.PUT, HttpMethod.POST):
+            args["json"] = data
+        elif method in (HttpMethod.GET,):
+            args["params"] = data
+        else:
+            raise ValueError("Unsupported HTTP method.")
+
+        request = client.build_request(**args)
+
+        response = await client.send(request)
+        if not response.is_success:
+            request = response.request
+            error(
+                f"HTTP Request to {response.url} returned {response.status_code}\n"
+                f"HTTP Method was: {request.method}\n"
+                f"Headers were: {request.headers}\n"
+                f"Request Body was: {request.content}\n"
+            )
+
+    try:
+        return response.json()
+    except jsonlib.JSONDecodeError:
+        return None
 
 
 async def _gameboard_get(
-    endpoint: str, query_params: Optional[Dict] = None
-) -> Optional[Any]:
-    resp = await _service_get(
-        get_settings().gameboard.base_api_url, endpoint, query_params
-    )
-    try:
-        return resp.json()
-    except jsonlib.JSONDecodeError:
-        return None
+        endpoint: str, query_params: Optional[dict] = None
+) -> Optional[Any] | None:
+    return await _gameboard_request(HttpMethod.GET, endpoint, query_params)
+
+
+async def _gameboard_post(
+        endpoint: str, json_data: Optional[Any]
+) -> Optional[Any] | None:
+    return await _gameboard_request(HttpMethod.POST, endpoint, json_data)
+
+
+async def _gameboard_put(
+        endpoint: str, json_data: Optional[Any]
+) -> Optional[Any] | None:
+    return await _gameboard_request(HttpMethod.PUT, endpoint, json_data)
 
 
 async def get_player_by_user_id(user_id: str, game_id: str) -> Optional[Any]:

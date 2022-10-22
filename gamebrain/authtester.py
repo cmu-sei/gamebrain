@@ -98,12 +98,6 @@ def main():
     )
     print(resp.json())
 
-    print("Getting Team 2 headless client assignment:")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_2}",
-    )
-    print(resp.json())
-
     print("Testing headless client pool expended (response should be null or None):")
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/headless_client/{'a'*32}",
@@ -275,9 +269,6 @@ def main():
     team_id = data["teamId"]
     print(f"Session expiration time: {expiration}")
 
-    resp = gamebrain_admin_session.get(f"{GAMEBRAIN_URL}/admin/headless_client/{team_id}")
-    print(resp.json())
-    headless_url = resp.json()
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{team_id}", timeout=60.0
     )
@@ -287,12 +278,6 @@ def main():
     # Clean up.
     # session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
     # print(f"Deleted player {player_id}")
-
-    # print("Unassigning Team 2 headless client:")
-    # resp = gamebrain_admin_session.get(
-    #     f"{GAMEBRAIN_URL}/admin/headless_client_unassign/{TEST_TEAM_2}",
-    # )
-    # print(resp.json())
 
     # Or test automatic cleanup by marking the gamespace complete in TM:
     topomojo_session = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)

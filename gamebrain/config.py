@@ -9,7 +9,7 @@ import httpx
 import yaml
 from pydantic import BaseModel, validator
 
-from .clients import topomojo
+from .clients import gameboard, topomojo
 from .dispatch import GamespaceStatusTask
 from .gamedata.cache import (
     GameStateManager,
@@ -166,6 +166,7 @@ class Global:
             settings.db.drop_app_tables,
             settings.db.echo_sql,
         )
+        gameboard.ModuleSettings.settings = settings
         topomojo.ModuleSettings.settings = settings
         cls._init_jwks()
         cls._init_db_sync_task()
