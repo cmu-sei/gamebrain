@@ -1,10 +1,10 @@
-from logging import error
-from enum import Enum
 import json as jsonlib
 import ssl
 from typing import Any, Dict, List, Optional
 
 from httpx import AsyncClient
+
+from .common import _service_request_and_log, HttpMethod
 
 
 class ModuleSettings:
@@ -15,12 +15,6 @@ def get_settings():
     if ModuleSettings.settings is None:
         raise AttributeError("TopoMojo settings are not initialized.")
     return ModuleSettings.settings
-
-
-class HttpMethod(Enum):
-    GET = "GET"
-    PUT = "PUT"
-    POST = "POST"
 
 
 def _get_topomojo_client() -> AsyncClient:
@@ -35,36 +29,14 @@ def _get_topomojo_client() -> AsyncClient:
         base_url=settings.topomojo.base_api_url,
         verify=ssl_context,
         headers={"x-api-key": api_key, "x-api-client": api_client},
+        timeout=300.0,
     )
 
 
 async def _topomojo_request(
     method: HttpMethod, endpoint: str, data: Optional[Any]
 ) -> Optional[Any] | None:
-    async with _get_topomojo_client() as client:
-        args = {
-            "method": method.value,
-            "url": endpoint,
-            "timeout": 300.0,
-        }
-        if method in (HttpMethod.PUT, HttpMethod.POST):
-            args["json"] = data
-        elif method in (HttpMethod.GET,):
-            args["params"] = data
-        else:
-            raise ValueError("Unsupported HTTP method.")
-
-        request = client.build_request(**args)
-
-        response = await client.send(request)
-        if not response.is_success:
-            error(
-                f"HTTP Request to {response.url} returned {response.status_code}\n"
-                f"HTTP Method was: {request.method}\n"
-                f"Headers were: {request.headers}\n"
-                f"Request Body was: {request.content}\n"
-            )
-
+    response = await _service_request_and_log(_get_topomojo_client(), method, endpoint, data)
     try:
         return response.json()
     except jsonlib.JSONDecodeError:

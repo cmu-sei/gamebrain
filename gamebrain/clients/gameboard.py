@@ -1,14 +1,13 @@
 import asyncio
 import json as jsonlib
 import time
-from enum import Enum
-from logging import error
 import ssl
 from typing import Any, Optional
 
 from authlib.integrations.httpx_client.oauth2_client import AsyncOAuth2Client
 from httpx import AsyncClient
 
+from .common import _service_request_and_log, HttpMethod
 from ..util import url_path_join
 
 
@@ -22,17 +21,10 @@ def get_settings():
     return ModuleSettings.settings
 
 
-class HttpMethod(Enum):
-    GET = "GET"
-    PUT = "PUT"
-    POST = "POST"
-
-
 class AuthTokenCache:
     """
     It's stupid, but the authlib httpx integration doesn't seem to insert the authorization header when using
-    client.send. I want to unify the Gameboard and Topomojo calls at some point and I'd like to just construct
-    an httpx.AsyncClient to give a function to use for calls.
+    client.send, so I just construct an OAuth2AsyncClient to fetch a token, and then hand it off to an AsyncClient.
     """
     token = None
     token_lock = asyncio.Lock()
@@ -72,6 +64,7 @@ def _get_gameboard_client(access_token: str) -> AsyncClient:
         base_url=settings.gameboard.base_api_url,
         verify=ssl_context,
         headers={"Authorization": f"Bearer {access_token}"},
+        timeout=60.0,
     )
 
 
@@ -80,31 +73,7 @@ async def _gameboard_request(
 ) -> Optional[Any] | None:
     settings = get_settings()
     access_token = await AuthTokenCache.get_access_token(settings)
-    async with _get_gameboard_client(access_token) as client:
-        args = {
-            "method": method.value,
-            "url": endpoint,
-            "timeout": 60.0,
-        }
-        if method in (HttpMethod.PUT, HttpMethod.POST):
-            args["json"] = data
-        elif method in (HttpMethod.GET,):
-            args["params"] = data
-        else:
-            raise ValueError("Unsupported HTTP method.")
-
-        request = client.build_request(**args)
-
-        response = await client.send(request)
-        if not response.is_success:
-            request = response.request
-            error(
-                f"HTTP Request to {response.url} returned {response.status_code}\n"
-                f"HTTP Method was: {request.method}\n"
-                f"Headers were: {request.headers}\n"
-                f"Request Body was: {request.content}\n"
-            )
-
+    response = await _service_request_and_log(_get_gameboard_client(access_token), method, endpoint, data)
     try:
         return response.json()
     except jsonlib.JSONDecodeError:
