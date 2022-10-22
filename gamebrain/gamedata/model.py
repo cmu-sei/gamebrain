@@ -13,7 +13,7 @@ TaskCompletionType = Literal[
     "antennaExtended",
     "antennaRetracted",
     "challenge",
-    "codex"
+    "codex",
 ]
 
 

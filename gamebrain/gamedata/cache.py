@@ -128,9 +128,7 @@ class GameStateManager:
         if not gamespace_id:
             message = f"No Gamespace for Team {team_id}"
             logging.error(message)
-            return GenericResponse(
-                success=False, message=message
-            )
+            return GenericResponse(success=False, message=message)
 
         vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
         if not vms:
@@ -146,7 +144,9 @@ class GameStateManager:
                 name, *gs_id = vm["name"].split("#")
             except Exception as e:
                 logging.info(f"{vms}")
-                logging.exception(f"Exception when attempting to split a VM named {vm} in extend_antenna: {e}")
+                logging.exception(
+                    f"Exception when attempting to split a VM named {vm} in extend_antenna: {e}"
+                )
                 continue
             if name == vm_name:
                 vm_id = vm["id"]
@@ -160,19 +160,25 @@ class GameStateManager:
             )
 
     @classmethod
-    def _set_task_comm_event_active(cls, team_id: TeamID, team_data: GameDataTeamSpecific, task_id: TaskID):
+    def _set_task_comm_event_active(
+        cls, team_id: TeamID, team_data: GameDataTeamSpecific, task_id: TaskID
+    ):
         """
         cache lock is assumed to be held
         """
         global_task = cls._cache.task_map.__root__.get(task_id)
         if not global_task:
-            logging.error(f"Team {team_id} had a task in its team-specific data that "
-                          f"was not in the global data: {task_id}")
+            logging.error(
+                f"Team {team_id} had a task in its team-specific data that "
+                f"was not in the global data: {task_id}"
+            )
             return
         comm_event = cls._cache.comm_map.__root__.get(global_task.commID)
         if global_task.commID != "" and not comm_event:
-            logging.error(f"Team {team_id} had a comm event in its team-specific data that "
-                          f"was not in the global data: {global_task.commID}")
+            logging.error(
+                f"Team {team_id} had a comm event in its team-specific data that "
+                f"was not in the global data: {global_task.commID}"
+            )
             return
         team_data.currentStatus.incomingTransmission = bool(comm_event)
         team_data.currentStatus.incomingTransmissionObject = comm_event or {}
@@ -206,13 +212,17 @@ class GameStateManager:
                     task.taskID
                 ].markCompleteWhen
                 if completion_criteria is None or completion_criteria.type == task_type:
-                    cls._log_completion(task.taskID, team_id, task_type, completion_criteria)
+                    cls._log_completion(
+                        task.taskID, team_id, task_type, completion_criteria
+                    )
                     task.complete = True
                     if i == (len(mission.taskList) - 1):
                         # Mission complete.
                         if not all(map(lambda t: t.complete, mission.taskList)):
-                            logging.error(f"Marked task {task.taskID} complete, which completed mission "
-                                          f"{mission.missionID}, but not all tasks were complete for the mission.")
+                            logging.error(
+                                f"Marked task {task.taskID} complete, which completed mission "
+                                f"{mission.missionID}, but not all tasks were complete for the mission."
+                            )
                         mission.complete = True
                     else:
                         # Set the comm event for the next task.
@@ -222,9 +232,14 @@ class GameStateManager:
                         completion_criteria = cls._cache.task_map.__root__[
                             next_task.taskID
                         ].markCompleteWhen
-                        if completion_criteria is None or completion_criteria.type == task_type:
+                        if (
+                            completion_criteria is None
+                            or completion_criteria.type == task_type
+                        ):
                             continue
-                        cls._set_task_comm_event_active(team_id, team_data, next_task.taskID)
+                        cls._set_task_comm_event_active(
+                            team_id, team_data, next_task.taskID
+                        )
                     return
                 logging.debug(
                     f"Did not mark any specified tasks complete, but did complete a check for team {team_id}. "
@@ -373,10 +388,18 @@ class GameStateManager:
 
             transform_map = {"up": PowerStatus.on, "down": PowerStatus.off}
 
-            team_data.ship.commPower = transform_map.get(gamespace_state_output.comms, PowerStatus.off)
-            team_data.ship.flightPower = transform_map.get(gamespace_state_output.flight, PowerStatus.off)
-            team_data.ship.navPower = transform_map.get(gamespace_state_output.nav, PowerStatus.off)
-            team_data.ship.pilotPower = transform_map.get(gamespace_state_output.pilot, PowerStatus.off)
+            team_data.ship.commPower = transform_map.get(
+                gamespace_state_output.comms, PowerStatus.off
+            )
+            team_data.ship.flightPower = transform_map.get(
+                gamespace_state_output.flight, PowerStatus.off
+            )
+            team_data.ship.navPower = transform_map.get(
+                gamespace_state_output.nav, PowerStatus.off
+            )
+            team_data.ship.pilotPower = transform_map.get(
+                gamespace_state_output.pilot, PowerStatus.off
+            )
 
     @classmethod
     async def update_team_urls(cls, team_id: TeamID, vm_urls: dict[VmName, VmURL]):
@@ -408,7 +431,9 @@ class GameStateManager:
                     success=False, message="First Contact Event Incomplete"
                 )
 
-            vm_id_response = await cls._get_vm_id_from_name(team_id, cls._settings.game.antenna_vm_name)
+            vm_id_response = await cls._get_vm_id_from_name(
+                team_id, cls._settings.game.antenna_vm_name
+            )
             if not vm_id_response.success:
                 return vm_id_response
             vm_id = vm_id_response.message
@@ -437,16 +462,22 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            vm_id_response = await cls._get_vm_id_from_name(team_id, cls._settings.game.antenna_vm_name)
+            vm_id_response = await cls._get_vm_id_from_name(
+                team_id, cls._settings.game.antenna_vm_name
+            )
             if not vm_id_response.success:
                 return vm_id_response
             vm_id = vm_id_response.message
 
-            await topomojo.change_vm_net(vm_id, cls._settings.game.antenna_retracted_network)
+            await topomojo.change_vm_net(
+                vm_id, cls._settings.game.antenna_retracted_network
+            )
 
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False
-            team_data.currentStatus.networkName = cls._settings.game.antenna_retracted_network
+            team_data.currentStatus.networkName = (
+                cls._settings.game.antenna_retracted_network
+            )
 
             cls._mark_task_complete_if_current(team_id, team_data, "antennaRetracted")
 

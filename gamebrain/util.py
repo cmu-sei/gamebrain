@@ -33,6 +33,7 @@ class TeamLocks:
     """
     The point of this is to have a per-team lock, but the structure holding the per-team lock also needs a lock.
     """
+
     global_lock = asyncio.Lock()
     team_locks: dict[TeamID, asyncio.Lock] = {}
 

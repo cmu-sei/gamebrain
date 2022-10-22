@@ -36,7 +36,9 @@ def _get_topomojo_client() -> AsyncClient:
 async def _topomojo_request(
     method: HttpMethod, endpoint: str, data: Optional[Any]
 ) -> Optional[Any] | None:
-    response = await _service_request_and_log(_get_topomojo_client(), method, endpoint, data)
+    response = await _service_request_and_log(
+        _get_topomojo_client(), method, endpoint, data
+    )
     try:
         return response.json()
     except jsonlib.JSONDecodeError:

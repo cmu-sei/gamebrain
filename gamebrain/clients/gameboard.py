@@ -26,6 +26,7 @@ class AuthTokenCache:
     It's stupid, but the authlib httpx integration doesn't seem to insert the authorization header when using
     client.send, so I just construct an OAuth2AsyncClient to fetch a token, and then hand it off to an AsyncClient.
     """
+
     token = None
     token_lock = asyncio.Lock()
 
@@ -47,9 +48,13 @@ class AuthTokenCache:
         async with cls.token_lock:
             if not cls.token or ((cls.token["expires_at"] - time.time()) < 30.0):
                 client = cls._get_token_client()
-                await client.fetch_token(url_path_join(settings.identity.base_url, settings.identity.token_endpoint),
-                                         username=settings.identity.token_user,
-                                         password=settings.identity.token_password,)
+                await client.fetch_token(
+                    url_path_join(
+                        settings.identity.base_url, settings.identity.token_endpoint
+                    ),
+                    username=settings.identity.token_user,
+                    password=settings.identity.token_password,
+                )
                 cls.token = client.token
             return cls.token["access_token"]
 
@@ -69,11 +74,13 @@ def _get_gameboard_client(access_token: str) -> AsyncClient:
 
 
 async def _gameboard_request(
-        method: HttpMethod, endpoint: str, data: Optional[Any]
+    method: HttpMethod, endpoint: str, data: Optional[Any]
 ) -> Optional[Any] | None:
     settings = get_settings()
     access_token = await AuthTokenCache.get_access_token(settings)
-    response = await _service_request_and_log(_get_gameboard_client(access_token), method, endpoint, data)
+    response = await _service_request_and_log(
+        _get_gameboard_client(access_token), method, endpoint, data
+    )
     try:
         return response.json()
     except jsonlib.JSONDecodeError:
@@ -81,19 +88,19 @@ async def _gameboard_request(
 
 
 async def _gameboard_get(
-        endpoint: str, query_params: Optional[dict] = None
+    endpoint: str, query_params: Optional[dict] = None
 ) -> Optional[Any] | None:
     return await _gameboard_request(HttpMethod.GET, endpoint, query_params)
 
 
 async def _gameboard_post(
-        endpoint: str, json_data: Optional[Any]
+    endpoint: str, json_data: Optional[Any]
 ) -> Optional[Any] | None:
     return await _gameboard_request(HttpMethod.POST, endpoint, json_data)
 
 
 async def _gameboard_put(
-        endpoint: str, json_data: Optional[Any]
+    endpoint: str, json_data: Optional[Any]
 ) -> Optional[Any] | None:
     return await _gameboard_request(HttpMethod.PUT, endpoint, json_data)
 
