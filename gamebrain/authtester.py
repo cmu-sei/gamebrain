@@ -71,57 +71,21 @@ def main():
         TOKEN_URL, username=FOUNDRY_ADMIN_EMAIL, password=FOUNDRY_ADMIN_PASSWORD
     )
 
-    print("Testing invalid API key:")
-    resp = missing_api_key_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
-    )
-    team_1_headless_assignment = resp.json()
-    print(team_1_headless_assignment)
-
-    print("Testing invalid API key:")
-    resp = invalid_api_key_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
-    )
-    team_1_headless_assignment = resp.json()
-    print(team_1_headless_assignment)
-
-    print("Getting Team 1 headless client assignment:")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
-    )
-    team_1_headless_assignment = resp.json()
-    print(team_1_headless_assignment)
-
     print(f"Deploying for Team {TEST_TEAM_1}")
     resp = gamebrain_admin_session.get(
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
     )
-    print(resp.json())
-
-    print("Testing headless client pool expended (response should be null or None):")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{'a'*32}",
-    )
-    print(resp.json())
-
-    resp = gamebrain_admin_session.post(
-        f"{GAMEBRAIN_URL}/admin/secrets/{TEST_TEAM_1}",
-        json=["secret_1", "secret_2", "secret_3"],
-    )
-    print(resp.json())
-
-    resp = gamebrain_admin_session.post(
-        f"{GAMEBRAIN_URL}/admin/media",
-        json={"video1": "example.com/video1", "video2": "example.com/video2"},
-    )
-    print(resp.json())
+    deployment = resp.json()
+    print(deployment)
+    assert deployment["gamespaceId"] is not None
+    assert deployment["headless_url"] is not None
 
     user_token = user_session.token["access_token"]
 
     print("Testing get_team endpoint")
     json_data = {
         "user_token": user_token,
-        "server_container_hostname": f"server-{team_1_headless_assignment[-1]}",
+        "server_container_hostname": f"server-{deployment['headless_url'][-1]}",
     }
     print(json_data)
     resp = gamestate_session.post(

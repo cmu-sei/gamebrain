@@ -21,6 +21,7 @@ from pydantic import BaseModel
 import yappi
 
 from .auth import check_jwt, admin_api_key_dependency
+from .admin.controller import admin_router as test_admin_router
 from .gamedata.cache import GameStateManager
 import gamebrain.db as db
 from .clients import gameboard, topomojo
@@ -101,8 +102,10 @@ async def request_client(request: Request):
     return request.client
 
 
-@admin_router.get("/headless_client/{team_id}")
+@admin_router.get("/headless_client/{team_id}", deprecated=True)
+@test_admin_router.get("/headless_client/{team_id}", deprecated=True)
 async def get_headless_url(team_id: str) -> str | None:
+    return None
     assigned_headless_urls = await db.get_assigned_headless_urls()
 
     if url := assigned_headless_urls.get(team_id):
@@ -124,14 +127,16 @@ async def get_headless_url(team_id: str) -> str | None:
     return str(headless_url)
 
 
-@admin_router.get("/headless_client_unassign/{team_id}")
+@admin_router.get("/headless_client_unassign/{team_id}", deprecated=True)
 async def get_unassign_headless(team_id: str):
+    return False
     await db.store_team(team_id, headless_url=None)
     return True
 
 
-@admin_router.get("/headless_client_unassign")
+@admin_router.get("/headless_client_unassign", deprecated=True)
 async def get_unassign_all_headless():
+    return False
     assigned_headless_urls = await db.get_assigned_headless_urls()
     for team_id in assigned_headless_urls:
         await db.store_team(team_id, headless_url=None)
@@ -191,7 +196,7 @@ def construct_vm_url(gamespace_id: str, vm_name: str):
     return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
 
 
-@admin_router.get("/deploy/{game_id}/{team_id}")
+# @admin_router.get("/deploy/{game_id}/{team_id}")
 async def deploy(
     game_id: str,
     team_id: str,
@@ -412,7 +417,9 @@ async def get_team_data(auth: HTTPAuthorizationCredentials = Security(HTTPBearer
 
 
 @gamestate_router.get("/team_active/{team_id}")
-async def get_is_team_active(team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())) -> bool:
+async def get_is_team_active(
+    team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())
+) -> bool:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
 
     team = await db.get_team(team_id)
@@ -464,7 +471,8 @@ async def subscribe_events(ws: WebSocket):
     await subscriber.unsubscribe()
 
 
-APP.include_router(admin_router)
+#APP.include_router(admin_router)
+APP.include_router(test_admin_router)
 APP.include_router(priv_router)
 APP.include_router(gamestate_router)
 APP.include_router(gd_router)
