@@ -22,8 +22,11 @@ class TaskCompletion(BaseModel):
     locationID: str
 
 
+TaskID = str
+
+
 class TaskData(BaseModel):
-    taskID: str
+    taskID: TaskID
     missionID: str
     descriptionText: str
     infoPresent: bool = True
@@ -35,13 +38,17 @@ class TaskData(BaseModel):
 
 
 class TaskDataTeamSpecific(BaseModel):
-    taskID: str
+    taskID: TaskID
     visible: bool = True
     complete: bool = False
 
 
 class TaskDataFull(TaskData, TaskDataTeamSpecific):
     ...
+
+
+class TaskDataIdentifierStub(BaseModel):
+    taskID: TaskID
 
 
 class MissionData(BaseModel):
@@ -52,7 +59,7 @@ class MissionData(BaseModel):
     missionIcon: str
     isSpecial: bool = False
     roleList: list[str]
-    taskList: list[TaskData]
+    taskList: list[TaskDataIdentifierStub]
 
 
 class MissionDataTeamSpecific(BaseModel):
