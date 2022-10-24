@@ -74,7 +74,7 @@ class ConsoleUrl(BaseModel):
 
 
 class DeployResponse(BaseModel):
-    headless_url: HeadlessUrl | None
+    headlessUrl: HeadlessUrl | None
     gamespaceId: GamespaceID | None
     vms: list[ConsoleUrl]
 
@@ -179,7 +179,7 @@ async def deploy(
 
             headless_url = await HeadlessManager.assign_headless(team_id)
             if not headless_url:
-                return DeployResponse(gamespace_id=None, headless_url=None, vms=[])
+                return DeployResponse(gamespaceId=None, headlessUrl=None, vms=[])
 
             try:
                 (
@@ -208,7 +208,7 @@ async def deploy(
 
         if gamespace_id and headless_url and console_urls:
             return DeployResponse(
-                gamespaceId=gamespace_id, headless_url=headless_url, vms=console_urls
+                gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
             )
 
 
