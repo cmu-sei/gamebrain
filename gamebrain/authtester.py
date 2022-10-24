@@ -78,14 +78,14 @@ def main():
     deployment = resp.json()
     print(deployment)
     assert deployment["gamespaceId"] is not None
-    assert deployment["headless_url"] is not None
+    assert deployment["headlessUrl"] is not None
 
     user_token = user_session.token["access_token"]
 
     print("Testing get_team endpoint")
     json_data = {
         "user_token": user_token,
-        "server_container_hostname": f"server-{deployment['headless_url'][-1]}",
+        "server_container_hostname": f"server-{deployment['headlessUrl'][-1]}",
     }
     print(json_data)
     resp = gamestate_session.post(
