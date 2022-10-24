@@ -17,23 +17,26 @@ TaskCompletionType = Literal[
 ]
 
 
+CommID = str
+MissionID = str
+LocationID = str
+TaskID = str
+
+
 class TaskCompletion(BaseModel):
     type: TaskCompletionType
-    locationID: str
-
-
-TaskID = str
+    locationID: LocationID
 
 
 class TaskData(BaseModel):
     taskID: TaskID
-    missionID: str
+    missionID: MissionID
     descriptionText: str
     infoPresent: bool = True
     infoText: str
     videoPresent: bool = True
     videoURL: str
-    commID: str
+    commID: CommID
     markCompleteWhen: TaskCompletion = None
 
 
@@ -52,7 +55,7 @@ class TaskDataIdentifierStub(BaseModel):
 
 
 class MissionData(BaseModel):
-    missionID: str
+    missionID: MissionID
     title: str
     summaryShort: str
     summaryLong: str
@@ -63,7 +66,7 @@ class MissionData(BaseModel):
 
 
 class MissionDataTeamSpecific(BaseModel):
-    missionID: str
+    missionID: MissionID
     unlocked: bool = True
     visible: bool = False
     complete: bool = False
@@ -75,7 +78,7 @@ class MissionDataFull(MissionData, MissionDataTeamSpecific):
 
 
 class LocationData(BaseModel):
-    locationID: str
+    locationID: LocationID
     name: str
     imageID: str
     backdropID: str
@@ -89,7 +92,7 @@ class LocationData(BaseModel):
 
 
 class LocationDataTeamSpecific(BaseModel):
-    locationID: str
+    locationID: LocationID
     unlocked: bool = True
     visited: bool = False
     scanned: bool = False
@@ -128,13 +131,13 @@ class SessionDataTeamSpecific(BaseModel):
 
 
 class CommEventData(BaseModel):
-    commID: str
+    commID: CommID
     videoURL: str
     commTemplate: Literal["incoming", "probe", "badTranslation"]
     translationMessage: str
     scanInfoMessage: str
     firstContact: bool
-    locationID: str
+    locationID: LocationID
 
 
 PowerMode = Literal["launchMode", "explorationMode", "standby"]
@@ -173,7 +176,7 @@ class GenericResponse(BaseModel):
 
 class LocationUnlockResponse(BaseModel):
     responseStatus: Literal["success", "invalid", "alreadyunlocked"]
-    locationID: str
+    locationID: LocationID
     enteredCoordinates: str
 
 
