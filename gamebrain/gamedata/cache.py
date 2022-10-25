@@ -354,7 +354,7 @@ class GameStateManager:
             return
         team_data.currentStatus.incomingTransmission = bool(comm_event)
         team_data.currentStatus.incomingTransmissionObject = (
-            comm_event.to_snapshot() or {}
+            {} if not comm_event else comm_event.to_snapshot()
         )
 
     @classmethod
