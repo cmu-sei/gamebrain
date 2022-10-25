@@ -109,7 +109,7 @@ class GamespaceStatusTask:
         logging.info(
             f"Got a grading result from team {team_id}'s challenge:\n{formatted_result}"
         )
-        await GameStateManager.team_state_from_gamespace(team_id, grading_result)
+        await GameStateManager.dispatch_grading_task_update(team_id, grading_result)
 
     @classmethod
     async def _handle_challenge_task_dispatch(
@@ -145,7 +145,9 @@ class GamespaceStatusTask:
             logging.debug(f"Dispatch completed, with non-success result: \n{result}")
             return
         logging.info(f"Got a challenge task success from {team_id}:\n{result}")
-        await GameStateManager.challenge_task_complete(team_id, challenge_task.task_id)
+        await GameStateManager.dispatch_challenge_task_complete(
+            team_id, challenge_task.task_id
+        )
 
     @classmethod
     async def _grader_task(cls):

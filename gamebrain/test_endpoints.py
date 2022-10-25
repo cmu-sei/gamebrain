@@ -52,7 +52,7 @@ async def test_net_change(gamespace_id: str, vm_name: str, network: str):
 async def test_mark_challenge_task_complete(
     team_id: str, task_id: str
 ) -> GameDataResponse:
-    await GameStateManager.challenge_task_complete(team_id, task_id)
+    await GameStateManager.dispatch_challenge_task_complete(team_id, task_id)
     return await GameStateManager.get_team_data(team_id)
 
 
@@ -70,5 +70,5 @@ async def test_mark_codexes_complete(team_id: str) -> GameDataResponse:
         nav="up",
         pilot="up",
     )
-    await GameStateManager.team_state_from_gamespace(team_id, state_update)
+    await GameStateManager.dispatch_grading_task_update(team_id, state_update)
     return await GameStateManager.get_team_data(team_id)

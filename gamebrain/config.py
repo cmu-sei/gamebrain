@@ -13,7 +13,7 @@ from .clients import gameboard, topomojo
 from .dispatch import GamespaceStatusTask
 from .gamedata.cache import (
     GameStateManager,
-    GameDataCache,
+    GameDataCacheSnapshot,
 )
 from .cleanup import BackgroundCleanupTask
 import gamebrain.db as db
@@ -182,11 +182,11 @@ class Global:
                 "game.gamestate_test_mode setting is ON, constructing initial data from test constructor."
             )
         elif stored_cache := await db.get_cache_snapshot():
-            initial_cache = GameDataCache(**stored_cache)
+            initial_cache = GameDataCacheSnapshot(**stored_cache)
             logging.info("Initializing game data cache from saved snapshot.")
         else:
             with open("initial_state.json") as f:
-                initial_cache = GameDataCache(**json.load(f))
+                initial_cache = GameDataCacheSnapshot(**json.load(f))
             logging.info("Initializing game data cache from initial_state.json.")
         await GameStateManager.init(initial_cache, settings)
 

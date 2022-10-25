@@ -5,6 +5,7 @@ from pydantic import BaseModel, AnyUrl
 
 
 TaskCompletionType = Literal[
+    "comm",
     "jump",
     "explorationMode",
     "launchMode",
@@ -25,7 +26,7 @@ TaskID = str
 
 class TaskCompletion(BaseModel):
     type: TaskCompletionType
-    locationID: LocationID
+    locationID: LocationID = None
 
 
 class TaskData(BaseModel):
@@ -163,6 +164,36 @@ class GameDataTeamSpecific(BaseModel):
     locations: list[LocationDataTeamSpecific]
     missions: list[MissionDataTeamSpecific]
 
+    def to_internal(self) -> "InternalTeamGameData":
+        locations = {
+            location.locationID: location.dict() for location in self.locations
+        }
+        missions = {}
+        tasks = {}
+        for mission_data in self.missions:
+            try:
+                # Get the first task that is not marked complete for this mission.
+                current_task = next(
+                    filter(lambda t: t.complete is False, mission_data.taskList)
+                ).taskID
+            except StopIteration:
+                current_task = None
+            missions[mission_data.missionID] = mission_data.dict() | {
+                "current_task": current_task
+            }
+
+            for task_data in mission_data.taskList:
+                tasks[task_data.taskID] = task_data.dict()
+
+        return InternalTeamGameData(
+            currentStatus=self.currentStatus,
+            session=self.session,
+            ship=self.ship,
+            locations=locations,
+            missions=missions,
+            tasks=tasks,
+        )
+
 
 class GameDataResponse(GameDataTeamSpecific):
     locations: list[LocationDataFull]
@@ -183,3 +214,56 @@ class LocationUnlockResponse(BaseModel):
 class ScanResponse(GenericResponse):
     eventWaiting: bool
     incomingTransmission: CommEventData | None
+
+
+class InternalCommEvent(CommEventData):
+    associated_task: TaskID
+
+    def to_snapshot(self) -> CommEventData:
+        return CommEventData(**self.dict())
+
+
+class InternalGlobalLocationData(LocationData):
+    ...
+
+
+class InternalTeamLocationData(LocationDataTeamSpecific):
+    ...
+
+
+class InternalGlobalTaskData(TaskData):
+    next: TaskID | None
+    prev: TaskID | None
+
+
+class InternalTeamTaskData(TaskDataTeamSpecific):
+    ...
+
+
+class InternalGlobalMissionData(MissionData):
+    first_task: TaskID
+
+
+class InternalTeamMissionData(MissionDataTeamSpecific):
+    current_task: TaskID | None
+
+
+class InternalTeamGameData(BaseModel):
+    currentStatus: CurrentLocationGameplayDataTeamSpecific
+    session: SessionDataTeamSpecific
+    ship: ShipDataTeamSpecific
+    locations: dict[LocationID, InternalTeamLocationData]
+    missions: dict[MissionID, InternalTeamMissionData]
+    tasks: dict[TaskID, InternalTeamTaskData]
+
+    def to_snapshot(self) -> GameDataTeamSpecific:
+        locations = [location.dict() for location in self.locations.values()]
+        missions = [mission.dict() for mission in self.missions.values()]
+
+        return GameDataTeamSpecific(
+            currentStatus=self.currentStatus,
+            session=self.session,
+            ship=self.ship,
+            locations=locations,
+            missions=missions,
+        )

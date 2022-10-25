@@ -256,7 +256,7 @@ def construct_teams(
     return cache.TeamMap(__root__=team_data)
 
 
-def construct_data(params: GenerationParameters = None) -> cache.GameDataCache:
+def construct_data(params: GenerationParameters = None) -> cache.GameDataCacheSnapshot:
     if params is None:
         params = GenerationParameters()
 
@@ -270,7 +270,7 @@ def construct_data(params: GenerationParameters = None) -> cache.GameDataCache:
         params,
     )
 
-    return cache.GameDataCache(
+    return cache.GameDataCacheSnapshot(
         **global_data.dict(),
         team_map=team_data,
         team_initial_state=construct_team_specific_data(

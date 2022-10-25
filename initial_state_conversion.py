@@ -11,7 +11,7 @@ from gamebrain.gamedata.cache import (
     TaskMap,
     MissionMap,
     LocationMap,
-    GameDataCache,
+    GameDataCacheSnapshot,
 )
 from gamebrain.gamedata.model import (
     SessionDataTeamSpecific,
@@ -119,7 +119,7 @@ def main():
         missions=unlocked_missions,
     )
 
-    initial_cache = GameDataCache(
+    initial_cache = GameDataCacheSnapshot(
         comm_map=comm_map,
         task_map=task_map,
         mission_map=mission_map,

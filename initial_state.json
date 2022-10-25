@@ -9,24 +9,6 @@
       "firstContact": true,
       "locationID": "dunesea"
     },
-    "vid2": {
-      "commID": "vid2",
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
-      "commTemplate": "probe",
-      "translationMessage": "Translate Text 2",
-      "scanInfoMessage": "Probe Text 2",
-      "firstContact": true,
-      "locationID": "dunesea"
-    },
-    "vid3": {
-      "commID": "vid3",
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_3.mp4",
-      "commTemplate": "badTranslation",
-      "translationMessage": "Translate Text 3",
-      "scanInfoMessage": "Probe Text 3",
-      "firstContact": true,
-      "locationID": "rebel"
-    },
     "vid4": {
       "commID": "vid4",
       "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_4.mp4",
@@ -231,47 +213,6 @@
           "commID": ""
         }
       ]
-    },
-    "ep7": {
-      "missionID": "ep7",
-      "title": "The Force Awakens",
-      "summaryShort": "A new hero arises...",
-      "summaryLong": "If you liked A NEW HOPE, you'll like this",
-      "missionIcon": "ruins",
-      "isSpecial": false,
-      "roleList": [
-        "Cyber Defense Forensics Analyst",
-        "Exploitation Analyst",
-        "Threat/Warning Analyst"
-      ],
-      "taskList": []
-    },
-    "ep8": {
-      "missionID": "ep8",
-      "title": "The Last Jedi",
-      "summaryShort": "The devisive one...",
-      "summaryLong": "Honestly, I don't know what everyone is complaining about.  The idea of anyone can be embued with the Force was such a great idea.  Yeah, the casino planet was junk, but they blew a ship through a Star Destroyer!",
-      "missionIcon": "xeno",
-      "isSpecial": false,
-      "roleList": [
-        "Cyber Defense Incident Responder",
-        "Network Operations Specialist",
-        "Threat/Warning Analyst"
-      ],
-      "taskList": []
-    },
-    "ep9": {
-      "missionID": "ep9",
-      "title": "The Rise of Skywalker",
-      "summaryShort": "Somehow, Palpatine returned...",
-      "summaryLong": "Tell me you didn't have a plan for your trilogy without telling me you didn't have a plan for your trilogy.",
-      "missionIcon": "museum",
-      "isSpecial": false,
-      "roleList": [
-        "Exploitation Analyst",
-        "Network Operations Specialist"
-      ],
-      "taskList": []
     }
   },
   "task_map": {
@@ -295,7 +236,7 @@
       "videoURL": "",
       "commID": "vid1",
       "markCompleteWhen": {
-        "type": "explorationMode",
+        "type": "comm",
         "locationID": "dunesea"
       }
     },
@@ -540,27 +481,6 @@
             "complete": false
           }
         ]
-      },
-      {
-        "missionID": "ep7",
-        "unlocked": true,
-        "visible": false,
-        "complete": false,
-        "taskList": []
-      },
-      {
-        "missionID": "ep8",
-        "unlocked": true,
-        "visible": false,
-        "complete": false,
-        "taskList": []
-      },
-      {
-        "missionID": "ep9",
-        "unlocked": true,
-        "visible": false,
-        "complete": false,
-        "taskList": []
       }
     ]
   }

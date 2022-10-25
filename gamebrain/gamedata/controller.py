@@ -141,7 +141,9 @@ async def get_commeventcompleted(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.complete_comm_event(team_id)
+        result = await GameStateManager.complete_comm_event(team_id)
+        logging.info(f"CommEventCompleted result: {result}.")
+        return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
