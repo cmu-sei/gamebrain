@@ -72,7 +72,7 @@ def main():
     )
 
     print(f"Deploying for Team {TEST_TEAM_1}")
-    resp = gamebrain_admin_session.get(
+    resp = gamebrain_admin_session.post(
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
     )
     deployment = resp.json()
@@ -243,7 +243,7 @@ def main():
     team_id = data["teamId"]
     print(f"Session expiration time: {expiration}")
 
-    resp = gamebrain_admin_session.get(
+    resp = gamebrain_admin_session.post(
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{team_id}", timeout=60.0
     )
     print(resp.json())

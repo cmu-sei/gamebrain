@@ -152,9 +152,19 @@ async def get_team_name(game_id: GameID, team_id: TeamID) -> str:
 
 
 @admin_router.get("/deploy/{game_id}/{team_id}")
+async def get_deployment(game_id: GameID, team_id: TeamID) -> DeployResponse:
+    return await deploy(game_id, team_id, False)
+
+
+@admin_router.post("/deploy/{game_id}/{team_id}")
+async def create_deployment(game_id: GameID, team_id: TeamID) -> DeployResponse:
+    return await deploy(game_id, team_id, True)
+
+
 async def deploy(
     game_id: GameID,
     team_id: TeamID,
+    create_gamespace_if_none: bool,
 ) -> DeployResponse:
     async with TeamLocks(team_id):
         team_data = await get_team_from_db(team_id)
@@ -173,7 +183,7 @@ async def deploy(
             for vm in vm_data
         ]
 
-        if not gamespace_id or not headless_url:
+        if create_gamespace_if_none and (not gamespace_id or not headless_url):
             # If a team has no gamespace, they should be reset to the beginning of the game.
             await GameStateManager.new_team(team_id)
 
@@ -206,10 +216,9 @@ async def deploy(
                 team_id, {vm.Name: vm.Url for vm in console_urls}
             )
 
-        if gamespace_id and headless_url and console_urls:
-            return DeployResponse(
-                gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
-            )
+        return DeployResponse(
+            gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
+        )
 
 
 @admin_router.get("/undeploy/{team_id}")
