@@ -45,6 +45,8 @@ async def test_net_change(gamespace_id: str, vm_name: str, network: str):
         logging.error(result)
         raise HTTPException(status_code=500, detail=result)
 
+    logging.info(f"Test net change endpoint called with network: {network}")
+
     await topomojo.change_vm_net(vm_id, network)
 
 
