@@ -112,11 +112,12 @@ class MissionMap(BaseModel):
         for mission_id, mission in self.__root__.items():
             try:
                 first_task = next(iter(mission.taskList)).taskID
+                last_task = next(iter(mission.taskList[::-1])).taskID
             except StopIteration:
                 raise ValueError(f"Mission {mission_id} is missing tasks.")
 
             translation_map[mission_id] = InternalGlobalMissionData(
-                **mission.dict() | {"first_task": first_task}
+                **mission.dict() | {"first_task": first_task, "last_task": last_task}
             )
 
         return InternalMissionMap(__root__=translation_map)
@@ -398,11 +399,6 @@ class GameStateManager:
         global_task = cls._cache.task_map.__root__[mission.current_task]
         team_task = team_data.tasks[mission.current_task]
 
-        # If the task ID is specified - such as from a challenge or codex task, do not automatically mark any other
-        # tasks complete.
-        if task_id and mission.current_task != task_id:
-            return
-
         task_completion_type = (
             None
             if global_task.markCompleteWhen is None
@@ -579,14 +575,33 @@ class GameStateManager:
             global_task_data = cls._cache.task_map.__root__.get(task_id)
             if not global_task_data:
                 logging.error(
-                    f"Dispatch task reported task {task_id} complete, but no such task exists."
+                    f"Dispatch task reported task {task_id} complete for team {team_id}, but no such task exists."
                 )
                 return
 
-            # Some challenge tasks have an immediate follow-up that we can't directly detect, so just mark it complete.
-            cls._mark_task_complete_if_current(
-                team_id, team_data, "challenge", global_task_data.taskID
-            )
+            team_task_data = team_data.tasks.get(task_id)
+            if not team_task_data:
+                logging.error(
+                    f"Dispatch task reported task {task_id} complete for team {team_id}, "
+                    "but the team has not unlocked that task."
+                )
+                return
+
+            # Some challenge tasks have precursor tasks which we currently have no way to detect, so when the actual
+            # challenge is complete, just mark all prior "challenge" tasks complete (because we mark those precursors
+            # as "challenge" tasks.
+            while global_task_data:
+                if (
+                    global_task_data.markCompleteWhen
+                    and global_task_data.markCompleteWhen.type == "challenge"
+                ):
+                    team_task_data.complete = True
+                else:
+                    return
+                global_task_data = cls._cache.task_map.__root__.get(
+                    global_task_data.prev
+                )
+                team_task_data = team_data.tasks.get(global_task_data.prev)
 
     @classmethod
     async def dispatch_grading_task_update(
@@ -619,8 +634,19 @@ class GameStateManager:
                     f"Dispatch for team {team_id} indicates completion of the codex "
                     f"at location {current_loc}."
                 )
-                # Some codex tasks have an immediate follow-up that we can't directly detect, so just mark it complete.
-                cls._mark_task_complete_if_current(team_id, team_data, "codex")
+                for team_task in team_data.tasks.values():
+                    global_task = cls._cache.task_map.__root__.get(team_task.taskID)
+                    if not global_task:
+                        logging.error(
+                            f"Team {team_id} had an unlocked task that was not in the global task map."
+                        )
+                        continue
+                    if (
+                        global_task.markCompleteWhen
+                        and global_task.markCompleteWhen.locationID == current_loc
+                        and global_task.markCompleteWhen.type == "codex"
+                    ):
+                        team_task.complete = True
 
             transform_map = {"up": PowerStatus.on, "down": PowerStatus.off}
 
@@ -806,7 +832,6 @@ class GameStateManager:
                         for task_id in unlocked_task_ids
                         if mission_id == cls._cache.task_map.__root__[task_id].missionID
                     ],
-                    first_task=cls._cache.mission_map.__root__[mission_id].first_task,
                 )
                 for mission_id in unlocked_mission_ids
             ]

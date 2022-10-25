@@ -245,6 +245,7 @@ class InternalTeamTaskData(TaskDataTeamSpecific):
 
 class InternalGlobalMissionData(MissionData):
     first_task: TaskID
+    last_task: TaskID
 
 
 class InternalTeamMissionData(MissionDataTeamSpecific):
