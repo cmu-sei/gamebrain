@@ -157,6 +157,7 @@ async def change_vm_net(vm_id: str, new_net: str):
         target_network = f"{target_network}:{interface[0]}"
 
     params = {"key": "net", "value": target_network}
+    logging.info(f"Attempting to change VM {vm_id} to network {target_network}.")
     return await change_vm_params(vm_id, params)
 
 
