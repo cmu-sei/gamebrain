@@ -1,4 +1,6 @@
+import json
 import json as jsonlib
+import logging
 import ssl
 from typing import Any, Dict, List, Optional
 
@@ -133,7 +135,28 @@ async def change_vm_params(vm_id: str, params: dict):
 
 
 async def change_vm_net(vm_id: str, new_net: str):
-    params = {"key": "net", "value": new_net}
+    possible_nets = await get_vm_nets(vm_id)
+    if not possible_nets or "net" not in possible_nets:
+        logging.error(f"Could not retrieve network information for VM {vm_id}.")
+        return
+
+    possible_nets = possible_nets["net"]
+    network_name, *interface = new_net.split(":")
+    for network in possible_nets:
+        if network.startswith(network_name):
+            target_network = network
+            break
+    else:
+        logging.warning(
+            f"Could not change VM {vm_id} to network {network_name} because the network was not found in "
+            f"its list of possible networks: \n{json.dumps(possible_nets, indent=2)}"
+        )
+        return
+
+    if interface:
+        target_network = f"{target_network}:{interface[0]}"
+
+    params = {"key": "net", "value": target_network}
     return await change_vm_params(vm_id, params)
 
 
