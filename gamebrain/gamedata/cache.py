@@ -596,7 +596,15 @@ class GameStateManager:
                     and global_task_data.markCompleteWhen.type == "challenge"
                 ):
                     team_task_data.complete = True
+                    logging.info(
+                        f"Dispatch task marked challenge task {team_task_data.taskID} "
+                        f"complete for team {team_id}."
+                    )
                 else:
+                    logging.info(
+                        f"Dispatch task for team {team_id} encountered a non-challenge "
+                        f"task {global_task_data.taskID} and returned."
+                    )
                     return
                 global_task_data = cls._cache.task_map.__root__.get(
                     global_task_data.prev
