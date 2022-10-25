@@ -179,11 +179,16 @@ class GameDataTeamSpecific(BaseModel):
             except StopIteration:
                 current_task = None
             missions[mission_data.missionID] = mission_data.dict() | {
-                "current_task": current_task
+                "current_task": current_task,
+                "taskList": [],
             }
 
             for task_data in mission_data.taskList:
-                tasks[task_data.taskID] = task_data.dict()
+                # Point the team task map and the mission task list at the **same** task model object,
+                # to avoid inconsistent date.
+                task_model = InternalTeamTaskData(**task_data.dict())
+                tasks[task_data.taskID] = task_model
+                missions[mission_data.missionID]["taskList"].append(task_model)
 
         return InternalTeamGameData(
             currentStatus=self.currentStatus,
@@ -246,6 +251,7 @@ class InternalGlobalMissionData(MissionData):
 
 class InternalTeamMissionData(MissionDataTeamSpecific):
     current_task: TaskID | None
+    taskList: list[InternalTeamTaskData]
 
 
 class InternalTeamGameData(BaseModel):

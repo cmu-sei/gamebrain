@@ -520,8 +520,8 @@ class GameStateManager:
                 raise NonExistentTeam()
 
             full_loc_data = []
-            for location in team_data.locations.values():
-                loc_global = cls._cache.location_map.__root__[location.locationID]
+            for location_id, location in team_data.locations.items():
+                loc_global = cls._cache.location_map.__root__[location_id]
                 loc_full = LocationDataFull(**loc_global.dict() | location.dict())
                 full_loc_data.append(loc_full)
 
