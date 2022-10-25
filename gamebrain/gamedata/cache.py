@@ -61,7 +61,7 @@ class CommMap(BaseModel):
             __root__={
                 comm_id: InternalCommEvent(
                     **comm_event.dict()
-                    | {"associated_task": comm_to_task_mapping[comm_id]}
+                    | {"associated_task": comm_to_task_mapping.get(comm_id, "")}
                 )
                 for comm_id, comm_event in self.__root__.items()
             }
