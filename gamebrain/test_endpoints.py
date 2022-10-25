@@ -3,8 +3,9 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from .auth import admin_api_key_dependency
-from .gamedata.cache import GameStateManager, GamespaceStateOutput, GameDataResponse
+from .config import get_settings, SettingsModel
 from .clients import topomojo
+from .gamedata.cache import GameStateManager, GamespaceStateOutput, GameDataResponse
 
 
 test_router = APIRouter(
@@ -74,3 +75,8 @@ async def test_mark_codexes_complete(team_id: str) -> GameDataResponse:
     )
     await GameStateManager.dispatch_grading_task_update(team_id, state_update)
     return await GameStateManager.get_team_data(team_id)
+
+
+@test_router.get("/settings")
+async def test_get_settings() -> SettingsModel:
+    return get_settings()
