@@ -9,6 +9,15 @@
       "firstContact": true,
       "locationID": "dunesea"
     },
+    "vid2": {
+      "commID": "vid4",
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_4.mp4",
+      "commTemplate": "incoming",
+      "translationMessage": "vid4 message",
+      "scanInfoMessage": "vid4 scan info",
+      "firstContact": true,
+      "locationID": "cantina"
+    },
     "vid4": {
       "commID": "vid4",
       "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_4.mp4",
@@ -91,7 +100,11 @@
           "infoText": "These aren't the droids you're looking for.",
           "videoPresent": true,
           "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
-          "commID": ""
+          "commID": "",
+          "markCompleteWhen": {
+            "type": "jump",
+            "locationID": "dunesea"
+          }
         },
         {
           "taskID": "m1t2",
@@ -224,7 +237,11 @@
       "infoText": "These aren't the droids you're looking for.",
       "videoPresent": true,
       "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
-      "commID": ""
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "jump",
+        "locationID": "cantina"
+      }
     },
     "m1t2": {
       "taskID": "m1t2",
@@ -237,7 +254,7 @@
       "commID": "vid1",
       "markCompleteWhen": {
         "type": "comm",
-        "locationID": "dunesea"
+        "locationID": "cantina"
       }
     },
     "m1t3": {

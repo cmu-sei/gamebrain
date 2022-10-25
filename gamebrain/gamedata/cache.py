@@ -528,12 +528,25 @@ class GameStateManager:
             full_mission_data = []
             for mission in team_data.missions.values():
                 mission_global = cls._cache.mission_map.__root__[mission.missionID]
-                task_list = [
-                    TaskDataFull(
-                        **cls._cache.task_map.__root__[task.taskID].dict() | task.dict()
+                task_list = []
+                for task_id in mission.tasks:
+                    team_task = team_data.tasks.get(task_id)
+                    if not team_task:
+                        logging.error(
+                            f"Team {team_id} had a mission identify a task {task_id}, but the task was not "
+                            "in the team's task map."
+                        )
+                        continue
+                    global_task = cls._cache.task_map.__root__.get(task_id)
+                    if not global_task:
+                        logging.error(
+                            f"Team {team_id} had a mission identify a task {task_id}, but the task was not "
+                            "in the global task map."
+                        )
+                        continue
+                    task_list.append(
+                        TaskDataFull(**global_task.dict() | team_task.dict())
                     )
-                    for task in mission.taskList
-                ]
                 mission_full = MissionDataFull(
                     **mission_global.dict() | mission.dict() | {"taskList": task_list}
                 )

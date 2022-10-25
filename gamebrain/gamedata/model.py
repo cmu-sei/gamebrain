@@ -180,15 +180,13 @@ class GameDataTeamSpecific(BaseModel):
                 current_task = None
             missions[mission_data.missionID] = mission_data.dict() | {
                 "current_task": current_task,
-                "taskList": [],
+                "tasks": [],
             }
 
             for task_data in mission_data.taskList:
-                # Point the team task map and the mission task list at the **same** task model object,
-                # to avoid inconsistent date.
                 task_model = InternalTeamTaskData(**task_data.dict())
                 tasks[task_data.taskID] = task_model
-                missions[mission_data.missionID]["taskList"].append(task_model)
+                missions[mission_data.missionID]["tasks"].append(task_data.taskID)
 
         return InternalTeamGameData(
             currentStatus=self.currentStatus,
@@ -251,7 +249,7 @@ class InternalGlobalMissionData(MissionData):
 
 class InternalTeamMissionData(MissionDataTeamSpecific):
     current_task: TaskID | None
-    taskList: list[InternalTeamTaskData]
+    tasks: list[TaskID]
 
 
 class InternalTeamGameData(BaseModel):
@@ -264,7 +262,14 @@ class InternalTeamGameData(BaseModel):
 
     def to_snapshot(self) -> GameDataTeamSpecific:
         locations = [location.dict() for location in self.locations.values()]
-        missions = [mission.dict() for mission in self.missions.values()]
+        missions = []
+        for mission in self.missions.values():
+            task_list = []
+            for task in mission.tasks:
+                task_data = self.tasks[task]
+                task_list.append(TaskDataTeamSpecific(**task_data.dict()))
+            mission_data = mission.dict() | {"taskList": task_list}
+            missions.append(mission_data)
 
         return GameDataTeamSpecific(
             currentStatus=self.currentStatus,

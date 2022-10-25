@@ -159,9 +159,13 @@ def main():
 
     print("Jump to unlocked location (expect success)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/Jump/location2/{TEST_TEAM_1}"
+        f"{GAMEBRAIN_URL}/GameData/Jump/cantina/{TEST_TEAM_1}"
     )
-    # pprint.pprint(resp.json())
+    pprint.pprint(resp.json())
+
+    print("Getting GameData again")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
+    pprint.pprint(resp.json())
 
     print("Scan new location (expect success)")
     resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/{TEST_TEAM_1}")
