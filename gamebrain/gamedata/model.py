@@ -39,12 +39,13 @@ class TaskData(BaseModel):
     videoPresent: bool = True
     videoURL: str
     commID: CommID
+    next: TaskID = None
     markCompleteWhen: TaskCompletion = None
 
 
 class TaskDataTeamSpecific(BaseModel):
     taskID: TaskID
-    visible: bool = True
+    visible: bool = False
     complete: bool = False
 
 
@@ -236,8 +237,7 @@ class InternalTeamLocationData(LocationDataTeamSpecific):
 
 
 class InternalGlobalTaskData(TaskData):
-    next: TaskID | None
-    prev: TaskID | None
+    ...
 
 
 class InternalTeamTaskData(TaskDataTeamSpecific):

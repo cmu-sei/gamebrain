@@ -135,22 +135,15 @@ class InternalMissionMap(BaseModel):
         )
 
 
-class TaskNextPrevInfo(BaseModel):
-    next: TaskID | None
-    prev: TaskID | None
-
-
 class TaskMap(BaseModel):
     __root__: dict[TaskID, TaskData]
 
     def to_internal(
-        self, task_ordering: dict[TaskID, TaskNextPrevInfo]
+        self,
     ) -> "InternalTaskMap":
         return InternalTaskMap(
             __root__={
-                task_id: InternalGlobalTaskData(
-                    **task.dict() | task_ordering[task_id].dict()
-                )
+                task_id: InternalGlobalTaskData(**task.dict())
                 for task_id, task in self.__root__.items()
             }
         )
@@ -201,22 +194,6 @@ class GameDataCacheSnapshot(GlobalData):
     team_initial_state: GameDataTeamSpecific
 
     def to_internal(self) -> "InternalCache":
-        task_ordering = {}
-        for mission in self.mission_map.__root__.values():
-            for i, task in enumerate(mission.taskList):
-                try:
-                    prev = mission.taskList[i - 1].taskID
-                except IndexError:
-                    prev = None
-
-                try:
-                    next_ = mission.taskList[i + 1].taskID
-                except IndexError:
-                    next_ = None
-
-                task_ordering[task.taskID] = TaskNextPrevInfo(
-                    **{"next": next_, "prev": prev}
-                )
         comm_to_task_mapping = {}
         for task in self.task_map.__root__.values():
             if task.commID:
@@ -226,7 +203,7 @@ class GameDataCacheSnapshot(GlobalData):
             comm_map=self.comm_map.to_internal(comm_to_task_mapping),
             location_map=self.location_map.to_internal(),
             mission_map=self.mission_map.to_internal(),
-            task_map=self.task_map.to_internal(task_ordering),
+            task_map=self.task_map.to_internal(),
             team_map=self.team_map.to_internal(),
             team_initial_state=self.team_initial_state.to_internal(),
         )
@@ -359,106 +336,96 @@ class GameStateManager:
         )
 
     @classmethod
-    def _task_doable_at_location(
-        cls, team_data: InternalTeamGameData, task_id: TaskID
-    ) -> bool:
-        """
-        cache lock is assumed to be held
-        """
-        team_task = team_data.tasks[task_id]
-        global_task = cls._cache.task_map.__root__[task_id]
-        return (
-            not team_task.complete
-            and global_task.markCompleteWhen
-            and (
-                global_task.markCompleteWhen.locationID is None
-                or global_task.markCompleteWhen.locationID
-                == team_data.currentStatus.currentLocation
-            )
-        )
-
-    @classmethod
-    def _mark_task_complete_inner_recursion(
-        cls,
-        team_id: TeamID,
-        team_data: InternalTeamGameData,
-        task_type: TaskCompletionType | None,
-        mission: InternalTeamMissionData,
-        task_id: TaskID = None,
-    ):
-        """
-        cache lock is assumed to be held
-
-        Marks the mission's current_task complete if the task's type matches task_type. None may be specified to
-        auto-advance tasks without markCompleteWhen blocks without advancing later tasks with the block specified.
-        Recursively calls itself with task_type set to None.
-
-        If task_id is specified, will ONLY complete the specified task ID, if and only if it is the same task as the
-        specified mission's current task.
-        """
-        global_task = cls._cache.task_map.__root__[mission.current_task]
-        team_task = team_data.tasks[mission.current_task]
-
-        task_completion_type = (
-            None
-            if global_task.markCompleteWhen is None
-            else global_task.markCompleteWhen.type
-        )
-        # Use the "comm" type to auto-advance after a comm event is marked complete. Should only be necessary if the
-        # task's completion criteria is something other than "comm" but it also has a comm event attached.
-        if task_type != task_completion_type and task_type not in (
-            "comm",
-            "challenge",
-            "codex",
-        ):
-            logging.info(
-                f"Attempted to mark task {mission.current_task} complete for team {team_id}, "
-                f"but the task_type to complete was {task_type} while the task was {task_completion_type}."
-            )
-            return
-
-        active_comm_event = team_data.currentStatus.incomingTransmissionObject
-        if active_comm_event and active_comm_event.commID == global_task.commID:
-            logging.info(
-                f"Attempted to mark task {mission.current_task} complete for team {team_id}, "
-                f"but they must complete comm event {active_comm_event.commID} first."
-            )
-            return
-
-        team_task.complete = True
-        logging.info(f"Marked task {team_task.taskID} complete for team {team_id}.")
-        if global_task.next:
-            mission.current_task = global_task.next
-            cls._set_task_comm_event_active(team_id, team_data, global_task.next)
-            cls._mark_task_complete_inner_recursion(team_id, team_data, None, mission)
-        else:
-            mission.complete = True
-            mission.current_task = None
-            logging.info(
-                f"Marked mission {mission.missionID} complete for team {team_id}."
-            )
-
-    @classmethod
-    def _mark_task_complete_if_current(
+    def _mark_task_complete_if_unlocked(
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
         task_type: TaskCompletionType,
-        task_id: TaskID = None,
+        location: LocationID = None,
     ):
         """
         cache lock is assumed to be held
         """
+        active_comm_event = team_data.currentStatus.incomingTransmissionObject
 
         for mission in team_data.missions.values():
-            if not mission.current_task or not cls._task_doable_at_location(
-                team_data, mission.current_task
-            ):
-                continue
+            global_mission = cls._cache.mission_map.__root__.get(mission.missionID)
+            if not global_mission:
+                logging.error(
+                    f"Team {team_id} had mission {mission.missionID} unlocked "
+                    "but it was not in the global data."
+                )
+            for task_id in map(lambda t: t.taskID, global_mission.taskList):
+                team_task = team_data.tasks.get(task_id)
+                if not team_task:
+                    continue
+                global_task = cls._cache.task_map.__root__.get(task_id)
+                if not global_task:
+                    logging.error(
+                        f"Mission {mission.missionID} had a task in its "
+                        "task list that was not in the global task map: {task}."
+                    )
+                    continue
+                if active_comm_event and active_comm_event.commID == global_task.commID:
+                    logging.info(
+                        f"Attempted to mark task {global_task.taskID} complete for team {team_id}, "
+                        f"but they must complete comm event {active_comm_event.commID} first."
+                    )
+                    continue
+                completion_criteria = global_task.markCompleteWhen
+                if not completion_criteria:
+                    continue
+                if location and completion_criteria.locationID != location:
+                    # The specified location was for a different task - primarily for codex use.
+                    continue
+                if task_type != completion_criteria.type:
+                    continue
+                if (
+                    completion_criteria.locationID
+                    != team_data.currentStatus.currentLocation
+                ):
+                    continue
 
-            cls._mark_task_complete_inner_recursion(
-                team_id, team_data, task_type, mission, task_id
-            )
+                team_task.complete = True
+                if global_task.markCompleteWhen.alsoComplete:
+                    for (
+                        also_complete_task_id
+                    ) in global_task.markCompleteWhen.alsoComplete:
+                        also_complete_task = team_data.tasks.get(also_complete_task_id)
+                        if not also_complete_task:
+                            logging.warning(
+                                f"Task {global_task.taskID} had dependent task {also_complete_task_id} specified, "
+                                "but it was not unlocked."
+                            )
+                        also_complete_task.complete = True
+                if global_task.next:
+                    while next_global_task := cls._cache.task_map.__root__.get(
+                        global_task.next
+                    ):
+                        if not next_global_task:
+                            logging.error(
+                                f"Task {global_task} indicated its next task was {global_task.next}, but that task "
+                                "doesn't exist in the global data."
+                            )
+                            break
+                        global_task = next_global_task
+                        if not team_data.tasks.get(global_task.taskID):
+                            # If the new task was already unlocked, don't reset its status.
+                            team_data.tasks[global_task.taskID] = InternalTeamTaskData(
+                                taskID=global_task.taskID, visible=True, complete=False
+                            )
+                            cls._set_task_comm_event_active(
+                                team_id, team_data, global_task.taskID
+                            )
+                        if next_global_task.markCompleteWhen:
+                            # Keep unlocking tasks if the one we just unlocked doesn't have specified criteria.
+                            # Otherwise we're done.
+                            break
+                else:
+                    mission.complete = True
+                    logging.info(
+                        f"Marked mission {mission.missionID} complete for team {team_id}."
+                    )
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
@@ -587,29 +554,7 @@ class GameStateManager:
                 )
                 return
 
-            # Some challenge tasks have precursor tasks which we currently have no way to detect, so when the actual
-            # challenge is complete, just mark all prior "challenge" tasks complete (because we mark those precursors
-            # as "challenge" tasks.
-            while global_task_data:
-                if (
-                    global_task_data.markCompleteWhen
-                    and global_task_data.markCompleteWhen.type == "challenge"
-                ):
-                    team_task_data.complete = True
-                    logging.info(
-                        f"Dispatch task marked challenge task {team_task_data.taskID} "
-                        f"complete for team {team_id}."
-                    )
-                else:
-                    logging.info(
-                        f"Dispatch task for team {team_id} encountered a non-challenge "
-                        f"task {global_task_data.taskID} and returned."
-                    )
-                    return
-                global_task_data = cls._cache.task_map.__root__.get(
-                    global_task_data.prev
-                )
-                team_task_data = team_data.tasks.get(global_task_data.prev)
+            cls._mark_task_complete_if_unlocked(team_id, team_data, "challenge")
 
     @classmethod
     async def dispatch_grading_task_update(
@@ -642,19 +587,9 @@ class GameStateManager:
                     f"Dispatch for team {team_id} indicates completion of the codex "
                     f"at location {current_loc}."
                 )
-                for team_task in team_data.tasks.values():
-                    global_task = cls._cache.task_map.__root__.get(team_task.taskID)
-                    if not global_task:
-                        logging.error(
-                            f"Team {team_id} had an unlocked task that was not in the global task map."
-                        )
-                        continue
-                    if (
-                        global_task.markCompleteWhen
-                        and global_task.markCompleteWhen.locationID == current_loc
-                        and global_task.markCompleteWhen.type == "codex"
-                    ):
-                        team_task.complete = True
+                cls._mark_task_complete_if_unlocked(
+                    team_id, team_data, "codex", current_loc
+                )
 
             transform_map = {"up": PowerStatus.on, "down": PowerStatus.off}
 
@@ -719,7 +654,7 @@ class GameStateManager:
             team_data.currentStatus.networkConnected = True
             team_data.currentStatus.networkName = new_net
 
-            cls._mark_task_complete_if_current(team_id, team_data, "antennaExtended")
+            cls._mark_task_complete_if_unlocked(team_id, team_data, "antennaExtended")
 
             return GenericResponse(
                 success=True, message=f"Team {team_id} extended their antenna."
@@ -749,7 +684,7 @@ class GameStateManager:
                 cls._settings.game.antenna_retracted_network
             )
 
-            cls._mark_task_complete_if_current(team_id, team_data, "antennaRetracted")
+            cls._mark_task_complete_if_unlocked(team_id, team_data, "antennaRetracted")
 
             return GenericResponse(
                 success=True, message=f"Team {team_id} retracted their antenna."
@@ -932,7 +867,7 @@ class GameStateManager:
             )
             team_data.currentStatus = new_status
 
-            cls._mark_task_complete_if_current(team_id, team_data, "jump")
+            cls._mark_task_complete_if_unlocked(team_id, team_data, "jump")
 
             return GenericResponse(success=True, message=location_id)
 
@@ -950,7 +885,7 @@ class GameStateManager:
                 location_data.firstContactEvent
             ]
 
-            cls._mark_task_complete_if_current(team_id, team_data, "scan")
+            cls._mark_task_complete_if_unlocked(team_id, team_data, "scan")
 
             team_data.currentStatus.incomingTransmission = True
             team_data.currentStatus.incomingTransmissionObject = (
@@ -976,7 +911,7 @@ class GameStateManager:
 
             team_data.currentStatus.powerStatus = new_mode
 
-            cls._mark_task_complete_if_current(team_id, team_data, new_mode)
+            cls._mark_task_complete_if_unlocked(team_id, team_data, new_mode)
 
             return GenericResponse(success=True, message=new_mode)
 
@@ -1055,9 +990,7 @@ class GameStateManager:
             team_data.currentStatus.incomingTransmissionObject = {}
             team_data.currentStatus.incomingTransmission = False
 
-            cls._mark_task_complete_if_current(
-                team_id, team_data, "comm", global_task.taskID
-            )
+            cls._mark_task_complete_if_unlocked(team_id, team_data, "comm")
 
             logging.info(
                 f"Team {team_id} completed comm event {current_comm_event.commID}."
