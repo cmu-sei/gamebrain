@@ -336,6 +336,93 @@ class GameStateManager:
         )
 
     @classmethod
+    def _unlock_tasks_until_completion_criteria(
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        global_task: InternalGlobalTaskData,
+    ):
+        if not team_data.tasks.get(global_task.taskID):
+            # If the new task was already unlocked, don't reset its status.
+            team_data.tasks[global_task.taskID] = InternalTeamTaskData(
+                taskID=global_task.taskID, visible=True, complete=False
+            )
+            if not team_data.currentStatus.incomingTransmission:
+                cls._set_task_comm_event_active(team_id, team_data, global_task.taskID)
+        if global_task.markCompleteWhen:
+            # Keep unlocking tasks if the one we just unlocked doesn't have specified criteria.
+            # Otherwise, we're done.
+            return
+        next_global_task = cls._cache.task_map.__root__.get(global_task.next)
+        if not next_global_task:
+            logging.error(
+                f"Task {global_task.taskID} indicated its next task was {global_task.next}, but that task "
+                "doesn't exist in the global data."
+            )
+            return
+        cls._unlock_tasks_until_completion_criteria(
+            team_id, team_data, next_global_task
+        )
+
+    @classmethod
+    def _complete_task_and_unlock_next(
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        global_task: InternalGlobalTaskData,
+    ):
+        team_task = team_data.tasks.get(global_task.taskID)
+        if not team_task:
+            logging.info(
+                f"Team {team_id} tried to complete task {global_task.taskID}, but the team has not "
+                "unlocked it yet."
+            )
+            return
+
+        completion_criteria = global_task.markCompleteWhen
+
+        if (
+            completion_criteria.locationID
+            and completion_criteria.locationID
+            != team_data.currentStatus.currentLocation
+            and completion_criteria.type not in ("codex", "challenge")
+        ):
+            return
+
+        team_task.complete = True
+        if completion_criteria.alsoComplete:
+            for also_complete_task_id in global_task.markCompleteWhen.alsoComplete:
+                also_complete_task = team_data.tasks.get(also_complete_task_id)
+                if not also_complete_task:
+                    logging.warning(
+                        f"Task {global_task.taskID} had dependent task {also_complete_task_id} specified, "
+                        "but it was not unlocked."
+                    )
+                also_complete_task.complete = True
+        if global_task.next:
+            next_global_task = cls._cache.task_map.__root__.get(global_task.next)
+            if not next_global_task:
+                logging.error(
+                    f"Task {global_task.taskID} indicated its next task was {global_task.next}, but that task "
+                    "doesn't exist in the global data."
+                )
+                return
+            cls._unlock_tasks_until_completion_criteria(
+                team_id, team_data, next_global_task
+            )
+        else:
+            mission = team_data.missions.get(global_task.missionID)
+            if not mission:
+                logging.error(
+                    f"Team {team_id} completed task {global_task.taskID} which specified mission ID "
+                    f"{global_task.missionID}, which they have not unlocked."
+                )
+            mission.complete = True
+            logging.info(
+                f"Marked mission {mission.missionID} complete for team {team_id}."
+            )
+
+    @classmethod
     def _mark_task_complete_if_unlocked(
         cls,
         team_id: TeamID,
@@ -386,46 +473,7 @@ class GameStateManager:
                 ):
                     continue
 
-                team_task.complete = True
-                if global_task.markCompleteWhen.alsoComplete:
-                    for (
-                        also_complete_task_id
-                    ) in global_task.markCompleteWhen.alsoComplete:
-                        also_complete_task = team_data.tasks.get(also_complete_task_id)
-                        if not also_complete_task:
-                            logging.warning(
-                                f"Task {global_task.taskID} had dependent task {also_complete_task_id} specified, "
-                                "but it was not unlocked."
-                            )
-                        also_complete_task.complete = True
-                if global_task.next:
-                    while next_global_task := cls._cache.task_map.__root__.get(
-                        global_task.next
-                    ):
-                        if not next_global_task:
-                            logging.error(
-                                f"Task {global_task} indicated its next task was {global_task.next}, but that task "
-                                "doesn't exist in the global data."
-                            )
-                            break
-                        global_task = next_global_task
-                        if not team_data.tasks.get(global_task.taskID):
-                            # If the new task was already unlocked, don't reset its status.
-                            team_data.tasks[global_task.taskID] = InternalTeamTaskData(
-                                taskID=global_task.taskID, visible=True, complete=False
-                            )
-                            cls._set_task_comm_event_active(
-                                team_id, team_data, global_task.taskID
-                            )
-                        if next_global_task.markCompleteWhen:
-                            # Keep unlocking tasks if the one we just unlocked doesn't have specified criteria.
-                            # Otherwise we're done.
-                            break
-                else:
-                    mission.complete = True
-                    logging.info(
-                        f"Marked mission {mission.missionID} complete for team {team_id}."
-                    )
+                cls._complete_task_and_unlock_next(team_id, team_data, task_id)
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
@@ -546,15 +594,17 @@ class GameStateManager:
                 )
                 return
 
-            team_task_data = team_data.tasks.get(task_id)
-            if not team_task_data:
+            if not (
+                global_task_data.markCompleteWhen
+                and global_task_data.markCompleteWhen.locationID
+            ):
                 logging.error(
-                    f"Dispatch task reported task {task_id} complete for team {team_id}, "
-                    "but the team has not unlocked that task."
+                    f"Task {task_id} either doesn't have a markCompleteWhen block or "
+                    "is missing a locationID in the markCompleteWhen block."
                 )
                 return
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, "challenge")
+            cls._complete_task_and_unlock_next(team_id, team_data, global_task_data)
 
     @classmethod
     async def dispatch_grading_task_update(
