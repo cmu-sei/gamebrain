@@ -625,23 +625,23 @@ class GameStateManager:
             )
 
             # TODO: Generalize this.
-            location_mapping = {
-                "aursys": gamespace_state_output.exoArch,
-                "j900": gamespace_state_output.redRaider,
-                "vitlra": gamespace_state_output.ancientRuins,
-                "aurmusm": gamespace_state_output.museum,
-                "astfld_correct": gamespace_state_output.xenoCult,
-                "lgpt22": gamespace_state_output.finalGoal,
+            task_mapping = {
+                "exoarch9": gamespace_state_output.exoArch,
+                "redradr10": gamespace_state_output.redRaider,
+                "antruins7": gamespace_state_output.ancientRuins,
+                "cllctn11": gamespace_state_output.museum,
+                "fllwrs12": gamespace_state_output.xenoCult,
             }
-            current_loc = location_mapping.get(team_data.currentStatus.currentLocation)
-            if current_loc and "success" in current_loc.lower():
-                logging.info(
-                    f"Dispatch for team {team_id} indicates completion of the codex "
-                    f"at location {current_loc}."
-                )
-                cls._mark_task_complete_if_unlocked(
-                    team_id, team_data, "codex", current_loc
-                )
+
+            for task_id, status in task_mapping.items():
+                if status == "success":
+                    logging.info(
+                        f"Grading dispatch for team {team_id} "
+                        f"indicates codex completion for task {task_id}"
+                    )
+                    cls._mark_task_complete_if_unlocked(
+                        team_id, team_data, "codex", task_id
+                    )
 
             transform_map = {"up": PowerStatus.on, "down": PowerStatus.off}
 
