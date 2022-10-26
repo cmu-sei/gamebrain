@@ -644,8 +644,15 @@ class GameStateManager:
                         f"Grading dispatch for team {team_id} "
                         f"indicates codex completion for task {task_id}"
                     )
-                    cls._mark_task_complete_if_unlocked(
-                        team_id, team_data, "codex", task_id
+                    global_task_data = cls._cache.task_map.__root__.get(task_id)
+                    if not global_task_data:
+                        logging.error(
+                            f"Dispatch for team {team_id} indicated completion for {task_id}, "
+                            "but the task doesn't exist."
+                        )
+                        continue
+                    cls._complete_task_and_unlock_next(
+                        team_id, team_data, global_task_data
                     )
 
             transform_map = {"up": PowerStatus.on, "down": PowerStatus.off}
