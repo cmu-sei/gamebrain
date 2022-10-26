@@ -27,6 +27,7 @@ TaskID = str
 class TaskCompletion(BaseModel):
     type: TaskCompletionType
     locationID: LocationID = None
+    alsoComplete: list[TaskID] = None
 
 
 class TaskData(BaseModel):
