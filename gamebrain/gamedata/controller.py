@@ -1,3 +1,4 @@
+import json
 import logging
 
 from fastapi import APIRouter, Security, HTTPException
@@ -29,7 +30,9 @@ async def get_gamedata(
 ) -> GameDataResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.get_team_data(team_id)
+        game_data = await GameStateManager.get_team_data(team_id)
+        logging.info(f"Team {team_id} GameData: \n{json.dumps(game_data.dict(), indent=2)}")
+        return game_data
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
