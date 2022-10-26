@@ -473,7 +473,7 @@ class GameStateManager:
                 ):
                     continue
 
-                cls._complete_task_and_unlock_next(team_id, team_data, task_id)
+                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
