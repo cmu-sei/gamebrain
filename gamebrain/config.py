@@ -93,7 +93,7 @@ class GameSettingsModel(BaseModel):
     ship_network_vm_name: Optional[str] = ""
 
     antenna_vm_name: Optional[str] = ""
-    antenna_retracted_network: Optional[str] = "deepspace"
+    antenna_retracted_network: Optional[str] = "deepspace:1"
     grading_vm_name: Optional[str] = ""
     grading_vm_dispatch_command: Optional[str] = ""
     final_destination_name: Optional[str] = ""
