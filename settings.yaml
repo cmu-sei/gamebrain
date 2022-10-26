@@ -42,7 +42,7 @@ game:
   grading_vm_name: "challenge-server"
   grading_vm_dispatch_command: "cat /home/user/challengeServer/custom_scripts/requestGrade.py"
   challenge_tasks:
-    - task_id: "redradr4"
+    - task_id: "redradr6"
       vm_name: "pirate-attacker"
       dispatch_command: "cat /home/user/LanguageFile"
     - task_id: "exoarch6"
