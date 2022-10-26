@@ -8,6 +8,8 @@ from pydantic import BaseModel
 
 from ..auth import admin_api_key_dependency
 from ..clients import gameboard, topomojo
+from ..clients.gameboard import GameID
+from ..clients.topomojo import GamespaceID, GamespaceExpiration
 from ..config import get_settings
 from ..db import (
     expire_team_gamespace,
@@ -16,8 +18,11 @@ from ..db import (
     store_team,
     get_assigned_headless_urls,
 )
-from ..gamedata.cache import GameStateManager
+from ..gamedata.cache import GameStateManager, TeamID
 from ..util import url_path_join, TeamLocks
+
+
+HeadlessUrl = str
 
 
 admin_router = APIRouter(
@@ -28,13 +33,6 @@ admin_router = APIRouter(
 def construct_vm_url(gamespace_id: str, vm_name: str):
     gameboard_base_url = get_settings().gameboard.base_url
     return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
-
-
-HeadlessUrl = str
-GamespaceID = str
-GamespaceExpiration = str
-GameID = str
-TeamID = str
 
 
 class HeadlessManager:

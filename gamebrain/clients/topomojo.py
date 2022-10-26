@@ -9,6 +9,10 @@ from httpx import AsyncClient
 from .common import _service_request_and_log, HttpMethod
 
 
+GamespaceID = str
+GamespaceExpiration = str
+
+
 class ModuleSettings:
     settings = None
 

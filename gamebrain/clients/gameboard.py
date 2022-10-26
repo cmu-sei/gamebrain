@@ -11,6 +11,9 @@ from .common import _service_request_and_log, HttpMethod
 from ..util import url_path_join
 
 
+GameID = str
+
+
 class ModuleSettings:
     settings = None
 
