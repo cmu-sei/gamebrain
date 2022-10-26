@@ -14,6 +14,7 @@ from ..config import get_settings
 from ..db import (
     expire_team_gamespace,
     get_team,
+    get_teams,
     store_virtual_machines,
     store_team,
     get_assigned_headless_urls,
@@ -230,3 +231,16 @@ async def undeploy(
     if gamespace_id := team_data.get("gamespace_id"):
         await topomojo.complete_gamespace(gamespace_id)
         await expire_team_gamespace(team_id)
+
+
+class ActiveTeamsResponse(BaseModel):
+    __root__: dict[TeamID, bool]
+
+
+@admin_router.get("/teams_active")
+async def get_teams_active() -> ActiveTeamsResponse:
+    teams = await get_teams()
+    active_teams = {team.get("id"): bool(team.get("gamespace_id")) for team in teams}
+
+    logging.info(f"Active teams: {json.dumps(active_teams, indent=2)}")
+    return ActiveTeamsResponse(__root__=active_teams)
