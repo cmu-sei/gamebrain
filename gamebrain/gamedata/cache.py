@@ -347,6 +347,8 @@ class GameStateManager:
             team_data.tasks[global_task.taskID] = InternalTeamTaskData(
                 taskID=global_task.taskID, visible=True, complete=False
             )
+            team_data.missions[global_task.missionID].tasks.append(global_task.taskID)
+            logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
             if not team_data.currentStatus.incomingTransmission:
                 cls._set_task_comm_event_active(team_id, team_data, global_task.taskID)
         if global_task.markCompleteWhen:
