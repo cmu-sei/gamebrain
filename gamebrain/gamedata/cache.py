@@ -372,14 +372,17 @@ class GameStateManager:
         team_id: TeamID,
         team_data: InternalTeamGameData,
         global_task: InternalGlobalTaskData,
-    ):
+    ) -> bool:
+        """
+        Returns True if a task was completed.
+        """
         team_task = team_data.tasks.get(global_task.taskID)
         if not team_task:
             logging.info(
                 f"Team {team_id} tried to complete task {global_task.taskID}, but the team has not "
                 "unlocked it yet."
             )
-            return
+            return False
 
         completion_criteria = global_task.markCompleteWhen
 
@@ -389,7 +392,7 @@ class GameStateManager:
             != team_data.currentStatus.currentLocation
             and completion_criteria.type not in ("codex", "challenge")
         ):
-            return
+            return False
 
         team_task.complete = True
         if completion_criteria.alsoComplete:
@@ -408,7 +411,7 @@ class GameStateManager:
                     f"Task {global_task.taskID} indicated its next task was {global_task.next}, but that task "
                     "doesn't exist in the global data."
                 )
-                return
+                return True
             cls._unlock_tasks_until_completion_criteria(
                 team_id, team_data, next_global_task
             )
@@ -419,10 +422,12 @@ class GameStateManager:
                     f"Team {team_id} completed task {global_task.taskID} which specified mission ID "
                     f"{global_task.missionID}, which they have not unlocked."
                 )
+                return True
             mission.complete = True
             logging.info(
                 f"Marked mission {mission.missionID} complete for team {team_id}."
             )
+        return True
 
     @classmethod
     def _mark_task_complete_if_unlocked(
