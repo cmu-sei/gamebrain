@@ -945,22 +945,25 @@ class GameStateManager:
             location_data = cls._cache.location_map.__root__[
                 team_data.currentStatus.currentLocation
             ]
-            first_contact_event = cls._cache.comm_map.__root__[
-                location_data.firstContactEvent
-            ]
 
             cls._mark_task_complete_if_unlocked(team_id, team_data, "scan")
 
-            team_data.currentStatus.incomingTransmission = True
-            team_data.currentStatus.incomingTransmissionObject = (
-                first_contact_event.to_snapshot()
+            first_contact_event = cls._cache.comm_map.__root__.get(
+                location_data.firstContactEvent
             )
-            team_data.currentStatus.currentLocationScanned = True
+            if first_contact_event:
+                team_data.currentStatus.incomingTransmission = True
+                team_data.currentStatus.incomingTransmissionObject = (
+                    first_contact_event.to_snapshot()
+                )
+                team_data.currentStatus.currentLocationScanned = True
+            else:
+                first_contact_event = {}
 
             return ScanResponse(
                 success=True,
                 message=location_data.locationID,
-                eventWaiting=True,
+                eventWaiting=team_data.currentStatus.incomingTransmission,
                 incomingTransmission=first_contact_event,
             )
 

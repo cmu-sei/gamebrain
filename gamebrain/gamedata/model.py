@@ -218,7 +218,7 @@ class LocationUnlockResponse(BaseModel):
 
 class ScanResponse(GenericResponse):
     eventWaiting: bool
-    incomingTransmission: CommEventData | None
+    incomingTransmission: CommEventData | dict
 
 
 class InternalCommEvent(CommEventData):
