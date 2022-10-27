@@ -461,13 +461,12 @@ class GameStateManager:
                         "task list that was not in the global task map: {task}."
                     )
                     continue
-                # TODO: Temporary workaround for certain tasks to advance.
-                # if active_comm_event and active_comm_event.commID == global_task.commID:
-                #     logging.info(
-                #         f"Attempted to mark task {global_task.taskID} complete for team {team_id}, "
-                #         f"but they must complete comm event {active_comm_event.commID} first."
-                #     )
-                #     continue
+                if active_comm_event and active_comm_event.commID == global_task.commID:
+                    logging.info(
+                        f"Attempted to mark task {global_task.taskID} complete for team {team_id}, "
+                        f"but they must complete comm event {active_comm_event.commID} first."
+                    )
+                    continue
                 completion_criteria = global_task.markCompleteWhen
                 if not completion_criteria:
                     continue
@@ -482,7 +481,10 @@ class GameStateManager:
                 ):
                     continue
 
-                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+                if cls._complete_task_and_unlock_next(
+                    team_id, team_data, global_task
+                ):
+                    return
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
