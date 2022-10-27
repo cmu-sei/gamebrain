@@ -829,17 +829,21 @@ class GameStateManager:
                 )
             )
 
-            # Now use the gathered sets to actually update the cache.
+            # Construct all the team task data objects first...
+            mission_tasks = defaultdict(list)
+            for task_id in unlocked_task_ids:
+                global_task_data = cls._cache.task_map.__root__.get(task_id)
+                if not global_task_data:
+                    logging.error(f"Team {team_id} somehow unlocked task {task_id}, which was not in the global data.")
+                    continue
+                mission_tasks[global_task_data.missionID].append(InternalTeamTaskData(taskID=task_id))
+
+            # Then use the task data objects to construct the team mission objects
             team_specific_missions = [
                 InternalTeamMissionData(
                     missionID=mission_id,
-                    taskList=[
-                        InternalTeamTaskData(
-                            taskID=task_id,
-                        )
-                        for task_id in unlocked_task_ids
-                        if mission_id == cls._cache.task_map.__root__[task_id].missionID
-                    ],
+                    taskList=mission_tasks[mission_id],
+                    tasks=list(map(lambda t: t.taskID, mission_tasks[mission_id])),
                 )
                 for mission_id in unlocked_mission_ids
             ]

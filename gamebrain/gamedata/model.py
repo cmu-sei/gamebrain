@@ -250,7 +250,6 @@ class InternalGlobalMissionData(MissionData):
 
 
 class InternalTeamMissionData(MissionDataTeamSpecific):
-    current_task: TaskID | None
     tasks: list[TaskID]
 
 
