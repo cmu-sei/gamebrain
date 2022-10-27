@@ -230,13 +230,14 @@ async def deploy(
 async def undeploy(
     team_id: TeamID,
 ):
-    team_data = await get_team(team_id)
-    if not team_data:
-        raise HTTPException(status_code=404, detail="Team not found.")
+    async with TeamLocks(team_id):
+        team_data = await get_team(team_id)
+        if not team_data:
+            raise HTTPException(status_code=404, detail="Team not found.")
 
-    if gamespace_id := team_data.get("gamespace_id"):
-        await topomojo.complete_gamespace(gamespace_id)
-        await expire_team_gamespace(team_id)
+        if gamespace_id := team_data.get("gamespace_id"):
+            await topomojo.complete_gamespace(gamespace_id)
+            await expire_team_gamespace(team_id)
 
 
 class ActiveTeamsResponse(BaseModel):
