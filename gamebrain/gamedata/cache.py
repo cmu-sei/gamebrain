@@ -792,7 +792,7 @@ class GameStateManager:
                 return response("alreadyunlocked")
 
             team_data.locations[location_id] = InternalTeamLocationData(
-                location_id=location_id
+                locationID=location_id
             )
 
             # Each Comm Event has a LocationID, so gather the ones associated with the new location.
