@@ -19,11 +19,12 @@ from ..db import (
     store_team,
     get_assigned_headless_urls,
 )
-from ..gamedata.cache import GameStateManager, TeamID
+from ..gamedata.cache import GameStateManager, TeamID, MissionID, NonExistentTeam
 from ..util import url_path_join, TeamLocks
 
 
 HeadlessUrl = str
+Success = bool
 
 
 admin_router = APIRouter(
@@ -272,3 +273,16 @@ async def get_teams_active() -> ActiveTeamsResponse:
 
     logging.info(f"Active teams: {json.dumps(active_teams, indent=2)}")
     return ActiveTeamsResponse(__root__=active_teams)
+
+
+class MissionProgressResponse(BaseModel):
+    __root__: dict[MissionID, bool]
+
+
+@admin_router.get("/progress/{team_id}")
+async def get_team_progress(team_id: TeamID) -> MissionProgressResponse:
+    try:
+        status = await GameStateManager.get_team_codex_status(team_id)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
+    return MissionProgressResponse(__root__=status)

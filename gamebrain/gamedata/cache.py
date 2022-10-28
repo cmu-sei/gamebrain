@@ -481,9 +481,7 @@ class GameStateManager:
                 ):
                     continue
 
-                if cls._complete_task_and_unlock_next(
-                    team_id, team_data, global_task
-                ):
+                if cls._complete_task_and_unlock_next(team_id, team_data, global_task):
                     return
 
     @classmethod
@@ -530,6 +528,23 @@ class GameStateManager:
     async def check_team_exists(cls, team_id: TeamID) -> bool:
         async with cls._lock:
             return team_id in cls._cache.team_map.__root__
+
+    @classmethod
+    async def get_team_codex_status(cls, team_id: TeamID) -> dict[MissionID, bool]:
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                raise NonExistentTeam()
+
+            mission_status = {}
+            for global_mission in cls._cache.mission_map.__root__.values():
+                team_mission = team_data.missions.get(global_mission.missionID)
+                if not team_mission:
+                    mission_status[global_mission.missionID] = False
+                    continue
+                mission_status[global_mission.missionID] = team_mission.complete
+
+            return mission_status
 
     @classmethod
     async def get_team_data(cls, team_id: TeamID | None) -> GameDataResponse | None:
@@ -837,9 +852,13 @@ class GameStateManager:
             for task_id in unlocked_task_ids:
                 global_task_data = cls._cache.task_map.__root__.get(task_id)
                 if not global_task_data:
-                    logging.error(f"Team {team_id} somehow unlocked task {task_id}, which was not in the global data.")
+                    logging.error(
+                        f"Team {team_id} somehow unlocked task {task_id}, which was not in the global data."
+                    )
                     continue
-                mission_tasks[global_task_data.missionID].append(InternalTeamTaskData(taskID=task_id))
+                mission_tasks[global_task_data.missionID].append(
+                    InternalTeamTaskData(taskID=task_id)
+                )
 
             # Then use the task data objects to construct the team mission objects
             team_specific_missions = [
