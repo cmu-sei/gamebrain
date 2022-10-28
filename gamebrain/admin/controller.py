@@ -31,11 +31,6 @@ admin_router = APIRouter(
 )
 
 
-def construct_vm_url(gamespace_id: str, vm_name: str):
-    gameboard_base_url = get_settings().gameboard.base_url
-    return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
-
-
 class HeadlessManager:
     _lock = asyncio.Lock()
 
@@ -76,6 +71,34 @@ class DeployResponse(BaseModel):
     headlessUrl: HeadlessUrl | None
     gamespaceId: GamespaceID | None
     vms: list[ConsoleUrl]
+
+
+def construct_vm_url(gamespace_id: str, vm_name: str):
+    gameboard_base_url = get_settings().gameboard.base_url
+    return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
+
+
+def console_urls_from_vm_data(
+    gamespace_id: GamespaceID, vm_data: dict | None
+) -> list[ConsoleUrl]:
+    console_urls = []
+    if not all((gamespace_id, vm_data)):
+        return console_urls
+
+    for vm in vm_data:
+        visible = vm.get("isVisible")
+        # Mock hypervisor doesn't include this key for some reason.
+        if visible or visible is None:
+            console_urls.append(
+                ConsoleUrl(
+                    **{
+                        "Id": vm["id"],
+                        "Url": construct_vm_url(gamespace_id, vm["name"]),
+                        "Name": vm["name"],
+                    }
+                )
+            )
+    return console_urls
 
 
 async def get_team_from_db(team_id: TeamID) -> dict:
@@ -129,17 +152,7 @@ async def register_gamespace_and_get_vms(
         )
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-    console_urls = [
-        ConsoleUrl(
-            **{
-                "Id": vm["id"],
-                "Url": construct_vm_url(gamespace["id"], vm["name"]),
-                "Name": vm["name"],
-            }
-        )
-        for vm in gamespace["vms"]
-        if vm["isVisible"]
-    ]
+    console_urls = console_urls_from_vm_data(gamespace["id"], gamespace["vms"])
 
     return gamespace["id"], gamespace["expirationTime"], console_urls
 
@@ -176,16 +189,9 @@ async def deploy(
         gamespace_id = team_data.get("gamespace_id")
         headless_url = team_data.get("headless_url")
         vm_data = team_data.get("vm_data", [])
-        console_urls = [
-            ConsoleUrl(
-                **{
-                    "Id": vm["id"],
-                    "Url": construct_vm_url(gamespace_id, vm["name"]),
-                    "Name": vm["name"],
-                }
-            )
-            for vm in vm_data
-        ]
+        console_urls = []
+        if gamespace_id and vm_data:
+            console_urls = console_urls_from_vm_data(gamespace_id, vm_data)
 
         if create_gamespace_if_none and (not gamespace_id or not headless_url):
             # If a team has no gamespace, they should be reset to the beginning of the game.
