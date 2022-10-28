@@ -251,13 +251,24 @@ async def undeploy(
 
 
 class ActiveTeamsResponse(BaseModel):
-    __root__: dict[TeamID, bool]
+    __root__: dict[TeamID, DeployResponse]
 
 
 @admin_router.get("/teams_active")
 async def get_teams_active() -> ActiveTeamsResponse:
     teams = await get_teams()
-    active_teams = {team.get("id"): bool(team.get("gamespace_id")) for team in teams}
+    active_teams = {}
+    for team in teams:
+        gamespace_id = team.get("gamespace_id")
+        headless_url = team.get("headless_url")
+        vm_data = team.get("vm_data")
+        if not (gamespace_id and headless_url and vm_data):
+            # Team is inactive.
+            continue
+        console_urls = console_urls_from_vm_data(gamespace_id, vm_data)
+        active_teams[team.get("id")] = DeployResponse(
+            gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
+        )
 
     logging.info(f"Active teams: {json.dumps(active_teams, indent=2)}")
     return ActiveTeamsResponse(__root__=active_teams)
