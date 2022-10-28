@@ -121,7 +121,7 @@ async def register_gamespace_and_get_vms(
     gamespace = await topomojo.register_gamespace(
         external_id, gameboard_team["sessionEnd"], gameboard_team["members"]
     )
-    if not gamespace:
+    if not gamespace or "vms" not in gamespace:
         logging.error(
             f"Unable to register a gamespace for team {team_id} from workspace {external_id}."
         )
