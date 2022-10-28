@@ -83,9 +83,11 @@ async def get_team_from_db(team_id: TeamID) -> dict:
 
     if expiration := team_data.get("gamespace_expiration"):
         if datetime.now(timezone.utc) > expiration:
-            logging.info(f"Team {team_id} had an expired gamespace {team_data['gamespace_id']}. "
-                         f"Expiration time was {expiration}. "
-                         "Dropping internal tracking.")
+            logging.info(
+                f"Team {team_id} had an expired gamespace {team_data['gamespace_id']}. "
+                f"Expiration time was {expiration}. "
+                "Dropping internal tracking."
+            )
             del team_data["gamespace_expiration"]
             del team_data["gamespace_id"]
             del team_data["vm_data"]
@@ -217,9 +219,11 @@ async def deploy(
             await GameStateManager.update_team_urls(
                 team_id, {vm.Name: vm.Url for vm in console_urls}
             )
-            logging.info(f"Registered gamespace {gamespace_id} for team {team_id}, "
-                         f"assigned to headless server {headless_url}. "
-                         f"VM Console URLs: {json.dumps([url.dict() for url in console_urls], indent=2)}")
+            logging.info(
+                f"Registered gamespace {gamespace_id} for team {team_id}, "
+                f"assigned to headless server {headless_url}. "
+                f"VM Console URLs: {json.dumps([url.dict() for url in console_urls], indent=2)}"
+            )
 
         return DeployResponse(
             gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
