@@ -391,15 +391,6 @@ class GameStateManager:
 
         completion_criteria = global_task.markCompleteWhen
 
-        if (
-            completion_criteria
-            and completion_criteria.locationID
-            and completion_criteria.locationID
-            != team_data.currentStatus.currentLocation
-            and completion_criteria.type not in ("codex", "challenge")
-        ):
-            return False
-
         team_task.complete = True
         if completion_criteria.alsoComplete:
             for also_complete_task_id in global_task.markCompleteWhen.alsoComplete:
