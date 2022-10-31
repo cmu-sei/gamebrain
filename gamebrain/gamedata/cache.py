@@ -628,7 +628,7 @@ class GameStateManager:
             task_mapping = {
                 "exoarch9": gamespace_state_output.exoArch,
                 "redradr10": gamespace_state_output.redRaider,
-                "antruins7": gamespace_state_output.ancientRuins,
+                "antruins8": gamespace_state_output.ancientRuins,
                 "cllctn11": gamespace_state_output.museum,
                 "fllwrs12": gamespace_state_output.xenoCult,
             }
