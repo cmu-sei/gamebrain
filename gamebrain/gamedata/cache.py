@@ -436,7 +436,8 @@ class GameStateManager:
         """
         cache lock is assumed to be held
         """
-        for task in team_data.tasks.values():
+        # Make a separate list so I can modify the team task map (for unlocking).
+        for task in list(team_data.tasks.values()):
             if task.complete:
                 continue
             global_task = cls._cache.task_map.__root__.get(task.taskID)
