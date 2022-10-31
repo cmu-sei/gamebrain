@@ -441,53 +441,32 @@ class GameStateManager:
         team_id: TeamID,
         team_data: InternalTeamGameData,
         task_type: TaskCompletionType,
-        location: LocationID = None,
     ):
         """
         cache lock is assumed to be held
         """
-        active_comm_event = team_data.currentStatus.incomingTransmissionObject
-
-        for mission in team_data.missions.values():
-            global_mission = cls._cache.mission_map.__root__.get(mission.missionID)
-            if not global_mission:
+        for task in team_data.tasks.values():
+            if task.complete:
+                continue
+            global_task = cls._cache.task_map.__root__.get(task.taskID)
+            if not global_task:
                 logging.error(
-                    f"Team {team_id} had mission {mission.missionID} unlocked "
-                    "but it was not in the global data."
+                    f"Team {team_id} had a task in its "
+                    "task list that was not in the global task map: {task}."
                 )
-            for task_id in map(lambda t: t.taskID, global_mission.taskList):
-                team_task = team_data.tasks.get(task_id)
-                if not team_task:
-                    continue
-                global_task = cls._cache.task_map.__root__.get(task_id)
-                if not global_task:
-                    logging.error(
-                        f"Mission {mission.missionID} had a task in its "
-                        "task list that was not in the global task map: {task}."
-                    )
-                    continue
-                # if active_comm_event and active_comm_event.commID == global_task.commID:
-                #     logging.info(
-                #         f"Attempted to mark task {global_task.taskID} complete for team {team_id}, "
-                #         f"but they must complete comm event {active_comm_event.commID} first."
-                #     )
-                #     continue
-                completion_criteria = global_task.markCompleteWhen
-                if not completion_criteria:
-                    continue
-                if location and completion_criteria.locationID != location:
-                    # The specified location was for a different task - primarily for codex use.
-                    continue
-                if task_type != completion_criteria.type:
-                    continue
-                if (
-                    completion_criteria.locationID
-                    != team_data.currentStatus.currentLocation
-                ):
-                    continue
+                continue
+            completion_criteria = global_task.markCompleteWhen
+            if not completion_criteria:
+                continue
+            if task_type != completion_criteria.type:
+                continue
+            if (
+                completion_criteria.locationID
+                != team_data.currentStatus.currentLocation
+            ):
+                continue
 
-                if cls._complete_task_and_unlock_next(team_id, team_data, global_task):
-                    return
+            cls._complete_task_and_unlock_next(team_id, team_data, global_task)
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
