@@ -10,6 +10,7 @@ from .gamedata.cache import (
     GamespaceStateOutput,
     GameDataResponse,
     GenericResponse,
+    LocationUnlockResponse,
     ScanResponse,
     NonExistentTeam,
     TeamID,
@@ -136,6 +137,17 @@ async def test_complete_power_change(
 ) -> GenericResponse:
     try:
         return await GameStateManager.set_power_mode(team_id, new_status)
+    except NonExistentTeam:
+        raise HTTPException(status_code=404, detail="Team not found.")
+
+
+@test_router.get("/complete/unlock/{coordinates}/{team_id}")
+async def test_unlock_location(
+        coordinates: str,
+        team_id: TeamID,
+) -> LocationUnlockResponse:
+    try:
+        return await GameStateManager.unlock_location(team_id, coordinates)
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
