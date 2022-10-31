@@ -392,7 +392,8 @@ class GameStateManager:
         completion_criteria = global_task.markCompleteWhen
 
         if (
-            completion_criteria.locationID
+            completion_criteria
+            and completion_criteria.locationID
             and completion_criteria.locationID
             != team_data.currentStatus.currentLocation
             and completion_criteria.type not in ("codex", "challenge")
