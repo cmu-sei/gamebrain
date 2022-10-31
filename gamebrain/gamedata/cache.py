@@ -1036,68 +1036,28 @@ class GameStateManager:
 
             current_comm_event = team_data.currentStatus.incomingTransmissionObject
             if not current_comm_event:
-                logging.warning(
+                logging.info(
                     f"Team {team_id} tried to complete a comm event, "
                     "but they do not currently have a comm event."
-                )
-                return GenericResponse(
-                    success=False,
-                    message="No incoming comm event.",
-                )
-
-            internal_comm_event = cls._cache.comm_map.__root__[
-                current_comm_event.commID
-            ]
-            global_task = cls._cache.task_map.__root__.get(
-                internal_comm_event.associated_task
-            )
-            if not global_task:
-                logging.error(
-                    f"Team {team_id} tried to complete comm event {internal_comm_event.commID}, "
-                    "but there was no associated task."
-                )
-                return GenericResponse(
-                    success=False,
-                    message="Could not find associated task.",
-                )
-
-            team_task = team_data.tasks.get(global_task.taskID)
-            if not team_task:
-                logging.error(
-                    f"Team {team_id} tried to complete comm event {internal_comm_event.commID}, "
-                    "but the associated task was not unlocked."
-                )
-                return GenericResponse(
-                    success=False,
-                    message="Associated task not unlocked.",
                 )
 
             if current_comm_event.firstContact:
                 current_location_id = team_data.currentStatus.currentLocation
                 team_comm_location_id = current_comm_event.locationID
-                if current_location_id != team_comm_location_id:
-                    logging.error(
-                        f"Team {team_id} tried to complete comm event {internal_comm_event.commID}, "
-                        "but they were not at the right location."
-                    )
-                    return GenericResponse(
-                        success=False,
-                        message="Wrong location.",
-                    )
+                if current_location_id == team_comm_location_id:
+                    team_comm_location = team_data.locations.get(team_comm_location_id)
+                    if not team_comm_location:
+                        logging.error(
+                            f"Team {team_id} tried to complete comm event {current_comm_event.commID}, "
+                            "but they have not unlocked the location yet."
+                        )
+                        return GenericResponse(
+                            success=False,
+                            message="Location not unlocked.",
+                        )
 
-                team_comm_location = team_data.locations.get(team_comm_location_id)
-                if not team_comm_location:
-                    logging.error(
-                        f"Team {team_id} tried to complete comm event {internal_comm_event.commID}, "
-                        "but they have not unlocked the location yet."
-                    )
-                    return GenericResponse(
-                        success=False,
-                        message="Location not unlocked.",
-                    )
-
-                team_data.currentStatus.firstContactComplete = True
-                team_comm_location.visited = True
+                    team_data.currentStatus.firstContactComplete = True
+                    team_comm_location.visited = True
 
             team_data.currentStatus.incomingTransmissionObject = {}
             team_data.currentStatus.incomingTransmission = False
