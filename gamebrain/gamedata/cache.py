@@ -973,12 +973,23 @@ class GameStateManager:
                 team_data.currentStatus.currentLocation
             ]
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, "scan")
+            team_location_data = team_data.locations.get(location_data.locationID)
+            if not team_location_data:
+                logging.error(
+                    f"Team had current location {team_data.currentStatus.currentLocation}, "
+                    "but the location was not unlocked."
+                )
+                return ScanResponse(
+                    success=False,
+                    message=location_data.locationID,
+                    eventWaiting=False,
+                    incomingTransmission={},
+                )
 
             first_contact_event = cls._cache.comm_map.__root__.get(
                 location_data.firstContactEvent
             )
-            if first_contact_event:
+            if first_contact_event and not team_location_data.visited:
                 team_data.currentStatus.incomingTransmission = True
                 team_data.currentStatus.incomingTransmissionObject = (
                     first_contact_event.to_snapshot()
@@ -986,6 +997,8 @@ class GameStateManager:
                 team_data.currentStatus.currentLocationScanned = True
             else:
                 first_contact_event = {}
+
+            cls._mark_task_complete_if_unlocked(team_id, team_data, "scan")
 
             return ScanResponse(
                 success=True,
