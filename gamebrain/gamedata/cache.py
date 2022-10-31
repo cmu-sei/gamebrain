@@ -335,6 +335,10 @@ class GameStateManager:
         team_data.currentStatus.incomingTransmissionObject = (
             {} if not comm_event else comm_event.to_snapshot()
         )
+        if team_data.currentStatus.incomingTransmission:
+            logging.info(f"Set comm event {global_task.commID} for team {team_id}.")
+        else:
+            logging.info(f"Did not set comm event for team {team_id}.")
 
     @classmethod
     def _unlock_tasks_until_completion_criteria(
