@@ -272,8 +272,9 @@ async def get_teams_active() -> ActiveTeamsResponse:
             gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
         )
 
-    logging.info(f"Active teams: {json.dumps(active_teams, indent=2)}")
-    return ActiveTeamsResponse(__root__=active_teams)
+    response = ActiveTeamsResponse(__root__=active_teams)
+    logging.info(f"Active teams: {json.dumps(response.dict(), indent=2)}")
+    return response
 
 
 class MissionProgressResponse(BaseModel):
