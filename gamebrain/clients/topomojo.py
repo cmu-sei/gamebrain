@@ -109,7 +109,7 @@ async def register_gamespace(
         "playerCount": len(team_members),
         "maxAttempts": 3,
         "maxMinutes": settings.game.gamespace_duration_minutes,
-        "points": 100,
+        "points": settings.game.total_points,
         "allowReset": True,
         "allowPreview": True,
         "startGamespace": True,

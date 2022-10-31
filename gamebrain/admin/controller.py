@@ -214,6 +214,7 @@ async def deploy(
                 # we should free whatever headless URL was assigned before leaving.
                 await expire_team_gamespace(team_id)
                 raise e
+            await gameboard.create_challenge(game_id, team_id)
             await store_team(
                 team_id,
                 gamespace_id=gamespace_id,

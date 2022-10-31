@@ -103,6 +103,7 @@ class GameSettingsModel(BaseModel):
 
     gamestate_test_mode: Optional[bool] = False
     game_id: str
+    total_points: int = 1000
 
     headless_client_urls: dict[Hostname, ServerPublicUrl]
 

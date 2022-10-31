@@ -128,3 +128,14 @@ async def get_team(team_id: str):
 
 async def get_teams(game_id: str):
     return await _gameboard_get(f"teams/{game_id}")
+
+
+async def create_challenge(game_id: str, team_id: str):
+    return await _gameboard_post(
+        f"unity/challenges",
+        {
+            "gameId": game_id,
+            "teamId": team_id,
+            "points": get_settings().game.total_points,
+        },
+    )
