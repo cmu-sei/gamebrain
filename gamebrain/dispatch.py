@@ -141,13 +141,16 @@ class GamespaceStatusTask:
         result = cls._log_dispatch_status(status)
 
         # Technically, the file is JSON-formatted with a key: value pair, but I only need the value.
-        if not result or "success" not in result.lower():
-            logging.debug(f"Dispatch completed, with non-success result: \n{result}")
-            return
-        logging.info(f"Got a challenge task success from {team_id}:\n{result}")
-        await GameStateManager.dispatch_challenge_task_complete(
-            team_id, challenge_task.task_id
-        )
+        if result and "success" in result.lower():
+            logging.info(f"Got a challenge task success from {team_id}:\n{result}")
+            await GameStateManager.dispatch_challenge_task_complete(
+                team_id, challenge_task.task_id
+            )
+        elif result and "fail" in result.lower():
+            logging.info(f"Got a challenge task fail from {team_id}:\n{result}")
+            await GameStateManager.dispatch_challenge_task_failed(team_id, challenge_task.task_id)
+        else:
+            logging.debug(f"Dispatch completed, without result: \n{result}")
 
     @classmethod
     async def _grader_task(cls):

@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, AnyUrl
 
 
-TaskCompletionType = Literal[
+TaskBranchType = Literal[
     "comm",
     "jump",
     "explorationMode",
@@ -14,6 +14,7 @@ TaskCompletionType = Literal[
     "antennaExtended",
     "antennaRetracted",
     "challenge",
+    "challengeFail",
     "codex",
 ]
 
@@ -24,10 +25,11 @@ LocationID = str
 TaskID = str
 
 
-class TaskCompletion(BaseModel):
-    type: TaskCompletionType
+class TaskBranch(BaseModel):
+    type: TaskBranchType
     locationID: LocationID = None
     alsoComplete: list[TaskID] = None
+    unlocks: TaskID = None
 
 
 class TaskData(BaseModel):
@@ -40,7 +42,9 @@ class TaskData(BaseModel):
     videoURL: str
     commID: CommID
     next: TaskID = None
-    markCompleteWhen: TaskCompletion = None
+    markCompleteWhen: TaskBranch = None
+    failWhen: TaskBranch = None
+    cancelWhen: TaskBranch = None
 
 
 class TaskDataTeamSpecific(BaseModel):

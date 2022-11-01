@@ -22,8 +22,8 @@ from .model import (
     LocationDataFull,
     MissionData,
     MissionDataFull,
-    TaskCompletionType,
-    TaskCompletion,
+    TaskBranchType,
+    TaskBranch,
     TaskData,
     TaskDataFull,
     CommEventData,
@@ -257,8 +257,8 @@ class GameStateManager:
     def _log_completion(
         task_id: TaskID,
         team_id: TeamID,
-        task_type: TaskCompletionType,
-        completion_criteria: TaskCompletion | None,
+        task_type: TaskBranchType,
+        completion_criteria: TaskBranch | None,
     ):
         missing_criteria = (
             ", despite the task not having a markCompleteWhen specified"
@@ -437,7 +437,7 @@ class GameStateManager:
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
-        task_type: TaskCompletionType,
+        task_type: TaskBranchType,
     ):
         """
         cache lock is assumed to be held
@@ -453,18 +453,34 @@ class GameStateManager:
                     "task list that was not in the global task map: {task}."
                 )
                 continue
-            completion_criteria = global_task.markCompleteWhen
-            if not completion_criteria:
+            criteria = None
+            # TODO: Eventually this should have a big refactor, but for now it just needs to work.
+            if global_task.markCompleteWhen:
+                criteria = global_task.markCompleteWhen
+            elif global_task.cancelWhen:
+                criteria = global_task.cancelWhen
+            if not criteria:
                 continue
-            if task_type != completion_criteria.type:
+            if task_type != criteria.type:
                 continue
             if (
-                completion_criteria.locationID
+                criteria.locationID
                 != team_data.currentStatus.currentLocation
             ):
                 continue
 
-            cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+            if global_task.markCompleteWhen:
+                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+            else:
+                team_mission = team_data.missions.get(global_task.missionID)
+                if not team_mission:
+                    logging.error(f"Team had task {task.taskID} unlocked but not its associated mission.")
+                try:
+                    team_mission.tasks.remove(task.taskID)
+                except ValueError:
+                    logging.error(f"Tried to remove {task.taskID} from mission {team_mission.missionID} for team "
+                                  f"{team_id}, but failed.")
+                team_data.tasks.pop(task.taskID)
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
@@ -613,6 +629,38 @@ class GameStateManager:
                 return
 
             cls._complete_task_and_unlock_next(team_id, team_data, global_task_data)
+
+    @classmethod
+    async def dispatch_challenge_task_failed(cls, team_id: TeamID, task_id: str):
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                logging.error(
+                    f"Dispatch task reported team {team_id} failed a task, but that team does not exist."
+                )
+                return
+
+            global_task_data = cls._cache.task_map.__root__.get(task_id)
+            if not global_task_data:
+                logging.error(
+                    f"Dispatch task reported task {task_id} failed for team {team_id}, but no such task exists."
+                )
+                return
+
+            if not (global_task_data.failWhen and global_task_data.failWhen.type == "challengeFail" and global_task_data.failWhen.unlocks):
+                return
+
+            next_task = global_task_data.failWhen.unlocks
+            if not next_task:
+                return
+
+            next_task_data = cls._cache.task_map.__root__.get(next_task)
+            if not next_task_data:
+                logging.error(f"Task {global_task_data.taskID} has a failWhen block that specifies task "
+                              f"{next_task} to unlock, but the task does not exist in the global data.")
+                return
+
+            cls._unlock_tasks_until_completion_criteria(team_id, team_data, next_task_data)
 
     @classmethod
     async def dispatch_grading_task_update(
