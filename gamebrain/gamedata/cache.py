@@ -421,6 +421,12 @@ class GameStateManager:
                 )
                 return True
             mission.complete = True
+            team_data.session.teamCodexCount = sum(
+                (
+                    1 if mission.complete else 0
+                    for mission in team_data.missions.values()
+                )
+            )
             logging.info(
                 f"Marked mission {mission.missionID} complete for team {team_id}."
             )
@@ -616,13 +622,6 @@ class GameStateManager:
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 raise NonExistentTeam()
-
-            team_data.session.teamCodexCount = sum(
-                1
-                for _ in filter(
-                    lambda v: v == "success", gamespace_state_output.dict().values()
-                )
-            )
 
             # TODO: Generalize this.
             task_mapping = {
