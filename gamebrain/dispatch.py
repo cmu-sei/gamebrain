@@ -148,7 +148,9 @@ class GamespaceStatusTask:
             )
         elif result and "fail" in result.lower():
             logging.info(f"Got a challenge task fail from {team_id}:\n{result}")
-            await GameStateManager.dispatch_challenge_task_failed(team_id, challenge_task.task_id)
+            await GameStateManager.dispatch_challenge_task_failed(
+                team_id, challenge_task.task_id
+            )
         else:
             logging.debug(f"Dispatch completed, without result: \n{result}")
 

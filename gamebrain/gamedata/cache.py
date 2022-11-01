@@ -463,10 +463,7 @@ class GameStateManager:
                 continue
             if task_type != criteria.type:
                 continue
-            if (
-                criteria.locationID
-                != team_data.currentStatus.currentLocation
-            ):
+            if criteria.locationID != team_data.currentStatus.currentLocation:
                 continue
 
             if global_task.markCompleteWhen:
@@ -474,12 +471,16 @@ class GameStateManager:
             else:
                 team_mission = team_data.missions.get(global_task.missionID)
                 if not team_mission:
-                    logging.error(f"Team had task {task.taskID} unlocked but not its associated mission.")
+                    logging.error(
+                        f"Team had task {task.taskID} unlocked but not its associated mission."
+                    )
                 try:
                     team_mission.tasks.remove(task.taskID)
                 except ValueError:
-                    logging.error(f"Tried to remove {task.taskID} from mission {team_mission.missionID} for team "
-                                  f"{team_id}, but failed.")
+                    logging.error(
+                        f"Tried to remove {task.taskID} from mission {team_mission.missionID} for team "
+                        f"{team_id}, but failed."
+                    )
                 team_data.tasks.pop(task.taskID)
 
     @classmethod
@@ -647,7 +648,11 @@ class GameStateManager:
                 )
                 return
 
-            if not (global_task_data.failWhen and global_task_data.failWhen.type == "challengeFail" and global_task_data.failWhen.unlocks):
+            if not (
+                global_task_data.failWhen
+                and global_task_data.failWhen.type == "challengeFail"
+                and global_task_data.failWhen.unlocks
+            ):
                 return
 
             next_task = global_task_data.failWhen.unlocks
@@ -656,11 +661,15 @@ class GameStateManager:
 
             next_task_data = cls._cache.task_map.__root__.get(next_task)
             if not next_task_data:
-                logging.error(f"Task {global_task_data.taskID} has a failWhen block that specifies task "
-                              f"{next_task} to unlock, but the task does not exist in the global data.")
+                logging.error(
+                    f"Task {global_task_data.taskID} has a failWhen block that specifies task "
+                    f"{next_task} to unlock, but the task does not exist in the global data."
+                )
                 return
 
-            cls._unlock_tasks_until_completion_criteria(team_id, team_data, next_task_data)
+            cls._unlock_tasks_until_completion_criteria(
+                team_id, team_data, next_task_data
+            )
 
     @classmethod
     async def dispatch_grading_task_update(
