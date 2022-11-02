@@ -646,6 +646,10 @@ class GameStateManager:
                 )
                 return
 
+            if task_id not in team_data.tasks:
+                # Team has not yet unlocked the relevant task, so just don't do anything.
+                return
+
             global_task_data = cls._cache.task_map.__root__.get(task_id)
             if not global_task_data:
                 logging.error(
