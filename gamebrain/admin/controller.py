@@ -72,6 +72,7 @@ class DeployResponse(BaseModel):
     headlessUrl: HeadlessUrl | None
     gamespaceId: GamespaceID | None
     vms: list[ConsoleUrl]
+    totalPoints: int
 
 
 def construct_vm_url(gamespace_id: str, vm_name: str):
@@ -200,7 +201,12 @@ async def deploy(
 
             headless_url = await HeadlessManager.assign_headless(team_id)
             if not headless_url:
-                return DeployResponse(gamespaceId=None, headlessUrl=None, vms=[])
+                return DeployResponse(
+                    gamespaceId=None,
+                    headlessUrl=None,
+                    vms=[],
+                    totalPoints=get_settings().game.total_points,
+                )
 
             try:
                 (
@@ -233,7 +239,10 @@ async def deploy(
             )
 
         return DeployResponse(
-            gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
+            gamespaceId=gamespace_id,
+            headlessUrl=headless_url,
+            vms=console_urls,
+            totalPoints=get_settings().game.total_points,
         )
 
 
@@ -268,7 +277,10 @@ async def get_teams_active() -> ActiveTeamsResponse:
             continue
         console_urls = console_urls_from_vm_data(gamespace_id, vm_data)
         active_teams[team.get("id")] = DeployResponse(
-            gamespaceId=gamespace_id, headlessUrl=headless_url, vms=console_urls
+            gamespaceId=gamespace_id,
+            headlessUrl=headless_url,
+            vms=console_urls,
+            totalPoints=get_settings().game.total_points,
         )
 
     response = ActiveTeamsResponse(__root__=active_teams)
