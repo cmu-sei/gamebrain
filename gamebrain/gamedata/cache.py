@@ -1075,7 +1075,7 @@ class GameStateManager:
                     "but they do not currently have a comm event."
                 )
 
-            if current_comm_event.firstContact:
+            if current_comm_event and current_comm_event.firstContact:
                 current_location_id = team_data.currentStatus.currentLocation
                 team_comm_location_id = current_comm_event.locationID
                 if current_location_id == team_comm_location_id:
