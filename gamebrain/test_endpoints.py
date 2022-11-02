@@ -71,6 +71,11 @@ async def test_complete_challenge(team_id: TeamID, task_id: TaskID) -> GameDataR
     return await GameStateManager.get_team_data(team_id)
 
 
+@test_router.get("/fail/challenge/{team_id}/{task_id}")
+async def test_fail_challenge(team_id: TeamID, task_id: TaskID):
+    await GameStateManager.dispatch_challenge_task_failed(team_id, task_id)
+
+
 @test_router.get("/complete/codex/{team_id}")
 async def test_complete_codex(team_id: TeamID) -> GameDataResponse:
     state_update = GamespaceStateOutput(
