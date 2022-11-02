@@ -343,13 +343,15 @@ class GameStateManager:
         team_data: InternalTeamGameData,
         global_task: InternalGlobalTaskData,
     ):
-        team_data.tasks[global_task.taskID] = InternalTeamTaskData(
-            taskID=global_task.taskID, visible=True, complete=False
-        )
-        team_data.missions[global_task.missionID].tasks.append(global_task.taskID)
-        logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
-        if not team_data.currentStatus.incomingTransmission:
-            cls._set_task_comm_event_active(team_id, team_data, global_task)
+        if not team_data.tasks.get(global_task.taskID):
+            # If the new task was already unlocked, don't reset its status.
+            team_data.tasks[global_task.taskID] = InternalTeamTaskData(
+                taskID=global_task.taskID, visible=True, complete=False
+            )
+            team_data.missions[global_task.missionID].tasks.append(global_task.taskID)
+            logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
+            if not team_data.currentStatus.incomingTransmission:
+                cls._set_task_comm_event_active(team_id, team_data, global_task)
 
     @classmethod
     def _unlock_tasks_until_completion_criteria(
@@ -358,9 +360,7 @@ class GameStateManager:
         team_data: InternalTeamGameData,
         global_task: InternalGlobalTaskData,
     ):
-        if not team_data.tasks.get(global_task.taskID):
-            # If the new task was already unlocked, don't reset its status.
-            cls._unlock_specific_task(team_id, team_data, global_task)
+        cls._unlock_specific_task(team_id, team_data, global_task)
         if global_task.markCompleteWhen:
             # Keep unlocking tasks if the one we just unlocked doesn't have specified criteria.
             # Otherwise, we're done.
