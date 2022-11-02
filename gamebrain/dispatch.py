@@ -157,31 +157,34 @@ class GamespaceStatusTask:
     @classmethod
     async def _grader_task(cls):
         while True:
-            await asyncio.sleep(30)
+            try:
+                await asyncio.sleep(30)
 
-            teams = await db.get_teams_with_gamespace_ids()
-            logging.info(
-                f"Dispatch cycle is running. The current teams are active: {json.dumps(teams, indent=2)}"
-            )
-
-            for team_id, gamespace_id in teams.items():
-
-                team_dispatches = cls._existing_dispatches.get(
-                    team_id,
-                    cls.TeamDispatches(
-                        grading={},
-                        challenge_tasks={
-                            task: {} for task in cls.challenge_tasks_config
-                        },
-                    ),
+                teams = await db.get_teams_with_gamespace_ids()
+                logging.info(
+                    f"Dispatch cycle is running. The current teams are active: {json.dumps(teams, indent=2)}"
                 )
 
-                await cls._handle_grading_dispatch(
-                    team_dispatches.grading, team_id, gamespace_id
-                )
-                for task, task_dispatch in team_dispatches.challenge_tasks.items():
-                    await cls._handle_challenge_task_dispatch(
-                        task_dispatch, team_id, gamespace_id, task
+                for team_id, gamespace_id in teams.items():
+
+                    team_dispatches = cls._existing_dispatches.get(
+                        team_id,
+                        cls.TeamDispatches(
+                            grading={},
+                            challenge_tasks={
+                                task: {} for task in cls.challenge_tasks_config
+                            },
+                        ),
                     )
 
-                cls._existing_dispatches[team_id] = team_dispatches
+                    await cls._handle_grading_dispatch(
+                        team_dispatches.grading, team_id, gamespace_id
+                    )
+                    for task, task_dispatch in team_dispatches.challenge_tasks.items():
+                        await cls._handle_challenge_task_dispatch(
+                            task_dispatch, team_id, gamespace_id, task
+                        )
+
+                    cls._existing_dispatches[team_id] = team_dispatches
+            except Exception as e:
+                logging.exception(f"Dispatch exception: {str(e)}")
