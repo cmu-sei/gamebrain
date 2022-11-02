@@ -312,18 +312,14 @@ class GameStateManager:
 
     @classmethod
     def _set_task_comm_event_active(
-        cls, team_id: TeamID, team_data: InternalTeamGameData, task_id: TaskID
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        global_task: InternalGlobalTaskData,
     ):
         """
         cache lock is assumed to be held
         """
-        global_task = cls._cache.task_map.__root__.get(task_id)
-        if not global_task:
-            logging.error(
-                f"Team {team_id} had a task in its team-specific data that "
-                f"was not in the global data: {task_id}"
-            )
-            return
         comm_event = cls._cache.comm_map.__root__.get(global_task.commID)
         if global_task.commID != "" and not comm_event:
             logging.error(
@@ -341,6 +337,21 @@ class GameStateManager:
             logging.info(f"Did not set comm event for team {team_id}.")
 
     @classmethod
+    def _unlock_specific_task(
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        global_task: InternalGlobalTaskData,
+    ):
+        team_data.tasks[global_task.taskID] = InternalTeamTaskData(
+            taskID=global_task.taskID, visible=True, complete=False
+        )
+        team_data.missions[global_task.missionID].tasks.append(global_task.taskID)
+        logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
+        if not team_data.currentStatus.incomingTransmission:
+            cls._set_task_comm_event_active(team_id, team_data, global_task)
+
+    @classmethod
     def _unlock_tasks_until_completion_criteria(
         cls,
         team_id: TeamID,
@@ -349,13 +360,7 @@ class GameStateManager:
     ):
         if not team_data.tasks.get(global_task.taskID):
             # If the new task was already unlocked, don't reset its status.
-            team_data.tasks[global_task.taskID] = InternalTeamTaskData(
-                taskID=global_task.taskID, visible=True, complete=False
-            )
-            team_data.missions[global_task.missionID].tasks.append(global_task.taskID)
-            logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
-            if not team_data.currentStatus.incomingTransmission:
-                cls._set_task_comm_event_active(team_id, team_data, global_task.taskID)
+            cls._unlock_specific_task(team_id, team_data, global_task)
         if global_task.markCompleteWhen:
             # Keep unlocking tasks if the one we just unlocked doesn't have specified criteria.
             # Otherwise, we're done.
@@ -667,9 +672,7 @@ class GameStateManager:
                 )
                 return
 
-            cls._unlock_tasks_until_completion_criteria(
-                team_id, team_data, next_task_data
-            )
+            cls._unlock_specific_task(team_id, team_data, next_task_data)
 
     @classmethod
     async def dispatch_grading_task_update(
