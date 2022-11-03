@@ -50,7 +50,7 @@ game:
       dispatch_command: "cat /home/user/atmosphere"
     - task_id: "cllctn6"
       vm_name:  "museum-approach"
-      dispatch_command: "cat /home/user/audit && rm /home/user/audit"
+      dispatch_command: bash -c "cat /home/user/audit && rm /home/user/audit"
   final_destination_name: "final"
   final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
   gamestate_test_mode: false
