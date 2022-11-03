@@ -461,46 +461,46 @@ class GameStateManager:
 
             # TODO: Eventually this should have a big refactor, but for now it just needs to work.
             current_location = team_data.currentStatus.currentLocation
-            if criteria := global_task.markCompleteWhen:
-                if (
-                    criteria.locationID == current_location
-                    and criteria.type == task_type
-                ):
-                    cls._complete_task_and_unlock_next(team_id, team_data, global_task)
-            elif criteria := global_task.cancelWhen:
-                if (
-                    criteria.locationID == current_location
-                    and criteria.type == task_type
-                ):
-                    team_mission = team_data.missions.get(global_task.missionID)
-                    if not team_mission:
-                        logging.error(
-                            f"Team had task {task.taskID} unlocked but not its associated mission."
-                        )
-                    try:
-                        team_mission.tasks.remove(task.taskID)
-                    except ValueError:
-                        logging.error(
-                            f"Tried to remove {task.taskID} from mission {team_mission.missionID} for team "
-                            f"{team_id}, but failed."
-                        )
-                    else:
-                        team_data.tasks.pop(task.taskID)
-            elif criteria := global_task.failWhen:
-                if (
-                    criteria.locationID == current_location
-                    and criteria.type == task_type
-                ):
-                    next_global_task = cls._cache.task_map.__root__.get(
-                        criteria.unlocks
+            if (
+                global_task.markCompleteWhen
+                and global_task.markCompleteWhen.locationID == current_location
+                and global_task.markCompleteWhen.type == task_type
+            ):
+                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+            elif (
+                global_task.cancelWhen
+                and global_task.cancelWhen.locationID == current_location
+                and global_task.cancelWhen.type == task_type
+            ):
+                team_mission = team_data.missions.get(global_task.missionID)
+                if not team_mission:
+                    logging.error(
+                        f"Team had task {task.taskID} unlocked but not its associated mission."
                     )
-                    if not next_global_task:
-                        logging.error(
-                            f"Task {task.taskID} referenced task {criteria.unlocks} in its failWhen block, "
-                            "but that task does not exist."
-                        )
-                        continue
-                    cls._unlock_specific_task(team_id, team_data, next_global_task)
+                try:
+                    team_mission.tasks.remove(task.taskID)
+                except ValueError:
+                    logging.error(
+                        f"Tried to remove {task.taskID} from mission {team_mission.missionID} for team "
+                        f"{team_id}, but failed."
+                    )
+                else:
+                    team_data.tasks.pop(task.taskID)
+            elif (
+                global_task.failWhen
+                and global_task.failWhen.locationID == current_location
+                and global_task.failWhen.type == task_type
+            ):
+                next_global_task = cls._cache.task_map.__root__.get(
+                    global_task.failWhen.unlocks
+                )
+                if not next_global_task:
+                    logging.error(
+                        f"Task {task.taskID} referenced task {global_task.failWhen.unlocks} in its failWhen block, "
+                        "but that task does not exist."
+                    )
+                    continue
+                cls._unlock_specific_task(team_id, team_data, next_global_task)
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
