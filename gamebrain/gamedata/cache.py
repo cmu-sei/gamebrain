@@ -458,35 +458,49 @@ class GameStateManager:
                     "task list that was not in the global task map: {task}."
                 )
                 continue
-            criteria = None
-            # TODO: Eventually this should have a big refactor, but for now it just needs to work.
-            if global_task.markCompleteWhen:
-                criteria = global_task.markCompleteWhen
-            elif global_task.cancelWhen:
-                criteria = global_task.cancelWhen
-            if not criteria:
-                continue
-            if task_type != criteria.type:
-                continue
-            if criteria.locationID != team_data.currentStatus.currentLocation:
-                continue
 
-            if global_task.markCompleteWhen:
-                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
-            else:
-                team_mission = team_data.missions.get(global_task.missionID)
-                if not team_mission:
-                    logging.error(
-                        f"Team had task {task.taskID} unlocked but not its associated mission."
+            # TODO: Eventually this should have a big refactor, but for now it just needs to work.
+            current_location = team_data.currentStatus.currentLocation
+            if criteria := global_task.markCompleteWhen:
+                if (
+                    criteria.locationID == current_location
+                    and criteria.type == task_type
+                ):
+                    cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+            elif criteria := global_task.cancelWhen:
+                if (
+                    criteria.locationID == current_location
+                    and criteria.type == task_type
+                ):
+                    team_mission = team_data.missions.get(global_task.missionID)
+                    if not team_mission:
+                        logging.error(
+                            f"Team had task {task.taskID} unlocked but not its associated mission."
+                        )
+                    try:
+                        team_mission.tasks.remove(task.taskID)
+                    except ValueError:
+                        logging.error(
+                            f"Tried to remove {task.taskID} from mission {team_mission.missionID} for team "
+                            f"{team_id}, but failed."
+                        )
+                    else:
+                        team_data.tasks.pop(task.taskID)
+            elif criteria := global_task.failWhen:
+                if (
+                    criteria.locationID == current_location
+                    and criteria.type == task_type
+                ):
+                    next_global_task = cls._cache.task_map.__root__.get(
+                        criteria.unlocks
                     )
-                try:
-                    team_mission.tasks.remove(task.taskID)
-                except ValueError:
-                    logging.error(
-                        f"Tried to remove {task.taskID} from mission {team_mission.missionID} for team "
-                        f"{team_id}, but failed."
-                    )
-                team_data.tasks.pop(task.taskID)
+                    if not next_global_task:
+                        logging.error(
+                            f"Task {task.taskID} referenced task {criteria.unlocks} in its failWhen block, "
+                            "but that task does not exist."
+                        )
+                        continue
+                    cls._unlock_specific_task(team_id, team_data, next_global_task)
 
     @classmethod
     def _basic_validation(cls, initial_state: GameDataCacheSnapshot):
