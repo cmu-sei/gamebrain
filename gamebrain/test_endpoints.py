@@ -65,13 +65,13 @@ async def test_net_change(
     await topomojo.change_vm_net(vm_id, network)
 
 
-@test_router.get("/complete/challenge/{team_id}/{task_id}")
+@test_router.get("/complete/challenge/{task_id}/{team_id}")
 async def test_complete_challenge(team_id: TeamID, task_id: TaskID) -> GameDataResponse:
     await GameStateManager.dispatch_challenge_task_complete(team_id, task_id)
     return await GameStateManager.get_team_data(team_id)
 
 
-@test_router.get("/fail/challenge/{team_id}/{task_id}")
+@test_router.get("/fail/challenge/{task_id}/{team_id}")
 async def test_fail_challenge(team_id: TeamID, task_id: TaskID):
     await GameStateManager.dispatch_challenge_task_failed(team_id, task_id)
 
