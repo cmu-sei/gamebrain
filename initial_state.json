@@ -1,296 +1,401 @@
 {
   "comm_map": {
-    "location1commfc": {
-      "commID": "location1commfc",
-      "videoURL": "https://example.com/comms/location1commfc",
-      "commTemplate": "badTranslation",
-      "translationMessage": "location1commfc translation message",
-      "scanInfoMessage": "location1commfc scan info message",
+    "vid1": {
+      "commID": "vid1",
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_1.mp4",
+      "commTemplate": "incoming",
+      "translationMessage": "Translate Text 1",
+      "scanInfoMessage": "Probe Text 1",
       "firstContact": true,
-      "locationID": "location1"
+      "locationID": "dunesea"
     },
-    "location1comm1": {
-      "commID": "location1comm1",
-      "videoURL": "https://example.com/comms/location1comm1",
-      "commTemplate": "badTranslation",
-      "translationMessage": "location1comm1 translation message",
-      "scanInfoMessage": "location1comm1 scan info message",
-      "firstContact": false,
-      "locationID": "location1"
-    },
-    "location2commfc": {
-      "commID": "location2commfc",
-      "videoURL": "https://example.com/comms/location2commfc",
-      "commTemplate": "badTranslation",
-      "translationMessage": "location2commfc translation message",
-      "scanInfoMessage": "location2commfc scan info message",
+    "vid2": {
+      "commID": "vid4",
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_4.mp4",
+      "commTemplate": "incoming",
+      "translationMessage": "vid4 message",
+      "scanInfoMessage": "vid4 scan info",
       "firstContact": true,
-      "locationID": "location2"
+      "locationID": "cantina"
     },
-    "location2comm1": {
-      "commID": "location2comm1",
-      "videoURL": "https://example.com/comms/location2comm1",
-      "commTemplate": "badTranslation",
-      "translationMessage": "location2comm1 translation message",
-      "scanInfoMessage": "location2comm1 scan info message",
+    "vid4": {
+      "commID": "vid4",
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_4.mp4",
+      "commTemplate": "incoming",
+      "translationMessage": "Translate Text 4",
+      "scanInfoMessage": "Probe Text 4",
       "firstContact": false,
-      "locationID": "location2"
+      "locationID": "cantina"
     },
-    "location3commfc": {
-      "commID": "location3commfc",
-      "videoURL": "https://example.com/comms/location3commfc",
-      "commTemplate": "badTranslation",
-      "translationMessage": "location3commfc translation message",
-      "scanInfoMessage": "location3commfc scan info message",
-      "firstContact": true,
-      "locationID": "location3"
-    },
-    "location3comm1": {
-      "commID": "location3comm1",
-      "videoURL": "https://example.com/comms/location3comm1",
-      "commTemplate": "badTranslation",
-      "translationMessage": "location3comm1 translation message",
-      "scanInfoMessage": "location3comm1 scan info message",
+    "vid5": {
+      "commID": "vid5",
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_5.mp4",
+      "commTemplate": "probe",
+      "translationMessage": "Translate Text 5",
+      "scanInfoMessage": "Probe Text 5",
       "firstContact": false,
-      "locationID": "location3"
+      "locationID": "rebel"
     }
   },
   "location_map": {
-    "location1": {
-      "locationID": "location1",
-      "name": "Location 1",
-      "imageID": "location1_image",
-      "backdropID": "location1_backdrop",
-      "surroundings": "Location 1 surroundings",
-      "unlockCode": "000000",
-      "trajectoryLaunch": 0,
-      "trajectoryCorrection": 0,
-      "trajectoryCube": 0,
-      "firstContactEvent": "location1commfc",
-      "networkName": "location1net"
+    "dunesea": {
+      "locationID": "dunesea",
+      "name": "Lars Farm",
+      "imageID": "image1",
+      "backdropID": "backdrop1",
+      "surroundings": "Surroundings: Farmland",
+      "unlockCode": "123456",
+      "trajectoryLaunch": 15,
+      "trajectoryCorrection": 140,
+      "trajectoryCube": 335,
+      "firstContactEvent": "vid1",
+      "networkName": "moisture_net"
     },
-    "location2": {
-      "locationID": "location2",
-      "name": "Location 2",
-      "imageID": "location2_image",
-      "backdropID": "location2_backdrop",
-      "surroundings": "Location 2 surroundings",
-      "unlockCode": "111111",
-      "trajectoryLaunch": 1,
-      "trajectoryCorrection": 1,
-      "trajectoryCube": 1,
-      "firstContactEvent": "location2commfc",
-      "networkName": "location2net"
+    "cantina": {
+      "locationID": "cantina",
+      "name": "Mos Eisley",
+      "imageID": "image2",
+      "backdropID": "backdrop2",
+      "surroundings": "Surroundings: Spaceport",
+      "unlockCode": "abc123",
+      "trajectoryLaunch": 275,
+      "trajectoryCorrection": 90,
+      "trajectoryCube": 145,
+      "firstContactEvent": "vid2",
+      "networkName": "scum_and_villany"
     },
-    "location3": {
-      "locationID": "location3",
-      "name": "Location 3",
-      "imageID": "location3_image",
-      "backdropID": "location3_backdrop",
-      "surroundings": "Location 3 surroundings",
-      "unlockCode": "222222",
-      "trajectoryLaunch": 2,
-      "trajectoryCorrection": 2,
-      "trajectoryCube": 2,
-      "firstContactEvent": "location3commfc",
-      "networkName": "location3net"
+    "rebel": {
+      "locationID": "rebel",
+      "name": "Lothal",
+      "imageID": "image3",
+      "backdropID": "backdrop3",
+      "surroundings": "Surroundings: Imperial Shipyard",
+      "unlockCode": "654321",
+      "trajectoryLaunch": 75,
+      "trajectoryCorrection": 70,
+      "trajectoryCube": 60,
+      "firstContactEvent": "vid3",
+      "networkName": "ZebNet"
     }
   },
   "mission_map": {
-    "location1mission1": {
-      "missionID": "location1mission1",
-      "title": "Mission 1 for location1 Title",
-      "summaryShort": "Mission 1 for location1 Short Summary",
-      "summaryLong": "Mission 1 for location1 Long Summary",
-      "missionIcon": "https://example.com/location1mission1/icon",
-      "isSpecial": false,
+    "ep4": {
+      "missionID": "ep4",
+      "title": "A New Hope",
+      "summaryShort": "That's no moon...",
+      "summaryLong": "A young farmboy sets off for adventure with a pair of stolen robots and an old man who has been watching him his entire life.",
+      "missionIcon": "lagrange",
+      "isSpecial": true,
       "roleList": [
-        "Mission 1 for location1 Rule 1",
-        "Mission 1 for location1 Rule 2",
-        "Mission 1 for location1 Rule 3"
+        "Cyber Defense Forensics Analyst",
+        "Exploitation Analyst",
+        "Threat/Warning Analyst"
       ],
       "taskList": [
         {
-          "taskID": "location1mission1task_location1commfc",
-          "missionID": "location1mission1",
-          "descriptionText": "location1mission1 location1mission1task_location1commfc description text",
+          "taskID": "m1t1",
+          "missionID": "ep4",
+          "descriptionText": "Buy some robots",
           "infoPresent": true,
-          "infoText": "location1mission1 location1mission1task_location1commfc info text",
+          "infoText": "These aren't the droids you're looking for.",
           "videoPresent": true,
-          "videoURL": "https://example.com/location1mission1/location1mission1task_location1commfc",
-          "commID": "location1commfc"
+          "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
+          "commID": "",
+          "markCompleteWhen": {
+            "type": "jump",
+            "locationID": "dunesea"
+          }
         },
         {
-          "taskID": "location1mission1task_location1comm1",
-          "missionID": "location1mission1",
-          "descriptionText": "location1mission1 location1mission1task_location1comm1 description text",
+          "taskID": "m1t2",
+          "missionID": "ep4",
+          "descriptionText": "Rescue a Princess",
           "infoPresent": true,
-          "infoText": "location1mission1 location1mission1task_location1comm1 info text",
-          "videoPresent": true,
-          "videoURL": "https://example.com/location1mission1/location1mission1task_location1comm1",
-          "commID": "location1comm1"
+          "infoText": "Maclunkey!",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": "vid1"
+        },
+        {
+          "taskID": "m1t3",
+          "missionID": "ep4",
+          "descriptionText": "Use the Force",
+          "infoPresent": true,
+          "infoText": "If you can bullseye womprats, you can hit a target 2m wide.",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": ""
         }
       ]
     },
-    "location2mission1": {
-      "missionID": "location2mission1",
-      "title": "Mission 1 for location2 Title",
-      "summaryShort": "Mission 1 for location2 Short Summary",
-      "summaryLong": "Mission 1 for location2 Long Summary",
-      "missionIcon": "https://example.com/location2mission1/icon",
+    "ep5": {
+      "missionID": "ep5",
+      "title": "The Empire Strikes Back",
+      "summaryShort": "I am your father...",
+      "summaryLong": "This is the one with the AT-ATs.  That's all you need to know.",
+      "missionIcon": "exo",
       "isSpecial": false,
       "roleList": [
-        "Mission 1 for location2 Rule 1",
-        "Mission 1 for location2 Rule 2",
-        "Mission 1 for location2 Rule 3"
+        "Cyber Defense Incident Responder",
+        "Network Operations Specialist",
+        "Threat/Warning Analyst"
       ],
       "taskList": [
         {
-          "taskID": "location2mission1task_location2commfc",
-          "missionID": "location2mission1",
-          "descriptionText": "location2mission1 location2mission1task_location2commfc description text",
+          "taskID": "m2t1",
+          "missionID": "ep5",
+          "descriptionText": "Survive a night on Hoth",
           "infoPresent": true,
-          "infoText": "location2mission1 location2mission1task_location2commfc info text",
-          "videoPresent": true,
-          "videoURL": "https://example.com/location2mission1/location2mission1task_location2commfc",
-          "commID": "location2commfc"
+          "infoText": "I thought they smelled bad... on the inside.",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": ""
         },
         {
-          "taskID": "location2mission1task_location2comm1",
-          "missionID": "location2mission1",
-          "descriptionText": "location2mission1 location2mission1task_location2comm1 description text",
+          "taskID": "m2t2",
+          "missionID": "ep5",
+          "descriptionText": "Complain to a Muppet",
           "infoPresent": true,
-          "infoText": "location2mission1 location2mission1task_location2comm1 info text",
-          "videoPresent": true,
-          "videoURL": "https://example.com/location2mission1/location2mission1task_location2comm1",
-          "commID": "location2comm1"
+          "infoText": "Whine a lot, you do.",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": ""
+        },
+        {
+          "taskID": "m2t3",
+          "missionID": "ep5",
+          "descriptionText": "Have dinner with your father",
+          "infoPresent": true,
+          "infoText": "Don't forget to give him a hand.",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": "vid4"
         }
       ]
     },
-    "location3mission1": {
-      "missionID": "location3mission1",
-      "title": "Mission 1 for location3 Title",
-      "summaryShort": "Mission 1 for location3 Short Summary",
-      "summaryLong": "Mission 1 for location3 Long Summary",
-      "missionIcon": "https://example.com/location3mission1/icon",
+    "ep6": {
+      "missionID": "ep6",
+      "title": "Return of the Jedi",
+      "summaryShort": "Good.... good...",
+      "summaryLong": "Yoda, sick of Luke's questions, just gives up and dies.",
+      "missionIcon": "raider",
       "isSpecial": false,
       "roleList": [
-        "Mission 1 for location3 Rule 1",
-        "Mission 1 for location3 Rule 2",
-        "Mission 1 for location3 Rule 3"
+        "Exploitation Analyst",
+        "Network Operations Specialist"
       ],
       "taskList": [
         {
-          "taskID": "location3mission1task_location3commfc",
-          "missionID": "location3mission1",
-          "descriptionText": "location3mission1 location3mission1task_location3commfc description text",
+          "taskID": "m3t1",
+          "missionID": "ep6",
+          "descriptionText": "Deliver a message to Jabba",
           "infoPresent": true,
-          "infoText": "location3mission1 location3mission1task_location3commfc info text",
-          "videoPresent": true,
-          "videoURL": "https://example.com/location3mission1/location3mission1task_location3commfc",
-          "commID": "location3commfc"
+          "infoText": "It's a Huttish message.  It means Jabba sleeps with the Sarlacc.",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": ""
         },
         {
-          "taskID": "location3mission1task_location3comm1",
-          "missionID": "location3mission1",
-          "descriptionText": "location3mission1 location3mission1task_location3comm1 description text",
+          "taskID": "m3t2",
+          "missionID": "ep6",
+          "descriptionText": "Make new freinds",
           "infoPresent": true,
-          "infoText": "location3mission1 location3mission1task_location3comm1 info text",
-          "videoPresent": true,
-          "videoURL": "https://example.com/location3mission1/location3mission1task_location3comm1",
-          "commID": "location3comm1"
+          "infoText": "Today's the day you're going to be the Teddy Bear's picnic.",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": "vid5"
+        },
+        {
+          "taskID": "m3t3",
+          "missionID": "ep6",
+          "descriptionText": "Let the hate flow through you",
+          "infoPresent": false,
+          "infoText": "Consider a leadership offer in the family business.",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": ""
+        },
+        {
+          "taskID": "m3t4",
+          "missionID": "ep6",
+          "descriptionText": "Burn it all down",
+          "infoPresent": true,
+          "infoText": "You know, any contractor willing to work on that Death Star knew the risks. If they were killed, it was their own fault. ",
+          "videoPresent": false,
+          "videoURL": "",
+          "commID": ""
         }
       ]
     }
   },
   "task_map": {
-    "location1mission1task_location1commfc": {
-      "taskID": "location1mission1task_location1commfc",
-      "missionID": "location1mission1",
-      "descriptionText": "location1mission1 location1mission1task_location1commfc description text",
+    "m1t1": {
+      "taskID": "m1t1",
+      "missionID": "ep4",
+      "descriptionText": "Buy some robots",
       "infoPresent": true,
-      "infoText": "location1mission1 location1mission1task_location1commfc info text",
+      "infoText": "These aren't the droids you're looking for.",
       "videoPresent": true,
-      "videoURL": "https://example.com/location1mission1/location1mission1task_location1commfc",
-      "commID": "location1commfc"
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "jump",
+        "locationID": "cantina"
+      }
     },
-    "location1mission1task_location1comm1": {
-      "taskID": "location1mission1task_location1comm1",
-      "missionID": "location1mission1",
-      "descriptionText": "location1mission1 location1mission1task_location1comm1 description text",
+    "m1t2": {
+      "taskID": "m1t2",
+      "missionID": "ep4",
+      "descriptionText": "Rescue a Princess",
       "infoPresent": true,
-      "infoText": "location1mission1 location1mission1task_location1comm1 info text",
-      "videoPresent": true,
-      "videoURL": "https://example.com/location1mission1/location1mission1task_location1comm1",
-      "commID": "location1comm1"
+      "infoText": "Maclunkey!",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "vid1",
+      "markCompleteWhen": {
+        "type": "comm",
+        "locationID": "cantina"
+      }
     },
-    "location2mission1task_location2commfc": {
-      "taskID": "location2mission1task_location2commfc",
-      "missionID": "location2mission1",
-      "descriptionText": "location2mission1 location2mission1task_location2commfc description text",
+    "m1t3": {
+      "taskID": "m1t3",
+      "missionID": "ep4",
+      "descriptionText": "Use the Force",
       "infoPresent": true,
-      "infoText": "location2mission1 location2mission1task_location2commfc info text",
-      "videoPresent": true,
-      "videoURL": "https://example.com/location2mission1/location2mission1task_location2commfc",
-      "commID": "location2commfc"
+      "infoText": "If you can bullseye womprats, you can hit a target 2m wide.",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "launchMode",
+        "locationID": "dunesea"
+      }
     },
-    "location2mission1task_location2comm1": {
-      "taskID": "location2mission1task_location2comm1",
-      "missionID": "location2mission1",
-      "descriptionText": "location2mission1 location2mission1task_location2comm1 description text",
+    "m2t1": {
+      "taskID": "m2t1",
+      "missionID": "ep5",
+      "descriptionText": "Survive a night on Hoth",
       "infoPresent": true,
-      "infoText": "location2mission1 location2mission1task_location2comm1 info text",
-      "videoPresent": true,
-      "videoURL": "https://example.com/location2mission1/location2mission1task_location2comm1",
-      "commID": "location2comm1"
+      "infoText": "I thought they smelled bad... on the inside.",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "standby",
+        "locationID": "dunesea"
+      }
     },
-    "location3mission1task_location3commfc": {
-      "taskID": "location3mission1task_location3commfc",
-      "missionID": "location3mission1",
-      "descriptionText": "location3mission1 location3mission1task_location3commfc description text",
+    "m2t2": {
+      "taskID": "m2t2",
+      "missionID": "ep5",
+      "descriptionText": "Complain to a Muppet",
       "infoPresent": true,
-      "infoText": "location3mission1 location3mission1task_location3commfc info text",
-      "videoPresent": true,
-      "videoURL": "https://example.com/location3mission1/location3mission1task_location3commfc",
-      "commID": "location3commfc"
+      "infoText": "Whine a lot, you do.",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "explorationMode",
+        "locationID": "dunesea"
+      }
     },
-    "location3mission1task_location3comm1": {
-      "taskID": "location3mission1task_location3comm1",
-      "missionID": "location3mission1",
-      "descriptionText": "location3mission1 location3mission1task_location3comm1 description text",
+    "m2t3": {
+      "taskID": "m2t3",
+      "missionID": "ep5",
+      "descriptionText": "Have dinner with your father",
       "infoPresent": true,
-      "infoText": "location3mission1 location3mission1task_location3comm1 info text",
-      "videoPresent": true,
-      "videoURL": "https://example.com/location3mission1/location3mission1task_location3comm1",
-      "commID": "location3comm1"
+      "infoText": "Don't forget to give him a hand.",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "vid4",
+      "markCompleteWhen": {
+        "type": "scan",
+        "locationID": "dunesea"
+      }
+    },
+    "m3t1": {
+      "taskID": "m3t1",
+      "missionID": "ep6",
+      "descriptionText": "Deliver a message to Jabba",
+      "infoPresent": true,
+      "infoText": "It's a Huttish message.  It means Jabba sleeps with the Sarlacc.",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "antennaExtended",
+        "locationID": "dunesea"
+      }
+    },
+    "m3t2": {
+      "taskID": "m3t2",
+      "missionID": "ep6",
+      "descriptionText": "Make new freinds",
+      "infoPresent": true,
+      "infoText": "Today's the day you're going to be the Teddy Bear's picnic.",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "vid5",
+      "markCompleteWhen": {
+        "type": "antennaRetracted",
+        "locationID": "dunesea"
+      }
+    },
+    "m3t3": {
+      "taskID": "m3t3",
+      "missionID": "ep6",
+      "descriptionText": "Let the hate flow through you",
+      "infoPresent": false,
+      "infoText": "Consider a leadership offer in the family business.",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "challenge",
+        "locationID": "dunesea"
+      }
+    },
+    "m3t4": {
+      "taskID": "m3t4",
+      "missionID": "ep6",
+      "descriptionText": "Burn it all down",
+      "infoPresent": true,
+      "infoText": "You know, any contractor willing to work on that Death Star knew the risks. If they were killed, it was their own fault. ",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "",
+      "markCompleteWhen": {
+        "type": "challenge",
+        "locationID": "dunesea"
+      }
     }
   },
   "team_map": {},
   "team_initial_state": {
     "currentStatus": {
-      "currentLocation": "location1",
+      "currentLocation": "dunesea",
       "currentLocationScanned": false,
-      "currentLocationSurroundings": "Location 1 surroundings",
+      "currentLocationSurroundings": "Surroundings: Farmland",
       "antennaExtended": false,
       "networkConnected": false,
-      "networkName": "location1net",
+      "networkName": "",
       "firstContactComplete": false,
       "powerStatus": "launchMode",
       "incomingTransmission": false,
       "incomingTransmissionObject": null
     },
     "session": {
-      "teamInfoName": "",
+      "teamInfoName": "Default Team Name",
       "teamCodexCount": 0,
-      "jumpCutsceneURL": "https://example.com/jump"
+      "jumpCutsceneURL": "http://k2.etc.cmu.edu/tmpVideoStore/cube-drive-compressed_720_low.mp4"
     },
     "ship": {
-      "codexURL": "https://example.com/initial_state_ship/codex",
-      "workstation1URL": "https://example.com/initial_state_ship/ws1",
-      "workstation2URL": "https://example.com/initial_state_ship/ws2",
-      "workstation3URL": "https://example.com/initial_state_ship/ws3",
-      "workstation4URL": "https://example.com/initial_state_ship/ws4",
-      "workstation5URL": "https://example.com/initial_state_ship/ws5",
+      "codexURL": "http://k2.etc.cmu.edu/envsim/vmsims/codexworkstation.html",
+      "workstation1URL": "http://k2.etc.cmu.edu/envsim/vmsims/workstation1.html",
+      "workstation2URL": "http://k2.etc.cmu.edu/envsim/vmsims/workstation2.html",
+      "workstation3URL": "http://k2.etc.cmu.edu/envsim/vmsims/workstation3.html",
+      "workstation4URL": "http://k2.etc.cmu.edu/envsim/vmsims/workstation4.html",
+      "workstation5URL": "http://k2.etc.cmu.edu/envsim/vmsims/workstation5.html",
       "commPower": "off",
       "flightPower": "off",
       "navPower": "off",
@@ -298,7 +403,21 @@
     },
     "locations": [
       {
-        "locationID": "location1",
+        "locationID": "dunesea",
+        "unlocked": true,
+        "visited": false,
+        "scanned": false,
+        "networkEstablished": false
+      },
+      {
+        "locationID": "cantina",
+        "unlocked": true,
+        "visited": false,
+        "scanned": false,
+        "networkEstablished": false
+      },
+      {
+        "locationID": "rebel",
         "unlocked": true,
         "visited": false,
         "scanned": false,
@@ -307,18 +426,74 @@
     ],
     "missions": [
       {
-        "missionID": "location1mission1",
+        "missionID": "ep4",
         "unlocked": true,
         "visible": false,
         "complete": false,
         "taskList": [
           {
-            "taskID": "location1mission1task_location1commfc",
+            "taskID": "m1t1",
             "visible": true,
             "complete": false
           },
           {
-            "taskID": "location1mission1task_location1comm1",
+            "taskID": "m1t2",
+            "visible": true,
+            "complete": false
+          },
+          {
+            "taskID": "m1t3",
+            "visible": true,
+            "complete": false
+          }
+        ]
+      },
+      {
+        "missionID": "ep5",
+        "unlocked": true,
+        "visible": false,
+        "complete": false,
+        "taskList": [
+          {
+            "taskID": "m2t1",
+            "visible": true,
+            "complete": false
+          },
+          {
+            "taskID": "m2t2",
+            "visible": true,
+            "complete": false
+          },
+          {
+            "taskID": "m2t3",
+            "visible": true,
+            "complete": false
+          }
+        ]
+      },
+      {
+        "missionID": "ep6",
+        "unlocked": true,
+        "visible": false,
+        "complete": false,
+        "taskList": [
+          {
+            "taskID": "m3t1",
+            "visible": true,
+            "complete": false
+          },
+          {
+            "taskID": "m3t2",
+            "visible": true,
+            "complete": false
+          },
+          {
+            "taskID": "m3t3",
+            "visible": true,
+            "complete": false
+          },
+          {
+            "taskID": "m3t4",
             "visible": true,
             "complete": false
           }

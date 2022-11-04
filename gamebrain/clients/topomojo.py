@@ -1,10 +1,16 @@
-from logging import error
-from enum import Enum
+import json
 import json as jsonlib
+import logging
 import ssl
 from typing import Any, Dict, List, Optional
 
 from httpx import AsyncClient
+
+from .common import _service_request_and_log, HttpMethod
+
+
+GamespaceID = str
+GamespaceExpiration = str
 
 
 class ModuleSettings:
@@ -17,53 +23,28 @@ def get_settings():
     return ModuleSettings.settings
 
 
-class HttpMethod(Enum):
-    GET = "GET"
-    PUT = "PUT"
-    POST = "POST"
-
-
 def _get_topomojo_client() -> AsyncClient:
     settings = get_settings()
     ssl_context = ssl.create_default_context()
     if settings.ca_cert_path:
         ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
     api_key = settings.topomojo.x_api_key
+    api_client = settings.topomojo.x_api_client
 
     return AsyncClient(
         base_url=settings.topomojo.base_api_url,
         verify=ssl_context,
-        headers={"X-API-KEY": api_key},
+        headers={"x-api-key": api_key, "x-api-client": api_client},
+        timeout=300.0,
     )
 
 
 async def _topomojo_request(
     method: HttpMethod, endpoint: str, data: Optional[Any]
 ) -> Optional[Any] | None:
-    async with _get_topomojo_client() as client:
-        args = {
-            "method": method.value,
-            "url": endpoint,
-            "timeout": 60.0,
-        }
-        if method in (HttpMethod.PUT, HttpMethod.POST):
-            args["json"] = data
-        elif method in (HttpMethod.GET,):
-            args["params"] = data
-        else:
-            raise ValueError("Unsupported HTTP method.")
-
-        request = client.build_request(**args)
-
-        response = await client.send(request)
-        if not response.is_success:
-            error(
-                f"HTTP Request to {response.url} returned {response.status_code}\n"
-                f"HTTP Method was: {request.method}\n"
-                f"Headers were: {request.headers}\n"
-                f"Request Body was: {request.content}\n"
-            )
-
+    response = await _service_request_and_log(
+        _get_topomojo_client(), method, endpoint, data
+    )
     try:
         return response.json()
     except jsonlib.JSONDecodeError:
@@ -96,6 +77,10 @@ async def get_gamespace(gamespace_id: str) -> Optional[Any]:
     return await _topomojo_get(f"gamespace/{gamespace_id}")
 
 
+async def get_vms_by_gamespace_id(gamespace_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"vms", {"filter": gamespace_id})
+
+
 async def get_vm_nets(vm_id: str) -> Optional[Any]:
     return await _topomojo_get(f"vm/{vm_id}/nets")
 
@@ -124,7 +109,7 @@ async def register_gamespace(
         "playerCount": len(team_members),
         "maxAttempts": 3,
         "maxMinutes": settings.game.gamespace_duration_minutes,
-        "points": 100,
+        "points": settings.game.total_points,
         "allowReset": True,
         "allowPreview": True,
         "startGamespace": True,
@@ -143,13 +128,40 @@ async def stop_gamespace(gamespace_id: str):
     return await _topomojo_post(endpoint, {})
 
 
+async def complete_gamespace(gamespace_id: str):
+    endpoint = f"gamespace/{gamespace_id}/complete"
+    return await _topomojo_post(endpoint, {})
+
+
 async def change_vm_params(vm_id: str, params: dict):
     endpoint = f"vm/{vm_id}/change"
     return await _topomojo_put(endpoint, params)
 
 
 async def change_vm_net(vm_id: str, new_net: str):
-    params = {"key": "net", "value": new_net}
+    possible_nets = await get_vm_nets(vm_id)
+    if not possible_nets or "net" not in possible_nets:
+        logging.error(f"Could not retrieve network information for VM {vm_id}.")
+        return
+
+    possible_nets = possible_nets["net"]
+    network_name, *interface = new_net.split(":")
+    for network in possible_nets:
+        if network.startswith(network_name):
+            target_network = network
+            break
+    else:
+        logging.warning(
+            f"Could not change VM {vm_id} to network {network_name} because the network was not found in "
+            f"its list of possible networks: \n{json.dumps(possible_nets, indent=2)}"
+        )
+        return
+
+    if interface:
+        target_network = f"{target_network}:{interface[0]}"
+
+    params = {"key": "net", "value": target_network}
+    logging.info(f"Attempting to change VM {vm_id} to network {target_network}.")
     return await change_vm_params(vm_id, params)
 
 

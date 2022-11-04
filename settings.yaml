@@ -15,17 +15,17 @@ identity:
   token_user: administrator@foundry.local
   token_password: foundry
 topomojo:
-  base_url: https://foundry.local/topomojo
   base_api_url: https://foundry.local/topomojo/api/
   x_api_key: xaFmE0_YIo8QjDszdh0L79ySlpI79KfA
+  x_api_client: user-bot-test
 gameboard:
+  base_url: https://foundry.local/gameboard/
   base_api_url: https://foundry.local/gameboard/api/
 db:
   connection_string: postgresql+asyncpg://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
   drop_app_tables: true
   echo_sql: false
 game:
-  ship_workspace_id: 064a5068907345c7a8c1fdf7b929c0bf
   gamespace_duration_minutes: 30
   event_actions:
     - event_message_partial: "Mission 1"
@@ -38,13 +38,22 @@ game:
         action_type: dispatch
         vm_name: ubuntu
         command: touch /home/tmtest/it-worked
+  antenna_vm_name: "extend-antenna-test"
   grading_vm_name: "challenge-server"
-  grading_vm_file_path: "/home/user/challengeServer/custom_scripts/requestGrade.py"
-  red_raider_vm_name: "pirate-attacker"
-  red_raider_file_path: "/home/user/LanguageFile"
+  grading_vm_dispatch_command: "cat /home/user/challengeServer/custom_scripts/requestGrade.py"
+  challenge_tasks:
+    - task_id: "redradr6"
+      vm_name: "pirate-attacker"
+      dispatch_command: "cat /home/user/LanguageFile"
+    - task_id: "exoarch6"
+      vm_name: "station-scada-system"
+      dispatch_command: "cat /home/user/atmosphere"
+    - task_id: "cllctn6"
+      vm_name:  "museum-approach"
+      dispatch_command: bash -c "cat /home/user/audit && rm /home/user/audit"
   final_destination_name: "final"
   final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
-  gamestate_test_mode: true
+  gamestate_test_mode: false
   game_id: f63c8e41fd994e16bad08075dd2a666c
   headless_client_urls:
     "server-1": "https://foundry.local/gameserver/1"

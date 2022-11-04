@@ -1,5 +1,7 @@
+import json
 import os
 import pprint
+import time
 import warnings
 
 from httpx import Client
@@ -24,6 +26,8 @@ GAME_CLIENT_ID = "game-client"
 GAME_CLIENT_SECRET = "a78ea5460fdd4293abe5c8e09f5bba57"
 GAMEBOARD_SCRIPT_CLIENT = "gameboard-script-test"
 GAMEBOARD_SCRIPT_SECRET = "0887738d326547ae92f06f04b4d434e2"
+TOPOMOJO_API_BASE_URL = "https://foundry.local/topomojo/api"
+TOPOMOJO_X_API_KEY = "xaFmE0_YIo8QjDszdh0L79ySlpI79KfA"
 
 TEST_USER_1 = "testplayer1@foundry.local"
 TEST_USER_1_ID = "0ee37ac5-7a64-4dca-9049-8a64f370d241"
@@ -67,57 +71,21 @@ def main():
         TOKEN_URL, username=FOUNDRY_ADMIN_EMAIL, password=FOUNDRY_ADMIN_PASSWORD
     )
 
-    print("Testing invalid API key:")
-    resp = missing_api_key_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
-    )
-    team_1_headless_assignment = resp.json()
-    print(team_1_headless_assignment)
-
-    print("Testing invalid API key:")
-    resp = invalid_api_key_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
-    )
-    team_1_headless_assignment = resp.json()
-    print(team_1_headless_assignment)
-
-    print("Getting Team 1 headless client assignment:")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_1}",
-    )
-    team_1_headless_assignment = resp.json()
-    print(team_1_headless_assignment)
-
-    print("Getting Team 2 headless client assignment:")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{TEST_TEAM_2}",
-    )
-    print(resp.json())
-
-    print("Testing headless client pool expended (response should be null or None):")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client/{'a'*32}",
-    )
-    print(resp.json())
-
+    print(f"Deploying for Team {TEST_TEAM_1}")
     resp = gamebrain_admin_session.post(
-        f"{GAMEBRAIN_URL}/admin/secrets/{TEST_TEAM_1}",
-        json=["secret_1", "secret_2", "secret_3"],
+        f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
     )
-    print(resp.json())
-
-    resp = gamebrain_admin_session.post(
-        f"{GAMEBRAIN_URL}/admin/media",
-        json={"video1": "example.com/video1", "video2": "example.com/video2"},
-    )
-    print(resp.json())
+    deployment = resp.json()
+    print(deployment)
+    assert deployment["gamespaceId"] is not None
+    assert deployment["headlessUrl"] is not None
 
     user_token = user_session.token["access_token"]
 
     print("Testing get_team endpoint")
     json_data = {
         "user_token": user_token,
-        "server_container_hostname": f"server-{team_1_headless_assignment[-1]}",
+        "server_container_hostname": f"server-{deployment['headlessUrl'][-1]}",
     }
     print(json_data)
     resp = gamestate_session.post(
@@ -152,63 +120,88 @@ def main():
     # pprint.pprint(resp.json())
 
     print("Getting GameData")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/team1")
-    # pprint.pprint(resp.json())
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
+    pprint.pprint(resp.json())
 
     print("Unlocking location 0 (expect alreadyunlocked)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/000000/team1"
+        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/000000/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
     print("Unlocking location 1 (expect success)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/111111/team1"
+        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/111111/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
     print("Invalid unlock (expect invalid)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/team1"
+        f"{GAMEBRAIN_URL}/GameData/LocationUnlock/123456/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
     print("Jump to current location (expect failure")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location1/team1")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/Jump/location1/{TEST_TEAM_1}"
+    )
     # pprint.pprint(resp.json())
 
     print("Jump to invalid location (expect failure")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/team1")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     print("Jump to locked location (expect failure")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location3/team1")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/Jump/location3/{TEST_TEAM_1}"
+    )
     # pprint.pprint(resp.json())
 
     print("Jump to unlocked location (expect success)")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/location2/team1")
-    # pprint.pprint(resp.json())
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/Jump/cantina/{TEST_TEAM_1}"
+    )
+    pprint.pprint(resp.json())
+
+    print("Getting GameData again")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
+    pprint.pprint(resp.json())
 
     print("Scan new location (expect success)")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/team1")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     print("Changing power mode (expect success)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/PowerMode/explorationMode/team1"
+        f"{GAMEBRAIN_URL}/GameData/PowerMode/explorationMode/{TEST_TEAM_1}"
     )
     # pprint.pprint(resp.json())
 
     print("Marking comm event complete (expect success)")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/team1")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/CommEventCompleted/{TEST_TEAM_1}"
+    )
     # pprint.pprint(resp.json())
+
+    print("Extend the antenna (expect success)")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/ExtendAntenna/{TEST_TEAM_1}"
+    )
+
+    print("Retract the antenna (expect success)")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/RetractAntenna/{TEST_TEAM_1}"
+    )
 
     print("Getting GameData")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/team1")
+    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
+    game_data = resp.json()
+    current_status = game_data.get("currentStatus")
+    print(json.dumps(current_status, indent=2))
 
     resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/undeploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
+        f"{GAMEBRAIN_URL}/admin/undeploy/{TEST_TEAM_1}", timeout=60.0
     )
     print(resp.json())
 
@@ -250,20 +243,28 @@ def main():
     team_id = data["teamId"]
     print(f"Session expiration time: {expiration}")
 
-    resp = gamebrain_admin_session.get(
+    resp = gamebrain_admin_session.post(
         f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{team_id}", timeout=60.0
     )
     print(resp.json())
+    gamespace_id = resp.json()["gamespaceId"]
 
     # Clean up.
-    session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
-    print(f"Deleted player {player_id}")
+    # session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
+    # print(f"Deleted player {player_id}")
 
-    print("Unassigning Team 2 headless client:")
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/headless_client_unassign/{TEST_TEAM_2}",
-    )
-    print(resp.json())
+    # Or test automatic cleanup by marking the gamespace complete in TM:
+    topomojo_session = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
+    topomojo_session.post(f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
+    # Then just wait a bit to see it happen in the gamebrain log... I should probably improve testing.
+
+    while True:
+        time.sleep(10.0)
+        resp = gamestate_session.get(f"{GAMEBRAIN_URL}/gamestate/team_active/{team_id}")
+        result = resp.json()
+        print(f"Checked if team {team_id} is active: {result}")
+        if not result:
+            break
 
 
 if __name__ == "__main__":

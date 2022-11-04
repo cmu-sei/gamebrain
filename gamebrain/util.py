@@ -1,4 +1,9 @@
+import asyncio
+import logging
+
 from urllib.parse import urlsplit, urlunsplit
+
+from .gamedata.cache import TeamID
 
 """
 The following two functions yoinked from here:
@@ -22,3 +27,27 @@ def url_path_join(*parts):
 
 def first_of_each(*sequences):
     return (next((x for x in sequence if x), "") for sequence in sequences)
+
+
+class TeamLocks:
+    """
+    The point of this is to have a per-team lock, but the structure holding the per-team lock also needs a lock.
+    """
+
+    global_lock = asyncio.Lock()
+    team_locks: dict[TeamID, asyncio.Lock] = {}
+
+    def __init__(self, team_id: TeamID):
+        self.team_id = team_id
+
+    async def __aenter__(self):
+        async with self.global_lock:
+            if self.team_id not in self.team_locks:
+                self.team_locks[self.team_id] = asyncio.Lock()
+            self.team_lock = self.team_locks[self.team_id]
+        await self.team_lock.acquire()
+        logging.debug(f"Acquired team lock for {self.team_id}.")
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.team_lock.release()
+        logging.debug(f"Released team lock for {self.team_id}.")

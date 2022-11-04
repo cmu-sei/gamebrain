@@ -1,3 +1,6 @@
+import json
+import logging
+
 from fastapi import APIRouter, Security, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import constr
@@ -27,18 +30,11 @@ async def get_gamedata(
 ) -> GameDataResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.get_team_data(team_id)
+        game_data = await GameStateManager.get_team_data(team_id)
+        logging.debug(f"Team {team_id} GameData: \n{json.dumps(game_data.dict(), indent=2)}")
+        return game_data
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
-
-
-@router.post("/GameData/{team_id}")
-async def post_gamedata(
-        team_id: TeamID,
-        auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
-) -> None:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
-    return await GameStateManager.new_team(team_id)
 
 
 @router.get("/GameData/LocationUnlock/{coordinates}/{team_id}")
@@ -67,15 +63,6 @@ async def get_jump(
         raise HTTPException(status_code=404, detail="Team not found.")
 
 
-@router.get("/GameData/Initialize/{location}")
-async def get_init(
-    location: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
-):
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
-
-
 @router.get("/GameData/ExtendAntenna/{team_id}")
 async def get_extendantenna(
     team_id: TeamID,
@@ -83,7 +70,9 @@ async def get_extendantenna(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.extend_antenna(team_id)
+        result = await GameStateManager.extend_antenna(team_id)
+        logging.info(f"ExtendAntenna result: \n{result.json(indent=2)}")
+        return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
@@ -95,7 +84,9 @@ async def get_retractantenna(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.retract_antenna(team_id)
+        result = await GameStateManager.retract_antenna(team_id)
+        logging.info(f"RetractAntenna result: \n{result.json(indent=2)}")
+        return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
 
@@ -132,18 +123,11 @@ async def get_commeventcompleted(
 ) -> GenericResponse:
     check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
     try:
-        return await GameStateManager.complete_comm_event(team_id)
+        result = await GameStateManager.complete_comm_event(team_id)
+        logging.info(f"CommEventCompleted result: {result}.")
+        return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
-
-
-@router.get("/GameData/InjectCommEvent/{commID}")
-async def get_injectcommevent(
-    commID: str, auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
-) -> GenericResponse:
-    payload = check_jwt(
-        auth.credentials, get_settings().identity.jwt_audiences.gamestate_api
-    )
 
 
 @router.get("/GameData/CodexStationPowerOn/{team_id}")

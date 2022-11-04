@@ -9,12 +9,13 @@ import httpx
 import yaml
 from pydantic import BaseModel, validator
 
-from .clients import topomojo
+from .clients import gameboard, topomojo
 from .dispatch import GamespaceStatusTask
 from .gamedata.cache import (
     GameStateManager,
-    GameDataCache,
+    GameDataCacheSnapshot,
 )
+from .cleanup import BackgroundCleanupTask
 import gamebrain.db as db
 from .pubsub import PubSub
 from .util import url_path_join
@@ -39,13 +40,15 @@ class IdentitySettingsModel(BaseModel):
 
 
 class GameboardSettingsModel(BaseModel):
+    # base_url is used to construct VM console URLs
+    base_url: str
     base_api_url: str
 
 
 class TopomojoSettingsModel(BaseModel):
-    base_url: str
     base_api_url: str
     x_api_key: str
+    x_api_client: str
 
 
 class DbSettingsModel(BaseModel):
@@ -75,22 +78,32 @@ Hostname = str
 ServerPublicUrl = str
 
 
+class ChallengeTask(BaseModel):
+    task_id: str
+    vm_name: str
+    dispatch_command: str
+
+    def __hash__(self):
+        return hash((self.task_id, self.vm_name, self.dispatch_command))
+
+
 class GameSettingsModel(BaseModel):
-    ship_workspace_id: str
     event_actions: list[EventActionsSettingsModel]
     gamespace_duration_minutes: Optional[int] = 60
     ship_network_vm_name: Optional[str] = ""
 
     antenna_vm_name: Optional[str] = ""
+    antenna_retracted_network: Optional[str] = "deepspace:1"
     grading_vm_name: Optional[str] = ""
-    grading_vm_file_path: Optional[str] = ""
-    red_raider_vm_name: Optional[str] = ""
-    red_raider_file_path: Optional[str] = ""
+    grading_vm_dispatch_command: Optional[str] = ""
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
 
+    challenge_tasks: list[ChallengeTask]
+
     gamestate_test_mode: Optional[bool] = False
     game_id: str
+    total_points: int = 1000
 
     headless_client_urls: dict[Hostname, ServerPublicUrl]
 
@@ -140,6 +153,8 @@ class Global:
     redis = None
 
     db_sync_task = None
+    grader_task = None
+    cleanup_task = None
 
     @classmethod
     async def init(cls):
@@ -152,10 +167,12 @@ class Global:
             settings.db.drop_app_tables,
             settings.db.echo_sql,
         )
+        gameboard.ModuleSettings.settings = settings
         topomojo.ModuleSettings.settings = settings
         cls._init_jwks()
         cls._init_db_sync_task()
         cls._init_grader_task()
+        cls._init_cleanup_task()
         await PubSub.init(settings)
 
         if settings.game.gamestate_test_mode:
@@ -166,11 +183,11 @@ class Global:
                 "game.gamestate_test_mode setting is ON, constructing initial data from test constructor."
             )
         elif stored_cache := await db.get_cache_snapshot():
-            initial_cache = GameDataCache(**stored_cache)
+            initial_cache = GameDataCacheSnapshot(**stored_cache)
             logging.info("Initializing game data cache from saved snapshot.")
         else:
             with open("initial_state.json") as f:
-                initial_cache = GameDataCache(**json.load(f))
+                initial_cache = GameDataCacheSnapshot(**json.load(f))
             logging.info("Initializing game data cache from initial_state.json.")
         await GameStateManager.init(initial_cache, settings)
 
@@ -195,10 +212,28 @@ class Global:
     @classmethod
     def _init_db_sync_task(cls):
         cls.db_sync_task = asyncio.create_task(cls._db_sync_task())
+        cls.db_sync_task.add_done_callback(cls._handle_task_result)
 
     @classmethod
     def _init_grader_task(cls):
         cls.grader_task = asyncio.create_task(GamespaceStatusTask.init(get_settings()))
+        cls.grader_task.add_done_callback(cls._handle_task_result)
+
+    @classmethod
+    def _init_cleanup_task(cls):
+        cls.cleanup_task = asyncio.create_task(
+            BackgroundCleanupTask.init(get_settings())
+        )
+        cls.cleanup_task.add_done_callback(cls._handle_task_result)
+
+    @staticmethod
+    def _handle_task_result(task: asyncio.Task) -> None:
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass  # Task cancellation should not be logged as an error.
+        except Exception:  # pylint: disable=broad-except
+            logging.exception("Exception raised by task = %r", task)
 
     @classmethod
     def get_jwks(cls):

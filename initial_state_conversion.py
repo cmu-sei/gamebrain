@@ -11,7 +11,7 @@ from gamebrain.gamedata.cache import (
     TaskMap,
     MissionMap,
     LocationMap,
-    GameDataCache,
+    GameDataCacheSnapshot,
 )
 from gamebrain.gamedata.model import (
     SessionDataTeamSpecific,
@@ -119,7 +119,7 @@ def main():
         missions=unlocked_missions,
     )
 
-    initial_cache = GameDataCache(
+    initial_cache = GameDataCacheSnapshot(
         comm_map=comm_map,
         task_map=task_map,
         mission_map=mission_map,
@@ -127,6 +127,29 @@ def main():
         team_map={},
         team_initial_state=team_initial_state,
     )
+
+    # Basic validation.
+
+    for task_id, task in task_map.__root__.items():
+        assert (
+            task.missionID in mission_map.__root__
+        ), f"Task {task_id} has mission {task.missionID}."
+
+    for mission_id, mission in mission_map.__root__.items():
+        for task in mission.taskList:
+            assert (
+                task.taskID in task_map.__root__
+            ), f"Mission {mission_id} has task {task.taskID}."
+
+    for comm_id, comm in comm_map.__root__.items():
+        assert (
+            comm.locationID in location_map.__root__
+        ), f"Comm event {comm_id} has location {comm.locationID}."
+
+    for location_id, location in location_map.__root__.items():
+        assert (
+            location.firstContactEvent in comm_map.__root__
+        ), f"Location {location_id} has first contact event {location.firstContactEvent}."
 
     with open(f"{FILE_PREFIX}_initial_state.json", "w") as f:
         json.dump(initial_cache.dict(), f, indent=2)
