@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from ..db import get_team
+from ..clients.gameboard import mission_update
 from .model import (
     GameDataTeamSpecific,
     GameDataResponse,
@@ -426,6 +427,23 @@ class GameStateManager:
                 )
                 return True
             mission.complete = True
+            global_mission = cls._cache.mission_map.__root__.get(mission.missionID)
+            if not global_mission:
+                logging.error(
+                    f"Team {team_id} had unlocked a mission with ID {mission.missionID}, but it does not "
+                    "exist in the global data."
+                )
+            else:
+                total_points = cls._settings.game.total_points
+                mission_count = len(cls._cache.mission_map.__root__)
+                mission_points = total_points // mission_count
+                await mission_update(
+                    team_id,
+                    global_mission.missionID,
+                    global_mission.title,
+                    mission_points,
+                )
+
             team_data.session.teamCodexCount = sum(
                 (
                     1 if mission.complete else 0
@@ -982,6 +1000,18 @@ class GameStateManager:
                 else:
                     team_db_data = await get_team(team_id)
                     gamespace_id = team_db_data.get("gamespace_id")
+
+                    total_points = cls._settings.game.total_points
+                    mission_count = len(cls._cache.mission_map.__root__)
+                    # Each mission gets total_points // mission_count,
+                    # so the final goal should get whatever points remain.
+                    final_goal_total_points = total_points - (
+                        (total_points // mission_count) * (mission_count - 1)
+                    )
+
+                    await mission_update(
+                        team_id, "finalGoal", "Final Goal", final_goal_total_points
+                    )
 
                     if not gamespace_id:
                         logging.error(

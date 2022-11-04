@@ -139,3 +139,17 @@ async def create_challenge(game_id: str, team_id: str):
             "points": get_settings().game.total_points,
         },
     )
+
+
+async def mission_update(
+    team_id: str, mission_id: str, mission_name: str, points_scored: int
+):
+    return await _gameboard_post(
+        "unity/mission-update",
+        {
+            "teamId": team_id,
+            "missionId": mission_id,
+            "missionName": mission_name,
+            "pointsScored": points_scored,
+        },
+    )
