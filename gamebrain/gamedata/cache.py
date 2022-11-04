@@ -436,12 +436,18 @@ class GameStateManager:
                 total_points = cls._settings.game.total_points
                 mission_count = len(cls._cache.mission_map.__root__)
                 mission_points = total_points // mission_count
-                asyncio.run(
+                task = asyncio.create_task(
                     gameboard.mission_update(
                         team_id,
                         global_mission.missionID,
                         global_mission.title,
                         mission_points,
+                    )
+                )
+                task.add_done_callback(
+                    lambda _: logging.info(
+                        f"Team {team_id} completed mission "
+                        f"{global_mission.missionID} and was awarded {mission_points} points."
                     )
                 )
 
