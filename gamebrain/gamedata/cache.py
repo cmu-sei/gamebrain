@@ -7,7 +7,6 @@ from typing import Literal
 from pydantic import BaseModel
 
 from ..db import get_team
-from ..clients.gameboard import mission_update
 from .model import (
     GameDataTeamSpecific,
     GameDataResponse,
@@ -35,7 +34,7 @@ from .model import (
     GenericResponse,
     ScanResponse,
 )
-from ..clients import topomojo
+from ..clients import gameboard, topomojo
 
 CommID = str
 LocationID = str
@@ -437,11 +436,13 @@ class GameStateManager:
                 total_points = cls._settings.game.total_points
                 mission_count = len(cls._cache.mission_map.__root__)
                 mission_points = total_points // mission_count
-                await mission_update(
-                    team_id,
-                    global_mission.missionID,
-                    global_mission.title,
-                    mission_points,
+                asyncio.run(
+                    gameboard.mission_update(
+                        team_id,
+                        global_mission.missionID,
+                        global_mission.title,
+                        mission_points,
+                    )
                 )
 
             team_data.session.teamCodexCount = sum(
@@ -1009,7 +1010,7 @@ class GameStateManager:
                         (total_points // mission_count) * (mission_count - 1)
                     )
 
-                    await mission_update(
+                    await gameboard.mission_update(
                         team_id, "finalGoal", "Final Goal", final_goal_total_points
                     )
 
