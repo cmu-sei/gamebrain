@@ -13,7 +13,11 @@ from fastapi import (
     WebSocketDisconnect,
     Request,
 )
-from fastapi.exception_handlers import http_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 import yappi
@@ -56,9 +60,17 @@ APP = FastAPI(
 
 
 @APP.exception_handler(HTTPException)
-async def debug_exception_handler(request, exc):
+async def debug_exception_handler(request: Request, exc: HTTPException):
     logging.error(request.headers)
     return await http_exception_handler(request, exc)
+
+
+@APP.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logging.error(
+        f"Got invalid request headers: {request.headers} and body {request.body()}"
+    )
+    return await request_validation_exception_handler(request, exc)
 
 
 # unpriv_router = APIRouter(prefix="/unprivileged")
