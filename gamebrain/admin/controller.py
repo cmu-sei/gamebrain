@@ -308,6 +308,11 @@ class UpdateConsoleUrlsPostData(BaseModel):
 @admin_router.post("/update_console_urls/{team_id}")
 async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostData):
     async with TeamLocks(team_id):
+        team_data = await get_team_from_db(team_id)
+        if not team_data:
+            logging.error(f"update_console_urls Team {team_id} does not exist.")
+            raise HTTPException(status_code=400, detail="Team does not exist.")
+
         console_urls = post_data.__root__
         logging.info(f"Got a console URL update for team {team_id}: {console_urls}")
 
