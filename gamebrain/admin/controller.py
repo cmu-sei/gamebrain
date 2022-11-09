@@ -63,9 +63,9 @@ class HeadlessManager:
 
 
 class ConsoleUrl(BaseModel):
-    Id: str
-    Url: str
-    Name: str
+    id: str
+    url: str
+    name: str
 
 
 class DeployResponse(BaseModel):
@@ -94,9 +94,9 @@ def console_urls_from_vm_data(
             console_urls.append(
                 ConsoleUrl(
                     **{
-                        "Id": vm["id"],
-                        "Url": construct_vm_url(gamespace_id, vm["name"]),
-                        "Name": vm["name"],
+                        "id": vm["id"],
+                        "url": construct_vm_url(gamespace_id, vm["name"]),
+                        "name": vm["name"],
                     }
                 )
             )
@@ -230,7 +230,7 @@ async def deploy(
                 team_id, [console_url.dict() for console_url in console_urls]
             )
             await GameStateManager.update_team_urls(
-                team_id, {vm.Name: vm.Url for vm in console_urls}
+                team_id, {vm.name: vm.url for vm in console_urls}
             )
             logging.info(
                 f"Registered gamespace {gamespace_id} for team {team_id}, "
@@ -315,5 +315,5 @@ async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostD
             team_id, [console_url.dict() for console_url in console_urls]
         )
         await GameStateManager.update_team_urls(
-            team_id, {vm.Name: vm.Url for vm in console_urls}
+            team_id, {vm.name: vm.url for vm in console_urls}
         )
