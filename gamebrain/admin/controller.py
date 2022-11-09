@@ -299,3 +299,21 @@ async def get_team_progress(team_id: TeamID) -> MissionProgressResponse:
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
     return MissionProgressResponse(__root__=status)
+
+
+class UpdateConsoleUrlsPostData(BaseModel):
+    __root__: list[ConsoleUrl]
+
+
+@admin_router.post("/update_console_urls/{team_id}")
+async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostData):
+    async with TeamLocks(team_id):
+        console_urls = post_data.__root__
+        logging.info(f"Got a console URL update for team {team_id}: {console_urls}")
+
+        await store_virtual_machines(
+            team_id, [console_url.dict() for console_url in console_urls]
+        )
+        await GameStateManager.update_team_urls(
+            team_id, {vm.Name: vm.Url for vm in console_urls}
+        )
