@@ -243,13 +243,14 @@ async def store_cache_snapshot(cache_snapshot: str):
     await DBManager.merge_rows([snapshot])
 
 
-async def get_cache_snapshot():
+async def get_cache_snapshot() -> str | None:
     try:
-        return (
+        db_row = (
             await DBManager.get_rows(
                 DBManager.CacheSnapshot, DBManager.CacheSnapshot.id == 0
             )
         ).pop()
+        return db_row["snapshot"]
     except IndexError:
         return None
 

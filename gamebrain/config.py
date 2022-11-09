@@ -7,7 +7,7 @@ from typing import Optional, Literal
 
 import httpx
 import yaml
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, ValidationError
 
 from .clients import gameboard, topomojo
 from .dispatch import GamespaceStatusTask
@@ -183,7 +183,15 @@ class Global:
                 "game.gamestate_test_mode setting is ON, constructing initial data from test constructor."
             )
         elif stored_cache := await db.get_cache_snapshot():
-            initial_cache = GameDataCacheSnapshot(**stored_cache)
+            stored_cache_dict = json.loads(stored_cache)
+            try:
+                initial_cache = GameDataCacheSnapshot(**stored_cache_dict)
+            except ValidationError as e:
+                logging.error(
+                    "Tried to load game state cache and failed validation. Got the following: "
+                    f"{json.dumps(stored_cache_dict, indent=2)}"
+                )
+                raise e
             logging.info("Initializing game data cache from saved snapshot.")
         else:
             with open("initial_state.json") as f:
