@@ -63,9 +63,9 @@ class HeadlessManager:
 
 
 class ConsoleUrl(BaseModel):
-    Id: str
-    Url: str
-    Name: str
+    id: str
+    url: str
+    name: str
 
 
 class DeployResponse(BaseModel):
@@ -94,9 +94,9 @@ def console_urls_from_vm_data(
             console_urls.append(
                 ConsoleUrl(
                     **{
-                        "Id": vm["id"],
-                        "Url": construct_vm_url(gamespace_id, vm["name"]),
-                        "Name": vm["name"],
+                        "id": vm["id"],
+                        "url": construct_vm_url(gamespace_id, vm["name"]),
+                        "name": vm["name"],
                     }
                 )
             )
@@ -230,7 +230,7 @@ async def deploy(
                 team_id, [console_url.dict() for console_url in console_urls]
             )
             await GameStateManager.update_team_urls(
-                team_id, {vm.Name: vm.Url for vm in console_urls}
+                team_id, {vm.name: vm.url for vm in console_urls}
             )
             logging.info(
                 f"Registered gamespace {gamespace_id} for team {team_id}, "
@@ -299,3 +299,26 @@ async def get_team_progress(team_id: TeamID) -> MissionProgressResponse:
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
     return MissionProgressResponse(__root__=status)
+
+
+class UpdateConsoleUrlsPostData(BaseModel):
+    __root__: list[ConsoleUrl]
+
+
+@admin_router.post("/update_console_urls/{team_id}")
+async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostData):
+    async with TeamLocks(team_id):
+        team_data = await get_team_from_db(team_id)
+        if not team_data:
+            logging.error(f"update_console_urls Team {team_id} does not exist.")
+            raise HTTPException(status_code=400, detail="Team does not exist.")
+
+        console_urls = post_data.__root__
+        logging.info(f"Got a console URL update for team {team_id}: {console_urls}")
+
+        await store_virtual_machines(
+            team_id, [console_url.dict() for console_url in console_urls]
+        )
+        await GameStateManager.update_team_urls(
+            team_id, {vm.name: vm.url for vm in console_urls}
+        )

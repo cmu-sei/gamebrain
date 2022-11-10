@@ -145,11 +145,11 @@ async def get_events(team_id: Optional[str] = None):
 
 async def store_virtual_machines(team_id: str, vms: List[Dict]):
     """
-    vms: List of {"Id": str, "Url": str, "Name": str} dicts
+    vms: List of {"id": str, "url": str, "name": str} dicts
     """
     vm_data = [
         DBManager.VirtualMachine(
-            id=vm["Id"], team_id=team_id, url=vm["Url"], name=vm["Name"]
+            id=vm["id"], team_id=team_id, url=vm["url"], name=vm["name"]
         )
         for vm in vms
     ]
@@ -243,13 +243,14 @@ async def store_cache_snapshot(cache_snapshot: str):
     await DBManager.merge_rows([snapshot])
 
 
-async def get_cache_snapshot():
+async def get_cache_snapshot() -> str | None:
     try:
-        return (
+        db_row = (
             await DBManager.get_rows(
                 DBManager.CacheSnapshot, DBManager.CacheSnapshot.id == 0
             )
         ).pop()
+        return db_row["snapshot"]
     except IndexError:
         return None
 
