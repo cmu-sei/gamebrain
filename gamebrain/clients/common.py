@@ -35,6 +35,7 @@ async def _service_request_and_log(
                 f"HTTP Method was: {request.method}\n"
                 f"Headers were: {request.headers}\n"
                 f"Request Body was: {request.content}\n"
+                f"Response content was: {response.content}\n"
             )
 
         return response
