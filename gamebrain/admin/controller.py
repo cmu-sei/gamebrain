@@ -123,7 +123,7 @@ async def get_team_from_db(team_id: TeamID) -> dict:
 
 
 async def register_gamespace_and_get_vms(
-    game_id: GameID, team_id: TeamID
+    game_id: GameID, team_id: TeamID, total_points: int
 ) -> (GamespaceID, GamespaceExpiration, list[ConsoleUrl]):
     gameboard_team = await gameboard.get_team(team_id)
     if not gameboard_team:
@@ -146,7 +146,10 @@ async def register_gamespace_and_get_vms(
 
     external_id = game_specs["externalId"]
     gamespace = await topomojo.register_gamespace(
-        external_id, gameboard_team["sessionEnd"], gameboard_team["members"]
+        external_id,
+        gameboard_team["sessionEnd"],
+        gameboard_team["members"],
+        total_points,
     )
     if not gamespace or "vms" not in gamespace:
         logging.error(
@@ -188,6 +191,8 @@ async def deploy(
     async with TeamLocks(team_id):
         team_data = await get_team_from_db(team_id)
 
+        total_points = await GameStateManager.get_total_points()
+
         gamespace_id = team_data.get("gamespace_id")
         headless_url = team_data.get("headless_url")
         vm_data = team_data.get("vm_data", [])
@@ -205,7 +210,7 @@ async def deploy(
                     gamespaceId=None,
                     headlessUrl=None,
                     vms=[],
-                    totalPoints=get_settings().game.total_points,
+                    totalPoints=total_points,
                 )
 
             try:
@@ -213,7 +218,7 @@ async def deploy(
                     gamespace_id,
                     gamespace_expiration,
                     console_urls,
-                ) = await register_gamespace_and_get_vms(game_id, team_id)
+                ) = await register_gamespace_and_get_vms(game_id, team_id, total_points)
                 team_name = await get_team_name(game_id, team_id)
             except Exception as e:
                 # If anything goes wrong with gamespace deployment,
@@ -242,7 +247,7 @@ async def deploy(
             gamespaceId=gamespace_id,
             headlessUrl=headless_url,
             vms=console_urls,
-            totalPoints=get_settings().game.total_points,
+            totalPoints=total_points,
         )
 
 
@@ -267,6 +272,7 @@ class ActiveTeamsResponse(BaseModel):
 @admin_router.get("/teams_active")
 async def get_teams_active() -> ActiveTeamsResponse:
     teams = await get_teams()
+    total_points = await GameStateManager.get_total_points()
     active_teams = {}
     for team in teams:
         gamespace_id = team.get("gamespace_id")
@@ -280,7 +286,7 @@ async def get_teams_active() -> ActiveTeamsResponse:
             gamespaceId=gamespace_id,
             headlessUrl=headless_url,
             vms=console_urls,
-            totalPoints=get_settings().game.total_points,
+            totalPoints=total_points,
         )
 
     response = ActiveTeamsResponse(__root__=active_teams)

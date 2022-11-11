@@ -433,27 +433,24 @@ class GameStateManager:
                     "exist in the global data."
                 )
             else:
-                total_points = cls._settings.game.total_points
-                mission_count = len(cls._cache.mission_map.__root__)
-                mission_points = total_points // mission_count
                 task = asyncio.create_task(
                     gameboard.mission_update(
                         team_id,
                         global_mission.missionID,
                         global_mission.title,
-                        mission_points,
+                        global_mission.points,
                     )
                 )
                 task.add_done_callback(
                     lambda _: logging.info(
                         f"Team {team_id} completed mission "
-                        f"{global_mission.missionID} and was awarded {mission_points} points."
+                        f"{global_mission.missionID} and was awarded {global_mission.points} points."
                     )
                 )
 
             team_data.session.teamCodexCount = sum(
                 (
-                    1 if mission.complete else 0
+                    1 if mission.complete and not global_mission.isSpecial else 0
                     for mission in team_data.missions.values()
                 )
             )
@@ -543,6 +540,13 @@ class GameStateManager:
                     f"Task {task_id}'s markCompleteWhen field specifies location {bad_loc} "
                     "which is not in the location map."
                 )
+
+    @classmethod
+    async def get_total_points(cls) -> int:
+        async with cls._lock:
+            return sum(
+                map(lambda m: m.points, cls._cache.mission_map.__root__.values())
+            )
 
     @classmethod
     async def snapshot_data(cls) -> JsonStr:
@@ -1007,18 +1011,6 @@ class GameStateManager:
                 else:
                     team_db_data = await get_team(team_id)
                     gamespace_id = team_db_data.get("gamespace_id")
-
-                    total_points = cls._settings.game.total_points
-                    mission_count = len(cls._cache.mission_map.__root__)
-                    # Each mission gets total_points // mission_count,
-                    # so the final goal should get whatever points remain.
-                    final_goal_total_points = total_points - (
-                        (total_points // mission_count) * (mission_count - 1)
-                    )
-
-                    await gameboard.mission_update(
-                        team_id, "finalGoal", "Final Goal", final_goal_total_points
-                    )
 
                     if not gamespace_id:
                         logging.error(
