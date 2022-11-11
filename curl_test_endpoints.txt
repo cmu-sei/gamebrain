@@ -3,3 +3,5 @@ curl --header "x-api-key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" localhost:8000/test/
 curl --header "x-api-key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" localhost:8000/test/mark_challenge_task_complete/{team_id}/{task_id}
 
 curl --header "x-api-key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" localhost:8000/test/mark_codexes_complete/{team_id}
+
+curl --header "x-api-key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" http://localhost:8000/test/overwrite_current_state
