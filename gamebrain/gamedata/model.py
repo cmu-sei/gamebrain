@@ -70,6 +70,7 @@ class MissionData(BaseModel):
     isSpecial: bool = False
     roleList: list[str]
     taskList: list[TaskDataIdentifierStub]
+    points: int = 0
 
 
 class MissionDataTeamSpecific(BaseModel):

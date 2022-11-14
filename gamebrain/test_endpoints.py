@@ -1,11 +1,15 @@
+from json import JSONDecodeError, load as json_load
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import ValidationError
 
+from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
 from .gamedata.cache import (
+    GameDataCacheSnapshot,
     GameStateManager,
     GamespaceStateOutput,
     GameDataResponse,
@@ -148,8 +152,8 @@ async def test_complete_power_change(
 
 @test_router.get("/complete/unlock/{coordinates}/{team_id}")
 async def test_unlock_location(
-        coordinates: str,
-        team_id: TeamID,
+    coordinates: str,
+    team_id: TeamID,
 ) -> LocationUnlockResponse:
     try:
         return await GameStateManager.unlock_location(team_id, coordinates)
@@ -160,3 +164,29 @@ async def test_unlock_location(
 @test_router.get("/settings")
 async def test_get_settings() -> SettingsModel:
     return get_settings()
+
+
+@test_router.get("/overwrite_current_state")
+async def test_overwrite_current_state():
+    active_teams = await get_teams_active()
+    if active_teams.__root__:
+        raise HTTPException(
+            status_code=400, detail="There are active teams. Will not overwrite."
+        )
+
+    with open("initial_state.json") as f:
+        try:
+            new_state_data = json_load(f)
+        except JSONDecodeError as e:
+            raise HTTPException(
+                status_code=400, detail=f"JSON has invalid formatting: {e}"
+            )
+
+        try:
+            new_state = GameDataCacheSnapshot(**new_state_data)
+        except ValidationError as e:
+            raise HTTPException(
+                status_code=400, detail=f"Could not validate new cache state: {e}"
+            )
+
+    await GameStateManager.init(new_state, GameStateManager._settings)

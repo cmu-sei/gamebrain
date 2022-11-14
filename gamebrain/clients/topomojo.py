@@ -94,7 +94,7 @@ async def poll_dispatch(dispatch_id: str) -> Optional[Any]:
 
 
 async def register_gamespace(
-    workspace_id: str, expiration_time: str, team_members: List[Dict]
+    workspace_id: str, expiration_time: str, team_members: List[Dict], total_points: int
 ):
     """
     team_members: Each dict contains 'id' and 'approvedName' keys.
@@ -109,7 +109,7 @@ async def register_gamespace(
         "playerCount": len(team_members),
         "maxAttempts": 3,
         "maxMinutes": settings.game.gamespace_duration_minutes,
-        "points": settings.game.total_points,
+        "points": total_points,
         "allowReset": True,
         "allowPreview": True,
         "startGamespace": True,
