@@ -873,7 +873,7 @@ class GameStateManager:
 
             code_match = list(
                 filter(
-                    lambda loc: loc.unlockCode == unlock_code,
+                    lambda loc: loc.unlockCode.lower() == unlock_code.lower(),
                     cls._cache.location_map.__root__.values(),
                 )
             )
