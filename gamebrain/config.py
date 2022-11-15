@@ -169,19 +169,9 @@ class Global:
         gameboard.ModuleSettings.settings = settings
         topomojo.ModuleSettings.settings = settings
         cls._init_jwks()
-        cls._init_db_sync_task()
-        cls._init_grader_task()
-        cls._init_cleanup_task()
         await PubSub.init(settings)
 
-        if settings.game.gamestate_test_mode:
-            from .tests.generate_test_gamedata import construct_data
-
-            initial_cache = construct_data()
-            logging.info(
-                "game.gamestate_test_mode setting is ON, constructing initial data from test constructor."
-            )
-        elif stored_cache := await db.get_cache_snapshot():
+        if stored_cache := await db.get_cache_snapshot():
             stored_cache_dict = json.loads(stored_cache)
             try:
                 initial_cache = GameDataCacheSnapshot(**stored_cache_dict)
@@ -198,6 +188,10 @@ class Global:
             logging.info("Initializing game data cache from initial_state.json.")
         await GameStateManager.init(initial_cache, settings)
 
+        cls._init_db_sync_task()
+        cls._init_grader_task()
+        cls._init_cleanup_task()
+
     @classmethod
     def _init_jwks(cls):
         settings = get_settings()
@@ -212,9 +206,9 @@ class Global:
     @classmethod
     async def _db_sync_task(cls):
         while True:
-            await asyncio.sleep(10)
             snapshot = await GameStateManager.snapshot_data()
             await db.store_cache_snapshot(snapshot)
+            await asyncio.sleep(10)
 
     @classmethod
     def _init_db_sync_task(cls):
