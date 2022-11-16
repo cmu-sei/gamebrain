@@ -824,12 +824,12 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            team_data.ship.workstation1URL = vm_urls.get("operator-terminal-1")
-            team_data.ship.workstation2URL = vm_urls.get("operator-terminal-2")
-            team_data.ship.workstation3URL = vm_urls.get("operator-terminal-3")
-            team_data.ship.workstation4URL = vm_urls.get("operator-terminal-4")
-            team_data.ship.workstation5URL = vm_urls.get("operator-terminal-5")
-            team_data.ship.codexURL = vm_urls.get("codex-decoder")
+            team_data.ship.workstation1URL = vm_urls.get("operator-terminal-1", "")
+            team_data.ship.workstation2URL = vm_urls.get("operator-terminal-2", "")
+            team_data.ship.workstation3URL = vm_urls.get("operator-terminal-3", "")
+            team_data.ship.workstation4URL = vm_urls.get("operator-terminal-4", "")
+            team_data.ship.workstation5URL = vm_urls.get("operator-terminal-5", "")
+            team_data.ship.codexURL = vm_urls.get("codex-decoder", "")
 
             logging.info(
                 f"Team Data for team {team_id} updated: {json.dumps(team_data.ship.dict(), indent=2)}"
