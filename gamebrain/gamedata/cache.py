@@ -361,7 +361,10 @@ class GameStateManager:
         global_task: InternalGlobalTaskData,
     ):
         cls._unlock_specific_task(team_id, team_data, global_task)
-        if global_task.markCompleteWhen:
+        if (
+            global_task.markCompleteWhen
+            and global_task.markCompleteWhen.type != "indirect"
+        ):
             # Keep unlocking tasks if the one we just unlocked doesn't have specified criteria.
             # Otherwise, we're done.
             return
