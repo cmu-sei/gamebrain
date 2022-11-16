@@ -377,6 +377,47 @@ class GameStateManager:
         )
 
     @classmethod
+    def _complete_indirect_task(
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        global_task: InternalGlobalTaskData,
+    ) -> bool:
+        """
+        Returns True if a task was completed.
+        """
+        team_task = team_data.tasks.get(global_task.taskID)
+        if not team_task:
+            logging.info(
+                f"Team {team_id} tried to complete task {global_task.taskID}, but the team has not "
+                "unlocked it yet."
+            )
+            return False
+
+        if (
+            global_task.markCompleteWhen
+            and global_task.markCompleteWhen.type == "indirect"
+        ):
+            for task_id in global_task.markCompleteWhen.indirectPrerequisiteTasks:
+                prereq_team_task = team_data.tasks.get(task_id)
+                not_unlocked = False
+                not_completed = False
+                if not prereq_team_task:
+                    not_unlocked = True
+                if prereq_team_task and not prereq_team_task.complete:
+                    not_completed = True
+                if not_unlocked or not_completed:
+                    reason = "unlocked" if not_unlocked else "completed"
+                    logging.info(
+                        f"Team {team_id} tried to complete task {global_task.taskID}, but the team has not "
+                        f"{reason} its prerequisite task {task_id} yet."
+                    )
+                    return False
+
+        team_task.complete = True
+        return True
+
+    @classmethod
     def _complete_task_and_unlock_next(
         cls,
         team_id: TeamID,
@@ -399,13 +440,18 @@ class GameStateManager:
         team_task.complete = True
         if completion_criteria.alsoComplete:
             for also_complete_task_id in global_task.markCompleteWhen.alsoComplete:
-                also_complete_task = team_data.tasks.get(also_complete_task_id)
-                if not also_complete_task:
-                    logging.warning(
+                also_complete_global_task = cls._cache.task_map.__root__.get(
+                    also_complete_task_id
+                )
+                if not also_complete_global_task:
+                    logging.error(
                         f"Task {global_task.taskID} had dependent task {also_complete_task_id} specified, "
-                        "but it was not unlocked."
+                        "but it was not in the global task map."
                     )
-                also_complete_task.complete = True
+                    continue
+                cls._complete_indirect_task(
+                    team_id, team_data, also_complete_global_task
+                )
         if global_task.next:
             next_global_task = cls._cache.task_map.__root__.get(global_task.next)
             if not next_global_task:
@@ -417,7 +463,7 @@ class GameStateManager:
             cls._unlock_tasks_until_completion_criteria(
                 team_id, team_data, next_global_task
             )
-        else:
+        if not global_task.next or global_task.completesMission:
             mission = team_data.missions.get(global_task.missionID)
             if not mission:
                 logging.error(
