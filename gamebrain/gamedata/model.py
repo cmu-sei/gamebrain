@@ -16,6 +16,7 @@ TaskBranchType = Literal[
     "challenge",
     "challengeFail",
     "codex",
+    "indirect",
 ]
 
 
@@ -30,6 +31,7 @@ class TaskBranch(BaseModel):
     locationID: LocationID = None
     alsoComplete: list[TaskID] = None
     unlocks: TaskID = None
+    indirectPrerequisiteTasks: list[TaskID] = []
 
 
 class TaskData(BaseModel):
@@ -42,6 +44,7 @@ class TaskData(BaseModel):
     videoURL: str
     commID: CommID
     next: TaskID = None
+    completesMission: bool = False
     markCompleteWhen: TaskBranch = None
     failWhen: TaskBranch = None
     cancelWhen: TaskBranch = None

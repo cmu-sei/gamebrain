@@ -1,4 +1,4 @@
-from json import JSONDecodeError, load as json_load
+from json import JSONDecodeError, load as json_load, loads as json_loads
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -164,6 +164,14 @@ async def test_unlock_location(
 @test_router.get("/settings")
 async def test_get_settings() -> SettingsModel:
     return get_settings()
+
+
+@test_router.get("/current_state")
+async def test_get_current_state() -> GameDataCacheSnapshot:
+    snapshot = await GameStateManager.snapshot_data()
+    snapshot_data = json_loads(snapshot)
+    new_state = GameDataCacheSnapshot(**snapshot_data)
+    return new_state
 
 
 @test_router.get("/overwrite_current_state")
