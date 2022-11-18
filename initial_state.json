@@ -186,13 +186,6 @@
         "visited": false,
         "scanned": false,
         "networkEstablished": false
-      },
-      {
-        "locationID": "demoland2",
-        "unlocked": false,
-        "visited": false,
-        "scanned": false,
-        "networkEstablished": false
       }
     ],
     "missions": [
