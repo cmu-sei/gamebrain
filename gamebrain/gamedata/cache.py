@@ -940,78 +940,82 @@ class GameStateManager:
             if location_id in team_data.locations:
                 return response("alreadyunlocked")
 
-            team_data.locations[location_id] = InternalTeamLocationData(
-                locationID=location_id
-            )
-
-            # Each Comm Event has a LocationID, so gather the ones associated with the new location.
-            unlocked_comm_event_ids = set(
-                map(
-                    lambda c: c.commID,
-                    (
-                        filter(
-                            lambda c: c.locationID == location_id,
-                            cls._cache.comm_map.__root__.values(),
-                        )
-                    ),
-                )
-            )
-            # Next gather the tasks that are associated with a Comm Event in the previous set.
-            unlocked_task_ids = set(
-                map(
-                    lambda t: t.taskID,
-                    filter(
-                        lambda t: t.commID in unlocked_comm_event_ids,
-                        cls._cache.task_map.__root__.values(),
-                    ),
-                )
-            )
-            # Finally gather the missions associated with the previous set of tasks.
-            unlocked_mission_ids = set(
-                map(
-                    lambda m: m.missionID,
-                    filter(
-                        lambda m: set(map(lambda t: t.taskID, m.taskList))
-                        & unlocked_task_ids,
-                        cls._cache.mission_map.__root__.values(),
-                    ),
-                )
-            )
-
-            # Construct all the team task data objects first...
-            mission_tasks = defaultdict(list)
-            for task_id in unlocked_task_ids:
-                global_task_data = cls._cache.task_map.__root__.get(task_id)
-                if not global_task_data:
-                    logging.error(
-                        f"Team {team_id} somehow unlocked task {task_id}, which was not in the global data."
-                    )
-                    continue
-                mission_tasks[global_task_data.missionID].append(
-                    InternalTeamTaskData(taskID=task_id)
-                )
-
-            # Then use the task data objects to construct the team mission objects
-            team_specific_missions = [
-                InternalTeamMissionData(
-                    missionID=mission_id,
-                    taskList=mission_tasks[mission_id],
-                    tasks=list(map(lambda t: t.taskID, mission_tasks[mission_id])),
-                )
-                for mission_id in unlocked_mission_ids
-            ]
-
-            for mission in team_specific_missions:
-                mission_id = mission.missionID
-                if mission_id in team_data.missions:
-                    logging.warning(
-                        f"Attempted to unlock mission {mission_id} for team {team_id}, "
-                        "but it was already unlocked."
-                    )
-                    continue
-                team_data.missions[mission_id] = mission
+            await cls._unlock_location_for_team(team_id, team_data, location_id)
 
             return response("success", location_id)
+
+    @classmethod
+    async def _unlock_location_for_team(
+        cls, team_id: TeamID, team_data: InternalTeamGameData, location_id: LocationID
+    ):
+        team_data.locations[location_id] = InternalTeamLocationData(
+            locationID=location_id
+        )
+
+        # Each Comm Event has a LocationID, so gather the ones associated with the new location.
+        unlocked_comm_event_ids = set(
+            map(
+                lambda c: c.commID,
+                filter(
+                    lambda c: c.locationID == location_id,
+                    cls._cache.comm_map.__root__.values(),
+                ),
+            )
+        )
+        # Next gather the tasks that are associated with a Comm Event in the previous set.
+        unlocked_task_ids = set(
+            map(
+                lambda t: t.taskID,
+                filter(
+                    lambda t: t.commID in unlocked_comm_event_ids,
+                    cls._cache.task_map.__root__.values(),
+                ),
+            )
+        )
+        # Finally gather the missions associated with the previous set of tasks.
+        unlocked_mission_ids = set(
+            map(
+                lambda m: m.missionID,
+                filter(
+                    lambda m: set(map(lambda t: t.taskID, m.taskList))
+                    & unlocked_task_ids,
+                    cls._cache.mission_map.__root__.values(),
+                ),
+            )
+        )
+
+        # Construct all the team task data objects first...
+        mission_tasks = defaultdict(list)
+        for task_id in unlocked_task_ids:
+            global_task_data = cls._cache.task_map.__root__.get(task_id)
+            if not global_task_data:
+                logging.error(
+                    f"Team {team_id} somehow unlocked task {task_id}, which was not in the global data."
+                )
+                continue
+            mission_tasks[global_task_data.missionID].append(
+                InternalTeamTaskData(taskID=task_id)
+            )
+
+        # Then use the task data objects to construct the team mission objects
+        team_specific_missions = [
+            InternalTeamMissionData(
+                missionID=mission_id,
+                taskList=mission_tasks[mission_id],
+                tasks=list(map(lambda t: t.taskID, mission_tasks[mission_id])),
+            )
+            for mission_id in unlocked_mission_ids
+        ]
+
+        for mission in team_specific_missions:
+            mission_id = mission.missionID
+            if mission_id in team_data.missions:
+                logging.warning(
+                    f"Attempted to unlock mission {mission_id} for team {team_id}, "
+                    "but it was already unlocked."
+                )
+                continue
+            team_data.missions[mission_id] = mission
 
     @classmethod
     async def jump(cls, team_id: TeamID, location_id: LocationID) -> GenericResponse:
