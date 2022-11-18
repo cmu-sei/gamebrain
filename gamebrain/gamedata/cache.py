@@ -455,6 +455,8 @@ class GameStateManager:
                 cls._complete_indirect_task(
                     team_id, team_data, also_complete_global_task
                 )
+        if completion_criteria.unlockLocation:
+            await cls._unlock_location_for_team(team_id, team_data, completion_criteria.unlockLocation)
         if global_task.next:
             next_global_task = cls._cache.task_map.__root__.get(global_task.next)
             if not next_global_task:
