@@ -7,375 +7,153 @@
       "translationMessage": "Translate Text 1",
       "scanInfoMessage": "Probe Text 1",
       "firstContact": true,
-      "locationID": "dunesea"
+      "locationID": "demoland1"
     },
     "vid2": {
-      "commID": "vid4",
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_4.mp4",
+      "commID": "vid2",
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
       "commTemplate": "incoming",
-      "translationMessage": "vid4 message",
-      "scanInfoMessage": "vid4 scan info",
+      "translationMessage": "Translate Text 2",
+      "scanInfoMessage": "Probe Text 2",
       "firstContact": true,
-      "locationID": "cantina"
-    },
-    "vid4": {
-      "commID": "vid4",
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_4.mp4",
-      "commTemplate": "incoming",
-      "translationMessage": "Translate Text 4",
-      "scanInfoMessage": "Probe Text 4",
-      "firstContact": false,
-      "locationID": "cantina"
-    },
-    "vid5": {
-      "commID": "vid5",
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_5.mp4",
-      "commTemplate": "probe",
-      "translationMessage": "Translate Text 5",
-      "scanInfoMessage": "Probe Text 5",
-      "firstContact": false,
-      "locationID": "rebel"
+      "locationID": "demoland2"
     }
   },
   "location_map": {
-    "dunesea": {
-      "locationID": "dunesea",
-      "name": "Lars Farm",
+    "demoland1": {
+      "locationID": "demoland1",
+      "name": "Demoland 1",
       "imageID": "image1",
       "backdropID": "backdrop1",
-      "surroundings": "Surroundings: Farmland",
+      "surroundings": "Surroundings: Demo 1",
       "unlockCode": "123456",
-      "trajectoryLaunch": 15,
-      "trajectoryCorrection": 140,
-      "trajectoryCube": 335,
+      "trajectoryLaunch": 1,
+      "trajectoryCorrection": 2,
+      "trajectoryCube": 3,
       "firstContactEvent": "vid1",
-      "networkName": "moisture_net"
+      "networkName": "deepspace:1"
     },
-    "cantina": {
-      "locationID": "cantina",
-      "name": "Mos Eisley",
+    "demoland2": {
+      "locationID": "demoland2",
+      "name": "Demoland 2",
       "imageID": "image2",
       "backdropID": "backdrop2",
-      "surroundings": "Surroundings: Spaceport",
-      "unlockCode": "abc123",
-      "trajectoryLaunch": 275,
-      "trajectoryCorrection": 90,
-      "trajectoryCube": 145,
-      "firstContactEvent": "vid2",
-      "networkName": "scum_and_villany"
-    },
-    "rebel": {
-      "locationID": "rebel",
-      "name": "Lothal",
-      "imageID": "image3",
-      "backdropID": "backdrop3",
-      "surroundings": "Surroundings: Imperial Shipyard",
+      "surroundings": "Surroundings: Demo 2",
       "unlockCode": "654321",
-      "trajectoryLaunch": 75,
-      "trajectoryCorrection": 70,
-      "trajectoryCube": 60,
-      "firstContactEvent": "vid3",
-      "networkName": "ZebNet"
+      "trajectoryLaunch": 4,
+      "trajectoryCorrection": 5,
+      "trajectoryCube": 6,
+      "firstContactEvent": "vid2",
+      "networkName": "deepspace:1"
     }
   },
   "mission_map": {
-    "ep4": {
-      "missionID": "ep4",
-      "title": "A New Hope",
-      "summaryShort": "That's no moon...",
-      "summaryLong": "A young farmboy sets off for adventure with a pair of stolen robots and an old man who has been watching him his entire life.",
-      "missionIcon": "lagrange",
-      "isSpecial": true,
-      "roleList": [
-        "Cyber Defense Forensics Analyst",
-        "Exploitation Analyst",
-        "Threat/Warning Analyst"
-      ],
-      "taskList": [
-        {
-          "taskID": "m1t1",
-          "missionID": "ep4",
-          "descriptionText": "Buy some robots",
-          "infoPresent": true,
-          "infoText": "These aren't the droids you're looking for.",
-          "videoPresent": true,
-          "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
-          "commID": "",
-          "markCompleteWhen": {
-            "type": "jump",
-            "locationID": "dunesea"
-          }
-        },
-        {
-          "taskID": "m1t2",
-          "missionID": "ep4",
-          "descriptionText": "Rescue a Princess",
-          "infoPresent": true,
-          "infoText": "Maclunkey!",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": "vid1"
-        },
-        {
-          "taskID": "m1t3",
-          "missionID": "ep4",
-          "descriptionText": "Use the Force",
-          "infoPresent": true,
-          "infoText": "If you can bullseye womprats, you can hit a target 2m wide.",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": ""
-        }
-      ]
-    },
-    "ep5": {
-      "missionID": "ep5",
-      "title": "The Empire Strikes Back",
-      "summaryShort": "I am your father...",
-      "summaryLong": "This is the one with the AT-ATs.  That's all you need to know.",
+    "demomission": {
+      "missionID": "demomission",
+      "title": "Demo Mission!",
+      "summaryShort": "Dauntless Orientation",
+      "summaryLong": "In this simulation of the Dauntless, you will be getting oriented with many of the ship's functions before embarking on the real Dauntless.",
       "missionIcon": "exo",
       "isSpecial": false,
-      "roleList": [
-        "Cyber Defense Incident Responder",
-        "Network Operations Specialist",
-        "Threat/Warning Analyst"
-      ],
+      "roleList": [],
       "taskList": [
         {
-          "taskID": "m2t1",
-          "missionID": "ep5",
-          "descriptionText": "Survive a night on Hoth",
-          "infoPresent": true,
-          "infoText": "I thought they smelled bad... on the inside.",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": ""
+          "taskID": "demotask1"
         },
         {
-          "taskID": "m2t2",
-          "missionID": "ep5",
-          "descriptionText": "Complain to a Muppet",
-          "infoPresent": true,
-          "infoText": "Whine a lot, you do.",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": ""
+          "taskID": "demotask2"
         },
         {
-          "taskID": "m2t3",
-          "missionID": "ep5",
-          "descriptionText": "Have dinner with your father",
-          "infoPresent": true,
-          "infoText": "Don't forget to give him a hand.",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": "vid4"
-        }
-      ]
-    },
-    "ep6": {
-      "missionID": "ep6",
-      "title": "Return of the Jedi",
-      "summaryShort": "Good.... good...",
-      "summaryLong": "Yoda, sick of Luke's questions, just gives up and dies.",
-      "missionIcon": "raider",
-      "isSpecial": false,
-      "roleList": [
-        "Exploitation Analyst",
-        "Network Operations Specialist"
-      ],
-      "taskList": [
-        {
-          "taskID": "m3t1",
-          "missionID": "ep6",
-          "descriptionText": "Deliver a message to Jabba",
-          "infoPresent": true,
-          "infoText": "It's a Huttish message.  It means Jabba sleeps with the Sarlacc.",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": ""
+          "taskID": "demotask3"
         },
         {
-          "taskID": "m3t2",
-          "missionID": "ep6",
-          "descriptionText": "Make new freinds",
-          "infoPresent": true,
-          "infoText": "Today's the day you're going to be the Teddy Bear's picnic.",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": "vid5"
+          "taskID": "demotask4"
         },
         {
-          "taskID": "m3t3",
-          "missionID": "ep6",
-          "descriptionText": "Let the hate flow through you",
-          "infoPresent": false,
-          "infoText": "Consider a leadership offer in the family business.",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": ""
-        },
-        {
-          "taskID": "m3t4",
-          "missionID": "ep6",
-          "descriptionText": "Burn it all down",
-          "infoPresent": true,
-          "infoText": "You know, any contractor willing to work on that Death Star knew the risks. If they were killed, it was their own fault. ",
-          "videoPresent": false,
-          "videoURL": "",
-          "commID": ""
+          "taskID": "demotask5"
         }
       ]
     }
   },
   "task_map": {
-    "m1t1": {
-      "taskID": "m1t1",
-      "missionID": "ep4",
-      "descriptionText": "Buy some robots",
+    "demotask1": {
+      "taskID": "demotask1",
+      "missionID": "demomission",
+      "descriptionText": "Unlock a new location",
       "infoPresent": true,
-      "infoText": "These aren't the droids you're looking for.",
-      "videoPresent": true,
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Launch Mode.<br>• Interact with the Navigation system<size=200%><voffset=-0.14em><sprite index=5></voffset></size>.<br>• At the top left of the station, use the button to enter an unlock code.<br>• Enter the unlock code 654321 to unlock the next location.</line-height>",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": ""
+    },
+    "demotask2": {
+      "taskID": "demotask2",
+      "missionID": "demomission",
+      "descriptionText": "Jump to a new location",
+      "infoPresent": true,
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Route power for Launch Mode <size=200%><voffset=-0.         14em><sprite index=3></voffset></size><br>\\u2022 Go to the <u>Nav System Workstation</u>. Set destination and note flight               calibration values. <size=200%><voffset=-0.14em><sprite index=5></size><br>• Set and lock flight calibration; engage thrusters at       <size=200%><voffset=-0.14em><sprite index=4></voffset></size><br>• Eject Data Cube from <size=200%><voffset=-0.14em><sprite             index=5></voffset></size> and insert at <size=200%><voffset=-0.14em><sprite index=0></voffset></size><br>• Initiate Launch</line-       height>",
+      "videoPresent": false,
+      "videoURL": "",
       "commID": "",
+      "next": "demotask3",
       "markCompleteWhen": {
         "type": "jump",
-        "locationID": "cantina"
+        "locationID": "demoland2",
+        "alsoComplete": ["demotask1"]
       }
     },
-    "m1t2": {
-      "taskID": "m1t2",
-      "missionID": "ep4",
-      "descriptionText": "Rescue a Princess",
+    "demotask3": {
+      "taskID": "demotask3",
+      "missionID": "demomission",
+      "descriptionText": "Route power for Exploration Mode",
       "infoPresent": true,
-      "infoText": "Maclunkey!",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "vid1",
-      "markCompleteWhen": {
-        "type": "comm",
-        "locationID": "cantina"
-      }
-    },
-    "m1t3": {
-      "taskID": "m1t3",
-      "missionID": "ep4",
-      "descriptionText": "Use the Force",
-      "infoPresent": true,
-      "infoText": "If you can bullseye womprats, you can hit a target 2m wide.",
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Route power to Sensor System Workstation, Data Link Workstation, Decoder workstation at <size=200%><voffset=-0.14em><sprite index=3></voffset></size></line-height>",
       "videoPresent": false,
       "videoURL": "",
       "commID": "",
-      "markCompleteWhen": {
-        "type": "launchMode",
-        "locationID": "dunesea"
-      }
-    },
-    "m2t1": {
-      "taskID": "m2t1",
-      "missionID": "ep5",
-      "descriptionText": "Survive a night on Hoth",
-      "infoPresent": true,
-      "infoText": "I thought they smelled bad... on the inside.",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "",
-      "markCompleteWhen": {
-        "type": "standby",
-        "locationID": "dunesea"
-      }
-    },
-    "m2t2": {
-      "taskID": "m2t2",
-      "missionID": "ep5",
-      "descriptionText": "Complain to a Muppet",
-      "infoPresent": true,
-      "infoText": "Whine a lot, you do.",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "",
+      "next": "demotask4",
       "markCompleteWhen": {
         "type": "explorationMode",
-        "locationID": "dunesea"
+        "locationID": "demoland2"
       }
     },
-    "m2t3": {
-      "taskID": "m2t3",
-      "missionID": "ep5",
-      "descriptionText": "Have dinner with your father",
+    "demotask4": {
+      "taskID": "demotask4",
+      "missionID": "demomission",
+      "descriptionText": "Initiate a Scan",
       "infoPresent": true,
-      "infoText": "Don't forget to give him a hand.",
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Exploration Mode<br>• Scan for any sign of activity <size=200%><voffset=-0.14em><sprite index=1></voffset></size></line-height>",
       "videoPresent": false,
       "videoURL": "",
-      "commID": "vid4",
+      "commID": "",
+      "next": "demotask5",
       "markCompleteWhen": {
         "type": "scan",
-        "locationID": "dunesea"
+        "locationID": "demoland2"
       }
     },
-    "m3t1": {
-      "taskID": "m3t1",
-      "missionID": "ep6",
-      "descriptionText": "Deliver a message to Jabba",
+    "demotask5": {
+      "taskID": "demotask5",
+      "missionID": "demomission",
+      "descriptionText": "Initiate Communication",
       "infoPresent": true,
-      "infoText": "It's a Huttish message.  It means Jabba sleeps with the Sarlacc.",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "",
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Exploration Mode<br>• Initiate \"Contact\" at <size=200%><voffset=-0.14em><sprite index=1></voffset></size></line-height>",
+      "videoPresent": true,
+      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
+      "commID": "vid2",
+      "next": "exoarch5",
       "markCompleteWhen": {
-        "type": "antennaExtended",
-        "locationID": "dunesea"
-      }
-    },
-    "m3t2": {
-      "taskID": "m3t2",
-      "missionID": "ep6",
-      "descriptionText": "Make new freinds",
-      "infoPresent": true,
-      "infoText": "Today's the day you're going to be the Teddy Bear's picnic.",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "vid5",
-      "markCompleteWhen": {
-        "type": "antennaRetracted",
-        "locationID": "dunesea"
-      }
-    },
-    "m3t3": {
-      "taskID": "m3t3",
-      "missionID": "ep6",
-      "descriptionText": "Let the hate flow through you",
-      "infoPresent": false,
-      "infoText": "Consider a leadership offer in the family business.",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "",
-      "markCompleteWhen": {
-        "type": "challenge",
-        "locationID": "dunesea"
-      }
-    },
-    "m3t4": {
-      "taskID": "m3t4",
-      "missionID": "ep6",
-      "descriptionText": "Burn it all down",
-      "infoPresent": true,
-      "infoText": "You know, any contractor willing to work on that Death Star knew the risks. If they were killed, it was their own fault. ",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "",
-      "markCompleteWhen": {
-        "type": "challenge",
-        "locationID": "dunesea"
+        "type": "comm",
+        "locationID": "demoland2"
       }
     }
   },
   "team_map": {},
   "team_initial_state": {
     "currentStatus": {
-      "currentLocation": "dunesea",
+      "currentLocation": "demoland1",
       "currentLocationScanned": false,
-      "currentLocationSurroundings": "Surroundings: Farmland",
+      "currentLocationSurroundings": "Surroundings: Demo",
       "antennaExtended": false,
       "networkConnected": false,
       "networkName": "",
@@ -403,22 +181,15 @@
     },
     "locations": [
       {
-        "locationID": "dunesea",
+        "locationID": "demoland1",
         "unlocked": true,
         "visited": false,
         "scanned": false,
         "networkEstablished": false
       },
       {
-        "locationID": "cantina",
-        "unlocked": true,
-        "visited": false,
-        "scanned": false,
-        "networkEstablished": false
-      },
-      {
-        "locationID": "rebel",
-        "unlocked": true,
+        "locationID": "demoland2",
+        "unlocked": false,
         "visited": false,
         "scanned": false,
         "networkEstablished": false
@@ -426,74 +197,18 @@
     ],
     "missions": [
       {
-        "missionID": "ep4",
+        "missionID": "demomission",
         "unlocked": true,
         "visible": false,
         "complete": false,
         "taskList": [
           {
-            "taskID": "m1t1",
+            "taskID": "demotask1",
             "visible": true,
             "complete": false
           },
           {
-            "taskID": "m1t2",
-            "visible": true,
-            "complete": false
-          },
-          {
-            "taskID": "m1t3",
-            "visible": true,
-            "complete": false
-          }
-        ]
-      },
-      {
-        "missionID": "ep5",
-        "unlocked": true,
-        "visible": false,
-        "complete": false,
-        "taskList": [
-          {
-            "taskID": "m2t1",
-            "visible": true,
-            "complete": false
-          },
-          {
-            "taskID": "m2t2",
-            "visible": true,
-            "complete": false
-          },
-          {
-            "taskID": "m2t3",
-            "visible": true,
-            "complete": false
-          }
-        ]
-      },
-      {
-        "missionID": "ep6",
-        "unlocked": true,
-        "visible": false,
-        "complete": false,
-        "taskList": [
-          {
-            "taskID": "m3t1",
-            "visible": true,
-            "complete": false
-          },
-          {
-            "taskID": "m3t2",
-            "visible": true,
-            "complete": false
-          },
-          {
-            "taskID": "m3t3",
-            "visible": true,
-            "complete": false
-          },
-          {
-            "taskID": "m3t4",
+            "taskID": "demotask2",
             "visible": true,
             "complete": false
           }
