@@ -456,7 +456,7 @@ class GameStateManager:
                     team_id, team_data, also_complete_global_task
                 )
         if completion_criteria.unlockLocation:
-            await cls._unlock_location_for_team(team_id, team_data, completion_criteria.unlockLocation)
+            cls._unlock_location_for_team(team_id, team_data, completion_criteria.unlockLocation)
         if global_task.next:
             next_global_task = cls._cache.task_map.__root__.get(global_task.next)
             if not next_global_task:
@@ -942,12 +942,12 @@ class GameStateManager:
             if location_id in team_data.locations:
                 return response("alreadyunlocked")
 
-            await cls._unlock_location_for_team(team_id, team_data, location_id)
+            cls._unlock_location_for_team(team_id, team_data, location_id)
 
             return response("success", location_id)
 
     @classmethod
-    async def _unlock_location_for_team(
+    def _unlock_location_for_team(
         cls, team_id: TeamID, team_data: InternalTeamGameData, location_id: LocationID
     ):
         team_data.locations[location_id] = InternalTeamLocationData(
