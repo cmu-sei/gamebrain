@@ -1,7 +1,8 @@
 from json import JSONDecodeError, load as json_load, loads as json_loads
 import logging
+from typing import TextIO, BinaryIO
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import ValidationError
 
 from .admin.controller import get_teams_active
@@ -69,10 +70,14 @@ async def test_net_change(
     await topomojo.change_vm_net(vm_id, network)
 
 
-@test_router.get("/complete/challenge/{task_id}/{team_id}")
-async def test_complete_challenge(team_id: TeamID, task_id: TaskID) -> GameDataResponse:
-    await GameStateManager.dispatch_challenge_task_complete(team_id, task_id)
+@test_router.get("/gamedata/{team_id}")
+async def test_get_team_data(team_id: TeamID) -> GameDataResponse:
     return await GameStateManager.get_team_data(team_id)
+
+
+@test_router.get("/complete/challenge/{task_id}/{team_id}")
+async def test_complete_challenge(team_id: TeamID, task_id: TaskID):
+    await GameStateManager.dispatch_challenge_task_complete(team_id, task_id)
 
 
 @test_router.get("/fail/challenge/{task_id}/{team_id}")
@@ -175,26 +180,35 @@ async def test_get_current_state() -> GameDataCacheSnapshot:
 
 
 @test_router.get("/overwrite_current_state")
-async def test_overwrite_current_state():
+async def test_get_overwrite_current_state():
+    with open("initial_state.json") as f:
+        await _reload_state_from_file(f)
+
+
+@test_router.post("/overwrite_current_state")
+async def test_post_overwrite_current_state(file: UploadFile):
+    await _reload_state_from_file(file.file)
+
+
+async def _reload_state_from_file(file: TextIO | BinaryIO):
     active_teams = await get_teams_active()
     if active_teams.__root__:
         raise HTTPException(
             status_code=400, detail="There are active teams. Will not overwrite."
         )
 
-    with open("initial_state.json") as f:
-        try:
-            new_state_data = json_load(f)
-        except JSONDecodeError as e:
-            raise HTTPException(
-                status_code=400, detail=f"JSON has invalid formatting: {e}"
-            )
+    try:
+        new_state_data = json_load(file)
+    except JSONDecodeError as e:
+        raise HTTPException(
+            status_code=400, detail=f"JSON has invalid formatting: {e}"
+        )
 
-        try:
-            new_state = GameDataCacheSnapshot(**new_state_data)
-        except ValidationError as e:
-            raise HTTPException(
-                status_code=400, detail=f"Could not validate new cache state: {e}"
-            )
+    try:
+        new_state = GameDataCacheSnapshot(**new_state_data)
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=400, detail=f"Could not validate new cache state: {e}"
+        )
 
     await GameStateManager.init(new_state, GameStateManager._settings)

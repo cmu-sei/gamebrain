@@ -31,6 +31,7 @@ class TaskBranch(BaseModel):
     locationID: LocationID = None
     alsoComplete: list[TaskID] = None
     unlocks: TaskID = None
+    unlockLocation: LocationID = None
     indirectPrerequisiteTasks: list[TaskID] = []
 
 

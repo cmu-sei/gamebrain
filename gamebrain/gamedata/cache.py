@@ -455,6 +455,10 @@ class GameStateManager:
                 cls._complete_indirect_task(
                     team_id, team_data, also_complete_global_task
                 )
+        if completion_criteria.unlockLocation:
+            cls._unlock_location_for_team(
+                team_id, team_data, completion_criteria.unlockLocation
+            )
         if global_task.next:
             next_global_task = cls._cache.task_map.__root__.get(global_task.next)
             if not next_global_task:
@@ -537,12 +541,30 @@ class GameStateManager:
                 and global_task.markCompleteWhen.locationID == current_location
                 and global_task.markCompleteWhen.type == task_type
             ):
+                if not (
+                    global_task.markCompleteWhen.type != "comm"
+                    or (
+                        global_task.markCompleteWhen.type == "comm"
+                        and global_task.commID
+                        == team_data.currentStatus.incomingTransmissionObject.commID
+                    )
+                ):
+                    continue
                 cls._complete_task_and_unlock_next(team_id, team_data, global_task)
             elif (
                 global_task.cancelWhen
                 and global_task.cancelWhen.locationID == current_location
                 and global_task.cancelWhen.type == task_type
             ):
+                if not (
+                    global_task.cancelWhen.type != "comm"
+                    or (
+                        global_task.cancelWhen.type == "comm"
+                        and global_task.commID
+                        == team_data.currentStatus.incomingTransmissionObject.commID
+                    )
+                ):
+                    continue
                 team_mission = team_data.missions.get(global_task.missionID)
                 if not team_mission:
                     logging.error(
@@ -940,78 +962,82 @@ class GameStateManager:
             if location_id in team_data.locations:
                 return response("alreadyunlocked")
 
-            team_data.locations[location_id] = InternalTeamLocationData(
-                locationID=location_id
-            )
-
-            # Each Comm Event has a LocationID, so gather the ones associated with the new location.
-            unlocked_comm_event_ids = set(
-                map(
-                    lambda c: c.commID,
-                    (
-                        filter(
-                            lambda c: c.locationID == location_id,
-                            cls._cache.comm_map.__root__.values(),
-                        )
-                    ),
-                )
-            )
-            # Next gather the tasks that are associated with a Comm Event in the previous set.
-            unlocked_task_ids = set(
-                map(
-                    lambda t: t.taskID,
-                    filter(
-                        lambda t: t.commID in unlocked_comm_event_ids,
-                        cls._cache.task_map.__root__.values(),
-                    ),
-                )
-            )
-            # Finally gather the missions associated with the previous set of tasks.
-            unlocked_mission_ids = set(
-                map(
-                    lambda m: m.missionID,
-                    filter(
-                        lambda m: set(map(lambda t: t.taskID, m.taskList))
-                        & unlocked_task_ids,
-                        cls._cache.mission_map.__root__.values(),
-                    ),
-                )
-            )
-
-            # Construct all the team task data objects first...
-            mission_tasks = defaultdict(list)
-            for task_id in unlocked_task_ids:
-                global_task_data = cls._cache.task_map.__root__.get(task_id)
-                if not global_task_data:
-                    logging.error(
-                        f"Team {team_id} somehow unlocked task {task_id}, which was not in the global data."
-                    )
-                    continue
-                mission_tasks[global_task_data.missionID].append(
-                    InternalTeamTaskData(taskID=task_id)
-                )
-
-            # Then use the task data objects to construct the team mission objects
-            team_specific_missions = [
-                InternalTeamMissionData(
-                    missionID=mission_id,
-                    taskList=mission_tasks[mission_id],
-                    tasks=list(map(lambda t: t.taskID, mission_tasks[mission_id])),
-                )
-                for mission_id in unlocked_mission_ids
-            ]
-
-            for mission in team_specific_missions:
-                mission_id = mission.missionID
-                if mission_id in team_data.missions:
-                    logging.warning(
-                        f"Attempted to unlock mission {mission_id} for team {team_id}, "
-                        "but it was already unlocked."
-                    )
-                    continue
-                team_data.missions[mission_id] = mission
+            cls._unlock_location_for_team(team_id, team_data, location_id)
 
             return response("success", location_id)
+
+    @classmethod
+    def _unlock_location_for_team(
+        cls, team_id: TeamID, team_data: InternalTeamGameData, location_id: LocationID
+    ):
+        team_data.locations[location_id] = InternalTeamLocationData(
+            locationID=location_id
+        )
+
+        # Each Comm Event has a LocationID, so gather the ones associated with the new location.
+        unlocked_comm_event_ids = set(
+            map(
+                lambda c: c.commID,
+                filter(
+                    lambda c: c.locationID == location_id,
+                    cls._cache.comm_map.__root__.values(),
+                ),
+            )
+        )
+        # Next gather the tasks that are associated with a Comm Event in the previous set.
+        unlocked_task_ids = set(
+            map(
+                lambda t: t.taskID,
+                filter(
+                    lambda t: t.commID in unlocked_comm_event_ids,
+                    cls._cache.task_map.__root__.values(),
+                ),
+            )
+        )
+        # Finally gather the missions associated with the previous set of tasks.
+        unlocked_mission_ids = set(
+            map(
+                lambda m: m.missionID,
+                filter(
+                    lambda m: set(map(lambda t: t.taskID, m.taskList))
+                    & unlocked_task_ids,
+                    cls._cache.mission_map.__root__.values(),
+                ),
+            )
+        )
+
+        # Construct all the team task data objects first...
+        mission_tasks = defaultdict(list)
+        for task_id in unlocked_task_ids:
+            global_task_data = cls._cache.task_map.__root__.get(task_id)
+            if not global_task_data:
+                logging.error(
+                    f"Team {team_id} somehow unlocked task {task_id}, which was not in the global data."
+                )
+                continue
+            mission_tasks[global_task_data.missionID].append(
+                InternalTeamTaskData(taskID=task_id)
+            )
+
+        # Then use the task data objects to construct the team mission objects
+        team_specific_missions = [
+            InternalTeamMissionData(
+                missionID=mission_id,
+                taskList=mission_tasks[mission_id],
+                tasks=list(map(lambda t: t.taskID, mission_tasks[mission_id])),
+            )
+            for mission_id in unlocked_mission_ids
+        ]
+
+        for mission in team_specific_missions:
+            mission_id = mission.missionID
+            if mission_id in team_data.missions:
+                logging.warning(
+                    f"Attempted to unlock mission {mission_id} for team {team_id}, "
+                    "but it was already unlocked."
+                )
+                continue
+            team_data.missions[mission_id] = mission
 
     @classmethod
     async def jump(cls, team_id: TeamID, location_id: LocationID) -> GenericResponse:
@@ -1154,6 +1180,39 @@ class GameStateManager:
             return GenericResponse(success=True, message=new_mode)
 
     @classmethod
+    def _find_comm_event_to_activate(
+        cls, team_id: TeamID, team_data: InternalTeamGameData
+    ):
+        def is_relevant_task(global_task: InternalGlobalTaskData) -> bool:
+            team_task = team_data.tasks.get(global_task.taskID)
+            if not (team_task and team_task.visible):
+                return False
+            if team_task.complete:
+                return False
+            completion_criteria = global_task.markCompleteWhen
+            if not completion_criteria:
+                return False
+            if completion_criteria.type != "comm":
+                return False
+            if (
+                completion_criteria.locationID
+                != team_data.currentStatus.currentLocation
+            ):
+                return False
+            return True
+
+        relevant_tasks = list(
+            filter(is_relevant_task, cls._cache.task_map.__root__.values())
+        )
+        try:
+            task = relevant_tasks.pop()
+        except IndexError:
+            team_data.currentStatus.incomingTransmissionObject = {}
+            team_data.currentStatus.incomingTransmission = False
+        else:
+            cls._set_task_comm_event_active(team_id, team_data, task)
+
+    @classmethod
     async def complete_comm_event(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
             team_data = cls._cache.team_map.__root__.get(team_id)
@@ -1185,10 +1244,9 @@ class GameStateManager:
                     team_data.currentStatus.firstContactComplete = True
                     team_comm_location.visited = True
 
-            team_data.currentStatus.incomingTransmissionObject = {}
-            team_data.currentStatus.incomingTransmission = False
-
             cls._mark_task_complete_if_unlocked(team_id, team_data, "comm")
+
+            cls._find_comm_event_to_activate(team_id, team_data)
 
             logging.info(
                 f"Team {team_id} completed comm event {current_comm_event.commID}."
