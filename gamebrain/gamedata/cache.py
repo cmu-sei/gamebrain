@@ -456,7 +456,9 @@ class GameStateManager:
                     team_id, team_data, also_complete_global_task
                 )
         if completion_criteria.unlockLocation:
-            cls._unlock_location_for_team(team_id, team_data, completion_criteria.unlockLocation)
+            cls._unlock_location_for_team(
+                team_id, team_data, completion_criteria.unlockLocation
+            )
         if global_task.next:
             next_global_task = cls._cache.task_map.__root__.get(global_task.next)
             if not next_global_task:
@@ -539,12 +541,30 @@ class GameStateManager:
                 and global_task.markCompleteWhen.locationID == current_location
                 and global_task.markCompleteWhen.type == task_type
             ):
+                if not (
+                    global_task.markCompleteWhen.type != "comm"
+                    or (
+                        global_task.markCompleteWhen.type == "comm"
+                        and global_task.commID
+                        == team_data.currentStatus.incomingTransmissionObject.commID
+                    )
+                ):
+                    continue
                 cls._complete_task_and_unlock_next(team_id, team_data, global_task)
             elif (
                 global_task.cancelWhen
                 and global_task.cancelWhen.locationID == current_location
                 and global_task.cancelWhen.type == task_type
             ):
+                if not (
+                    global_task.cancelWhen.type != "comm"
+                    or (
+                        global_task.cancelWhen.type == "comm"
+                        and global_task.commID
+                        == team_data.currentStatus.incomingTransmissionObject.commID
+                    )
+                ):
+                    continue
                 team_mission = team_data.missions.get(global_task.missionID)
                 if not team_mission:
                     logging.error(
@@ -1160,6 +1180,39 @@ class GameStateManager:
             return GenericResponse(success=True, message=new_mode)
 
     @classmethod
+    def _find_comm_event_to_activate(
+        cls, team_id: TeamID, team_data: InternalTeamGameData
+    ):
+        def is_relevant_task(global_task: InternalGlobalTaskData) -> bool:
+            team_task = team_data.tasks.get(global_task.taskID)
+            if not (team_task and team_task.visible):
+                return False
+            if team_task.complete:
+                return False
+            completion_criteria = global_task.markCompleteWhen
+            if not completion_criteria:
+                return False
+            if completion_criteria.type != "comm":
+                return False
+            if (
+                completion_criteria.locationID
+                != team_data.currentStatus.currentLocation
+            ):
+                return False
+            return True
+
+        relevant_tasks = list(
+            filter(is_relevant_task, cls._cache.task_map.__root__.values())
+        )
+        try:
+            task = relevant_tasks.pop()
+        except IndexError:
+            team_data.currentStatus.incomingTransmissionObject = {}
+            team_data.currentStatus.incomingTransmission = False
+        else:
+            cls._set_task_comm_event_active(team_id, team_data, task)
+
+    @classmethod
     async def complete_comm_event(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
             team_data = cls._cache.team_map.__root__.get(team_id)
@@ -1191,10 +1244,9 @@ class GameStateManager:
                     team_data.currentStatus.firstContactComplete = True
                     team_comm_location.visited = True
 
-            team_data.currentStatus.incomingTransmissionObject = {}
-            team_data.currentStatus.incomingTransmission = False
-
             cls._mark_task_complete_if_unlocked(team_id, team_data, "comm")
+
+            cls._find_comm_event_to_activate(team_id, team_data)
 
             logging.info(
                 f"Team {team_id} completed comm event {current_comm_event.commID}."
