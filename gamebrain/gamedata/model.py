@@ -1,7 +1,7 @@
 import enum
 from typing import Literal
 
-from pydantic import BaseModel, AnyUrl
+from pydantic import BaseModel
 
 
 TaskBranchType = Literal[
@@ -124,12 +124,12 @@ class ShipDataTeamSpecific(BaseModel):
     class Config:
         use_enum_values = True
 
-    codexURL: AnyUrl
-    workstation1URL: AnyUrl
-    workstation2URL: AnyUrl
-    workstation3URL: AnyUrl
-    workstation4URL: AnyUrl
-    workstation5URL: AnyUrl
+    codexURL: str
+    workstation1URL: str
+    workstation2URL: str
+    workstation3URL: str
+    workstation4URL: str
+    workstation5URL: str
     commPower: PowerStatus = PowerStatus.off
     flightPower: PowerStatus = PowerStatus.off
     navPower: PowerStatus = PowerStatus.off
@@ -139,7 +139,7 @@ class ShipDataTeamSpecific(BaseModel):
 class SessionDataTeamSpecific(BaseModel):
     teamInfoName: str = None
     teamCodexCount: int = 0
-    jumpCutsceneURL: AnyUrl
+    jumpCutsceneURL: str
 
 
 class CommEventData(BaseModel):
