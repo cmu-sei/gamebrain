@@ -181,12 +181,12 @@
       "incomingTransmission": true,
       "incomingTransmissionObject": {
         "commID": "vid2",
-        "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
+        "videoURL": "https://presidentscup.cisa.gov/files/206f89f254e454ea5c66a8f619e5ad20-VIDEO-02.mp4",
         "commTemplate": "incoming",
         "translationMessage": "Translate Text 2",
         "scanInfoMessage": "Probe Text 2",
-        "firstContact": true,
-        "locationID": "pluto"
+        "firstContact": false,
+        "locationID": "mars"
       }
     },
     "session": {
