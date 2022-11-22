@@ -970,8 +970,18 @@ class GameStateManager:
     def _unlock_location_for_team(
         cls, team_id: TeamID, team_data: InternalTeamGameData, location_id: LocationID
     ):
+        global_location = cls._cache.location_map.__root__.get(location_id)
+        if not global_location:
+            logging.error(f"Team {team_id} tried to unlock location {location_id} but it doesn't exist.")
+            return
+        # "visited" is used to signify that the first contact has been completed for a location
+        # In the case where a location has no associated comm event, it should automatically be considered visited.
+        # Scanned is used only by the game, but the above should apply to it as well
+        scanned_and_visited = not bool(global_location.firstContactEvent)
         team_data.locations[location_id] = InternalTeamLocationData(
-            locationID=location_id
+            locationID=location_id,
+            visited=scanned_and_visited,
+            scanned=scanned_and_visited
         )
 
         # Each Comm Event has a LocationID, so gather the ones associated with the new location.
