@@ -2,48 +2,70 @@
   "comm_map": {
     "vid1": {
       "commID": "vid1",
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_1.mp4",
+      "videoURL": "https://presidentscup.cisa.gov/files/11cc8d7f896eed846202d09e572bf0c6-VIDEO-01.mp4",
       "commTemplate": "incoming",
       "translationMessage": "Translate Text 1",
       "scanInfoMessage": "Probe Text 1",
       "firstContact": true,
-      "locationID": "demoland1"
+      "locationID": "mars"
     },
     "vid2": {
       "commID": "vid2",
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
+      "videoURL": "https://presidentscup.cisa.gov/files/206f89f254e454ea5c66a8f619e5ad20-VIDEO-02.mp4",
       "commTemplate": "incoming",
       "translationMessage": "Translate Text 2",
       "scanInfoMessage": "Probe Text 2",
+      "firstContact": false,
+      "locationID": "mars"
+    },
+    "vid3": {
+      "commID": "vid3",
+      "videoURL": "https://presidentscup.cisa.gov/files/d3185072bf093a7965a676538b8a1b6e-VIDEO-03.mp4",
+      "commTemplate": "incoming",
+      "translationMessage": "Translate Text 3",
+      "scanInfoMessage": "Probe Text 3",
       "firstContact": true,
-      "locationID": "demoland2"
+      "locationID": "prescup"
     }
   },
   "location_map": {
-    "demoland1": {
-      "locationID": "demoland1",
-      "name": "Demoland 1",
-      "imageID": "image1",
-      "backdropID": "backdrop1",
-      "surroundings": "Surroundings: Demo 1",
-      "unlockCode": "123456",
+    "mars": {
+      "locationID": "mars",
+      "name": "Martian<br>Orbit",
+      "imageID": "image9",
+      "backdropID": "bkd_mars",
+      "surroundings": "Eden II Base",
+      "unlockCode": "",
       "trajectoryLaunch": 1,
       "trajectoryCorrection": 2,
       "trajectoryCube": 3,
       "firstContactEvent": "vid1",
       "networkName": "deepspace:1"
     },
-    "demoland2": {
-      "locationID": "demoland2",
-      "name": "Demoland 2",
-      "imageID": "image2",
-      "backdropID": "backdrop2",
-      "surroundings": "Surroundings: Demo 2",
-      "unlockCode": "654321",
+    "plto": {
+      "locationID": "plto",
+      "name": "Outskirts Of Pluto",
+      "imageID": "image8",
+      "backdropID": "bkd_plto",
+      "surroundings": "",
+      "unlockCode": "",
       "trajectoryLaunch": 4,
       "trajectoryCorrection": 5,
       "trajectoryCube": 6,
-      "firstContactEvent": "vid2",
+      "firstContactEvent": "",
+      "networkName": "deepspace:1"
+    },
+    "prescup": {
+      "locationID": "prescup",
+      "name": "President's Cup",
+      "imageID": "image7",
+      "backdropID": "bkd_lgpt22",
+      "surroundings": "Surroundings: Unknown Object",
+      "unlockCode": "abc123",
+      "trajectoryLaunch": 7,
+      "trajectoryCorrection": 8,
+      "trajectoryCube": 9,
+      "firstContactEvent": "vid3",
       "networkName": "deepspace:1"
     }
   },
@@ -53,8 +75,8 @@
       "title": "Demo Mission!",
       "summaryShort": "Dauntless Orientation",
       "summaryLong": "In this simulation of the Dauntless, you will be getting oriented with many of the ship's functions before embarking on the real Dauntless.",
-      "missionIcon": "exo",
-      "isSpecial": false,
+      "missionIcon": "lagrange",
+      "isSpecial": true,
       "roleList": [],
       "taskList": [
         {
@@ -72,100 +94,105 @@
         {
           "taskID": "demotask5"
         }
-      ]
+      ],
+      "points": 1000
     }
   },
   "task_map": {
     "demotask1": {
       "taskID": "demotask1",
       "missionID": "demomission",
-      "descriptionText": "Unlock a new location",
+      "descriptionText": "View previously-watched videos",
       "infoPresent": true,
-      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Launch Mode.<br>• Interact with the Navigation system<size=200%><voffset=-0.14em><sprite index=5></voffset></size>.<br>• At the top left of the station, use the button to enter an unlock code.<br>• Enter the unlock code 654321 to unlock the next location.</line-height>",
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Exploration Mode<br>• Initiate       \\\"Contact\\\" at <size=200%><voffset=-0.14em><sprite index=1></voffset></size></line-height>",
       "videoPresent": false,
       "videoURL": "",
-      "commID": ""
+      "commID": "vid1",
+      "next": "demotask2"
     },
     "demotask2": {
       "taskID": "demotask2",
       "missionID": "demomission",
-      "descriptionText": "Jump to a new location",
+      "descriptionText": "Incoming signal",
+      "infoPresent": true,
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Exploration Mode<br>• Initiate       \\\"Contact\\\" at <size=200%><voffset=-0.14em><sprite index=1></voffset></size></line-height>",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "vid2",
+      "next": "demotask3"
+    },
+    "demotask3": {
+      "taskID": "demotask3",
+      "missionID": "demomission",
+      "descriptionText": "Go to Pluto!",
       "infoPresent": true,
       "infoText": "<line-height=60%><br></line-height><line-height=140%>• Route power for Launch Mode <size=200%><voffset=-0.         14em><sprite index=3></voffset></size><br>\\u2022 Go to the <u>Nav System Workstation</u>. Set destination and note flight               calibration values. <size=200%><voffset=-0.14em><sprite index=5></size><br>• Set and lock flight calibration; engage thrusters at       <size=200%><voffset=-0.14em><sprite index=4></voffset></size><br>• Eject Data Cube from <size=200%><voffset=-0.14em><sprite             index=5></voffset></size> and insert at <size=200%><voffset=-0.14em><sprite index=0></voffset></size><br>• Initiate Launch</line-       height>",
       "videoPresent": false,
       "videoURL": "",
       "commID": "",
-      "next": "demotask3",
-      "markCompleteWhen": {
-        "type": "jump",
-        "locationID": "demoland2",
-        "alsoComplete": ["demotask1"]
-      }
-    },
-    "demotask3": {
-      "taskID": "demotask3",
-      "missionID": "demomission",
-      "descriptionText": "Route power for Exploration Mode",
-      "infoPresent": true,
-      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Route power to Sensor System Workstation, Data Link Workstation, Decoder workstation at <size=200%><voffset=-0.14em><sprite index=3></voffset></size></line-height>",
-      "videoPresent": false,
-      "videoURL": "",
-      "commID": "",
       "next": "demotask4",
       "markCompleteWhen": {
-        "type": "explorationMode",
-        "locationID": "demoland2"
+        "type": "jump",
+        "locationID": "plto"
       }
     },
     "demotask4": {
       "taskID": "demotask4",
       "missionID": "demomission",
-      "descriptionText": "Initiate a Scan",
+      "descriptionText": "Incoming signal",
       "infoPresent": true,
-      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Exploration Mode<br>• Scan for any sign of activity <size=200%><voffset=-0.14em><sprite index=1></voffset></size></line-height>",
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Exploration Mode<br>• Initiate       \\\"Contact\\\" at <size=200%><voffset=-0.14em><sprite index=1></voffset></size></line-height>",
       "videoPresent": false,
       "videoURL": "",
-      "commID": "",
+      "commID": "vid3",
       "next": "demotask5",
       "markCompleteWhen": {
-        "type": "scan",
-        "locationID": "demoland2"
+        "type": "comm",
+        "locationID": "plto"
       }
     },
     "demotask5": {
       "taskID": "demotask5",
       "missionID": "demomission",
-      "descriptionText": "Initiate Communication",
+      "descriptionText": "Unlock location and jump",
       "infoPresent": true,
-      "infoText": "<line-height=60%><br></line-height><line-height=140%>• Power should be set to Exploration Mode<br>• Initiate \"Contact\" at <size=200%><voffset=-0.14em><sprite index=1></voffset></size></line-height>",
-      "videoPresent": true,
-      "videoURL": "http://k2.etc.cmu.edu/tmpVideoStore/K2_TestVid_2.mp4",
-      "commID": "vid2",
+      "infoText": "<line-height=60%><br></line-height><line-height=140%>\\u2022 Route power for Launch Mode<br>• Set coordinates in navigation system to abc/123<size=200%><voffset=-0.14em><sprite index=5></voffset></size></line-           height><br>\\u2022 Set destination and note flight calibration values. <size=200%><voffset=-0.14em><sprite index=5></voffset></          size><sprite index=3></voffset></size><br>\\u2022 Set and lock flight calibration values; engage thrusters at <size=200%><voffset=-      0.14em><sprite index=4></voffset></size><br>\\u2022 Eject Data Cube from <size=200%><voffset=-0.14em><sprite index=5></voffset></        size> and insert at <size=200%><voffset=-0.14em><sprite index=0></voffset></size><br>\\u2022 Initiate Launch!</line-height>",
+      "videoPresent": false,
+      "videoURL": "",
+      "commID": "",
       "next": "exoarch5",
       "markCompleteWhen": {
-        "type": "comm",
-        "locationID": "demoland2"
+        "type": "jump",
+        "locationID": "prescup"
       }
     }
   },
   "team_map": {},
   "team_initial_state": {
     "currentStatus": {
-      "currentLocation": "demoland1",
-      "currentLocationScanned": false,
-      "currentLocationSurroundings": "Surroundings: Demo",
+      "currentLocation": "mars",
+      "currentLocationScanned": true,
+      "currentLocationSurroundings": "Eden II Base",
       "antennaExtended": false,
       "networkConnected": false,
       "networkName": "",
-      "firstContactComplete": false,
+      "firstContactComplete": true,
       "powerStatus": "launchMode",
-      "incomingTransmission": false,
-      "incomingTransmissionObject": null
+      "incomingTransmission": true,
+      "incomingTransmissionObject": {
+        "commID": "vid2",
+        "videoURL": "https://presidentscup.cisa.gov/files/206f89f254e454ea5c66a8f619e5ad20-VIDEO-02.mp4",
+        "commTemplate": "incoming",
+        "translationMessage": "Translate Text 2",
+        "scanInfoMessage": "Probe Text 2",
+        "firstContact": false,
+        "locationID": "mars"
+      }
     },
     "session": {
       "teamInfoName": "Default Team Name",
       "teamCodexCount": 0,
-      "jumpCutsceneURL": "http://k2.etc.cmu.edu/tmpVideoStore/cube-drive-compressed_720_low.mp4"
+      "jumpCutsceneURL": "https://presidentscup.cisa.gov/files/Kq3tPWBUjmjywQY4GQ6S5FmfxzDwxxUf_Warp_Entire_Sequence_v1.mp4"
     },
     "ship": {
       "codexURL": "http://k2.etc.cmu.edu/envsim/vmsims/codexworkstation.html",
@@ -181,7 +208,14 @@
     },
     "locations": [
       {
-        "locationID": "demoland1",
+        "locationID": "mars",
+        "unlocked": true,
+        "visited": true,
+        "scanned": true,
+        "networkEstablished": false
+      },
+      {
+        "locationID": "plto",
         "unlocked": true,
         "visited": false,
         "scanned": false,
@@ -192,13 +226,13 @@
       {
         "missionID": "demomission",
         "unlocked": true,
-        "visible": false,
+        "visible": true,
         "complete": false,
         "taskList": [
           {
             "taskID": "demotask1",
             "visible": true,
-            "complete": false
+            "complete": true
           },
           {
             "taskID": "demotask2",
