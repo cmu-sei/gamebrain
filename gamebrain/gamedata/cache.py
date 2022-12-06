@@ -1127,6 +1127,9 @@ class GameStateManager:
 
             cls._mark_task_complete_if_unlocked(team_id, team_data, "jump")
 
+            if team_location.visited:
+                cls._find_comm_event_to_activate(team_id, team_data)
+
             return GenericResponse(success=True, message=location_id)
 
     @classmethod
