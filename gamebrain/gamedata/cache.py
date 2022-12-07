@@ -350,8 +350,7 @@ class GameStateManager:
             )
             team_data.missions[global_task.missionID].tasks.append(global_task.taskID)
             logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
-            if not team_data.currentStatus.incomingTransmission:
-                cls._set_task_comm_event_active(team_id, team_data, global_task)
+            cls._find_comm_event_to_activate(team_id, team_data)
 
     @classmethod
     def _unlock_tasks_until_completion_criteria(
