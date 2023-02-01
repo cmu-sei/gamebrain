@@ -1,3 +1,6 @@
+# Copyright 2023 Carnegie Mellon University. All Rights Reserved.
+# Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+
 from json import JSONDecodeError, load as json_load, loads as json_loads
 import logging
 from typing import TextIO, BinaryIO
