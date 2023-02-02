@@ -7,6 +7,7 @@ from typing import TextIO, BinaryIO
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import ValidationError
+import pytest
 
 from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
@@ -26,6 +27,9 @@ from .gamedata.cache import (
     LocationID,
     PowerMode,
 )
+
+# This whole module was written without thinking about pytest.
+pytest.skip(allow_module_level=True)
 
 
 test_router = APIRouter(
@@ -203,9 +207,7 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
     try:
         new_state_data = json_load(file)
     except JSONDecodeError as e:
-        raise HTTPException(
-            status_code=400, detail=f"JSON has invalid formatting: {e}"
-        )
+        raise HTTPException(status_code=400, detail=f"JSON has invalid formatting: {e}")
 
     try:
         new_state = GameDataCacheSnapshot(**new_state_data)
