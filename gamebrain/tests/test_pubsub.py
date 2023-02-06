@@ -9,7 +9,7 @@ import pytest_asyncio
 from gamebrain.pubsub import Subscriber, PubSub
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
