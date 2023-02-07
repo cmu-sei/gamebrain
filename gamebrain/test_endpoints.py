@@ -1,8 +1,10 @@
 # Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 # Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
+import os
 from json import JSONDecodeError, load as json_load, loads as json_loads
 import logging
+import sys
 from typing import TextIO, BinaryIO
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
@@ -29,7 +31,8 @@ from .gamedata.cache import (
 )
 
 # This whole module was written without thinking about pytest.
-pytest.skip(allow_module_level=True)
+if os.path.basename(sys.argv[0]) in ("pytest", "py.test"):
+    pytest.skip(allow_module_level=True)
 
 
 test_router = APIRouter(
@@ -207,7 +210,8 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
     try:
         new_state_data = json_load(file)
     except JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"JSON has invalid formatting: {e}")
+        raise HTTPException(
+            status_code=400, detail=f"JSON has invalid formatting: {e}")
 
     try:
         new_state = GameDataCacheSnapshot(**new_state_data)
