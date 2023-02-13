@@ -10,9 +10,7 @@ The `settings.yaml` file holds all of the environment settings, as well as a few
 
 > ### ca_cert_path: str
 
-(Optional) This is a path to a CA certificate file used to authenticate Gameboard and Topomojo. Default is ...
-
-TODO: Check what happens when no path is provided.
+(Optional) This is a path to a CA certificate file used to authenticate Gameboard and Topomojo. Default is null, which makes the application trust the system's default CA certificates instead.
 
 > ### app_root_prefix: str
 
@@ -212,12 +210,12 @@ A JSON object containing objects with the following fields:
 
 ```
   commID: CommID - A unique identifier for this comm event.
-  videoURL: str - Which video should play when this comm event is viewed
-  commTemplate: Literal["incoming", "probe", "badTranslation"] - # TODO: clarify the difference between these
-  translationMessage: str - Message shown before interacting with the event - # TODO: verify
-  scanInfoMessage: str - Message shown after interacting with the event - # TODO: verify
-  firstContact: bool - Whether this event is considered to be the first contact event for some location
-  locationID: LocationID - The identifier of the location at which this event will play
+  videoURL: str - Which video should play when this comm event is viewed.
+  commTemplate: Literal["incoming", "probe", "badTranslation"] - "incoming" denotes a message coming from an alien, "probe" represents the result of a scan, and "badTranslation" denotes that a challenge must be completed. These are primarily flavor options.
+  translationMessage: str - Message shown before initiating the scan.
+  scanInfoMessage: str - Message shown after scanning.
+  firstContact: bool - Whether this event is considered to be the first contact event for some location.
+  locationID: LocationID - The identifier of the location at which this event will play.
 ```
 
 > ### location_map
@@ -235,7 +233,7 @@ A JSON object containing objects with the following fields:
   trajectoryCorrection: int - Middle dial value at the piloting console.
   trajectoryCube: int - Bottom dial value at the piloting console.
   firstContactEvent: str - The identifier of this location's first contact event, if there is one.
-  networkName: str - The name of the network to switch to when the antenna is extended at this location on the Antenna VM specified in settings.yaml. TopoMojo requires a suffix of ":1", ":2", and so on to indicate which network interface to switch. - # TODO: Confirm this is 1-indexed.
+  networkName: str - The name of the network to switch to when the antenna is extended at this location on the Antenna VM specified in settings.yaml. To switch any network interface aside from the first, TopoMojo requires a suffix of ":0", ":1", ":2", etc. The suffix is not required for changing the first network interface.
 ```
 
 > ### mission_map
@@ -262,7 +260,7 @@ A JSON object containing objects with the following fields:
   taskID: TaskID - A unique identifier for this task.
   missionID: MissionID - The identifier of the mission this task is associated with.
   descriptionText: str - A summary of the task shown in the list of tasks for a mission in the mission log when a mission is selected.
-  infoPresent: bool - # TODO: Figure out what this does
+  infoPresent: bool - Whether the task has more detailed information.
   infoText: str - More detailed information about the requirements for completing this task, shown when a task is selected from the mission log. Supports HTML formatting.
   videoPresent: bool - Indicates whether the task has a video associated with it after it completes. Generally used for tasks triggering comm events.
   videoURL: str - The URL of the video if there is one.
@@ -273,6 +271,8 @@ A JSON object containing objects with the following fields:
   failWhen: TaskBranch - Criteria for a "fail" path for this task. The task itself does not actually fail, but can be used to show a remediation task in the task log, for example to tell the players that they will need to try again.
   cancelWhen: TaskBranch - Criteria to clear this task from the task log. Can be used to clear a remediation task once it's done.
 ```
+
+> #### TaskBranch
 
 ```
   type: Literal[
@@ -302,7 +302,83 @@ Internal use only. It is not recommended to use this field.
 
 > ### team_initial_state
 
-# TODO: Needs a lot of explanation...
+This section controls the starting conditions for a team that has just started a run of the game. Its top-level structure is a JSON object with the following structure, and note the last two fields are both lists:
+
+```
+  currentStatus: CurrentLocationGameplayDataTeamSpecific
+  session: SessionDataTeamSpecific
+  ship: ShipDataTeamSpecific
+  locations: list[LocationDataTeamSpecific]
+  missions: list[MissionDataTeamSpecific]
+```
+
+> #### CurrentLocationGameplayDataTeamSpecific
+
+```
+  currentLocation: str - Starting location.
+  currentLocationScanned: bool - In the game client, switches the screen used and activates the scan screen based on whether the current location has been scanned and its surroundings.
+  currentLocationSurroundings: str - The "surroundings" text which shows at the current location in the game client.
+  antennaExtended: bool - Used for the antenna lever's position.
+  networkConnected: bool - Whether a network shows as connected in the game client.
+  networkName: str - The name of the connected network if the above is true.
+  firstContactComplete: bool - Setting to true blocks extending the antenna until the first contact event is completed.
+  powerStatus: Literal["launchMode", "explorationMode", "standby"] - The current power mode. Does not affect individual console power settings, only the overall power setting.
+  incomingTransmission: bool - Whether a comm event is available. Generally best to leave this set to false for the initial state and use tasks to make a comm event available.
+  incomingTransmissionObject: CommEventData | null - The full comm event data of an active comm event. See the comm_map section for details.
+```
+
+> #### SessionDataTeamSpecific
+
+```
+  teamInfoName: str - The display name of the team. This value gets updated with the team's Gameboard team ID.
+  teamCodexCount: int - The number of codexes the team currently has. Usually should be set to 0 for the initial state.
+  jumpCutsceneURL: str - The cutscene video to be displayed when jumping to a new location.
+```
+
+> #### ShipDataTeamSpecific
+
+The fields for this structure are all required, but the URLs can be set to empty strings ("") or any default URL. They are updated via endpoint called from Gameboard after deployment. The power settings can be set to "off" or "on" but they are not currently in use.
+
+```
+  codexURL: str
+  workstation1URL: str
+  workstation2URL: str
+  workstation3URL: str
+  workstation4URL: str
+  workstation5URL: str
+  commPower: Literal["off", "on"] - Communication console power. Currently unused.
+  flightPower: Literal["off", "on"] - Flight console power. Currently unused.
+  navPower: Literal["off", "on"] - Navigation console power. Currently unused.
+  pilotPower: Literal["off", "on"] - Pilot console power. Currently unused.
+```
+
+> #### LocationDataTeamSpecific
+
+```
+  locationID: LocationID - The identifier for this location.
+  unlocked: bool - Whether the location shows in the list of travel destinations.
+  visited: bool - Whether the first contact comm event has been completed at this location.
+  scanned: bool - Whether or not the location has been marked as scanned.
+  networkEstablished: bool - Unused.
+```
+
+> #### MissionDataTeamSpecific
+
+```
+  missionID: MissionID - The identifier for this mission.
+  unlocked: bool - Whether the mission is considered unlocked internally.
+  visible: bool - Whether the mission shows up in the mission log.
+  complete: bool - Whether this mission is complete. Most of the time this should be false.
+  taskList: list[TaskDataTeamSpecific] - See below for TaskDataTeamSpecific structure.
+```
+
+> ##### TaskDataTeamSpecific
+
+```
+  taskID: TaskID - The identifier for this task.
+  visible: bool - Whether this task is displayed in the mission log task list.
+  complete: bool - Whether this task is complete.
+```
 
 
 ## Setup
