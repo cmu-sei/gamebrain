@@ -4,11 +4,9 @@
 
 This application controls the game logic for the Cubespace game. It interacts with both Gameboard and Topomojo in its operation - Gameboard to know when to deploy a game and post scores, and Topomojo to check the state of the team's workspace.
 
-## Configuration
+## settings.yaml
 
 The `settings.yaml` file holds all of the environment settings, as well as a few game settings. There is an example `settings.yaml` in this directory.
-
-`initial_state.json` contains the 2022 game missions, tasks, and locations.
 
 > ### ca_cert_path: str
 
@@ -203,6 +201,109 @@ The Gameboard Game ID which launches teams into the Cubespace game.
 > ### gamebrain_admin_api_key: str
 
 This is a key that will be shared with Gameboard API so that it can deploy and undeploy Cubespace games. Also used to call test endpoints.
+
+## initial_state.json
+
+`initial_state.json` contains the 2022 game missions, tasks, and locations.
+
+> ### comm_map
+
+A JSON object containing objects with the following fields:
+
+```
+  commID: CommID - A unique identifier for this comm event.
+  videoURL: str - Which video should play when this comm event is viewed
+  commTemplate: Literal["incoming", "probe", "badTranslation"] - # TODO: clarify the difference between these
+  translationMessage: str - Message shown before interacting with the event - # TODO: verify
+  scanInfoMessage: str - Message shown after interacting with the event - # TODO: verify
+  firstContact: bool - Whether this event is considered to be the first contact event for some location
+  locationID: LocationID - The identifier of the location at which this event will play
+```
+
+> ### location_map
+
+A JSON object containing objects with the following fields:
+
+```
+  locationID: LocationID - a unique identifier for this location.
+  name: str - The name shown in the navigation console for this location.
+  imageID: str - The image shown in the navigation console for this location. Part of the game client assets.
+  backdropID: str - The image shown when at this location. Part of the game client assets.
+  surroundings: str - Text shown when at the location.
+  unlockCode: str - Code that players can input at the navigation console to unlock this location. Only relevant if not unlocked initially.
+  trajectoryLaunch: int - Top dial value at the piloting console.
+  trajectoryCorrection: int - Middle dial value at the piloting console.
+  trajectoryCube: int - Bottom dial value at the piloting console.
+  firstContactEvent: str - The identifier of this location's first contact event, if there is one.
+  networkName: str - The name of the network to switch to when the antenna is extended at this location on the Antenna VM specified in settings.yaml. TopoMojo requires a suffix of ":1", ":2", and so on to indicate which network interface to switch. - # TODO: Confirm this is 1-indexed.
+```
+
+> ### mission_map
+
+A JSON object containing objects with the following fields:
+
+```
+  missionID: MissionID - A unique identifier for this mission.
+  title: str - The title shown in the mission log of the mission.
+  summaryShort: str - The summary shown in the list of missions in-game. Supports HTML formatting.
+  summaryLong: str - The summary shown on the right pane when the mission is selected. Supports HTML formatting.
+  missionIcon: str - Icon shown in the mission log. Part of the game client assets.
+  isSpecial: bool = False - Highlight the mission in the log to make it look special. Effect is visual only.
+  roleList: list[str] - The list of work roles associated with this mission.
+  taskList: list[TaskDataIdentifierStub] - A list of objects whose only key is "taskID", with a value equalling one of the task identifiers in the task map.
+  points: int - The number of points awarded for this mission's completion.
+```
+
+> ### task_map
+
+A JSON object containing objects with the following fields:
+
+```
+  taskID: TaskID - A unique identifier for this task.
+  missionID: MissionID - The identifier of the mission this task is associated with.
+  descriptionText: str - A summary of the task shown in the list of tasks for a mission in the mission log when a mission is selected.
+  infoPresent: bool - # TODO: Figure out what this does
+  infoText: str - More detailed information about the requirements for completing this task, shown when a task is selected from the mission log. Supports HTML formatting.
+  videoPresent: bool - Indicates whether the task has a video associated with it after it completes. Generally used for tasks triggering comm events.
+  videoURL: str - The URL of the video if there is one.
+  commID: CommID - The identifier of an associated comm event, if there is one.
+  next: TaskID - The identifier of the next task to show when this one is completed.
+  completesMission: bool - Mark the associated mission complete when this task is completed.
+  markCompleteWhen: TaskBranch - Criteria for marking this task complete. See below for TaskBranch structure.
+  failWhen: TaskBranch - Criteria for a "fail" path for this task. The task itself does not actually fail, but can be used to show a remediation task in the task log, for example to tell the players that they will need to try again.
+  cancelWhen: TaskBranch - Criteria to clear this task from the task log. Can be used to clear a remediation task once it's done.
+```
+
+```
+  type: Literal[
+    "comm", - Watch a comm event.
+    "jump", - Jump to a location.
+    "explorationMode", - Change the ship's power mode to exploration mode.
+    "launchMode", - Change the ship's power mode to launch mode.
+    "standby", - Change the ship's power mode to standby mode.
+    "scan", - Initiate a scan at a location.
+    "antennaExtended", - Extend the antenna.
+    "antennaRetracted", - Retract the antenna.
+    "challenge", - A challenge is completed. See settings.yaml's game.challenge_tasks setting to set up the task dispatches.
+    "challengeFail", - A challenge is failed. See settings.yaml's game.challenge_tasks setting to set up the task dispatches.
+    "codex", - A codex has been decoded. Codex tasks are not currently configurable.
+    "indirect", - Indicate that this branch is triggered by another task's alsoComplete. Only valid if this task branch is a completion branch.
+]
+  locationID: LocationID - (Optional) The location at which this branch is triggered.
+  alsoComplete: list[TaskID] - (Optional) A list of task identifiers to also mark complete. The target tasks must be "indirect" type.
+  unlocks: TaskID - (Optional) A task to unlock on this branch. Primarily used with failure branches to unlock a remediation task.
+  unlockLocation: LocationID - (Optional) A location identifier to unlock when this task branch is triggered.
+  indirectPrerequisiteTasks: list[TaskID] - A list of tasks that are required before this task is marked complete. Only valid for "indirect" completion branches.
+```
+
+> ### team_map
+
+Internal use only. It is not recommended to use this field.
+
+> ### team_initial_state
+
+# TODO: Needs a lot of explanation...
+
 
 ## Setup
 
