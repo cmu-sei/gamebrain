@@ -38,14 +38,14 @@ class DBManager:
         __tablename__ = "challenge_secret"
 
         id = Column(String(40), primary_key=True)
-        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
+        team_id = Column(String(36), ForeignKey(
+            "team_data.id"), nullable=False)
 
     class TeamData(orm_base):
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
-        gamespace_id = Column(String(36))
-        gamespace_expiration = Column(TIMESTAMP(timezone.utc))
+        ship_gamespace_id = Column(String(36))
         headless_url = Column(String)
         team_name = Column(String)
 
@@ -59,7 +59,8 @@ class DBManager:
         __tablename__ = "console_url"
 
         id = Column(String(36), primary_key=True)
-        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
+        team_id = Column(String(36), ForeignKey(
+            "team_data.id"), nullable=False)
         url = Column(String, nullable=False)
         name = Column(String, nullable=False)
 
@@ -67,7 +68,8 @@ class DBManager:
         __tablename__ = "event"
 
         id = Column(Integer, primary_key=True)
-        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
+        team_id = Column(String(36), ForeignKey(
+            "team_data.id"), nullable=False)
         message = Column(String, nullable=False)
         received_time = Column(TIMESTAMP(timezone.utc), nullable=False)
 
@@ -98,7 +100,8 @@ class DBManager:
     async def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
         if cls.engine and not drop_first:
             return
-        cls.engine = create_async_engine(connection_string, echo=echo, future=True)
+        cls.engine = create_async_engine(
+            connection_string, echo=echo, future=True)
         # I don't know if expire_on_commit is necessary here, but the SQLAlchemy docs used it.
         cls.session_factory = sessionmaker(
             cls.engine, expire_on_commit=False, class_=AsyncSession
@@ -133,7 +136,8 @@ class DBManager:
 async def store_event(team_id: str, message: str):
     received_time = datetime.now(timezone.utc)
     event = [
-        DBManager.Event(team_id=team_id, message=message, received_time=received_time)
+        DBManager.Event(team_id=team_id, message=message,
+                        received_time=received_time)
     ]
     await DBManager.merge_rows(event)
     return received_time
@@ -161,21 +165,17 @@ async def store_virtual_machines(team_id: str, vms: List[Dict]):
 
 async def store_team(
     team_id: str,
-    gamespace_id: Optional[str] = None,
-    gamespace_expiration: Optional[str] = None,
+    ship_gamespace_id: Optional[str] = None,
     headless_url: Optional[str] | None = "",
     team_name: Optional[str] = None,
 ):
     """
-    gamespace_id: Maximum 36 character string.
-    gamespace_expiration: https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse
+    ship_gamespace_id: Maximum 36 character string.
     """
     # Avoid clobbering existing values
     kwargs = {}
-    if gamespace_id:
-        kwargs["gamespace_id"] = gamespace_id
-    if gamespace_expiration:
-        kwargs["gamespace_expiration"] = isoparse(gamespace_expiration)
+    if ship_gamespace_id:
+        kwargs["ship_gamespace_id"] = ship_gamespace_id
     if headless_url or headless_url is None:
         kwargs["headless_url"] = headless_url
     if team_name:
@@ -186,7 +186,7 @@ async def store_team(
 
 async def expire_team_gamespace(team_id: str):
     team_data = DBManager.TeamData(
-        id=team_id, gamespace_id=None, gamespace_expiration=None, headless_url=None
+        id=team_id, ship_gamespace_id=None, headless_url=None
     )
     await DBManager.merge_rows([team_data])
     await DBManager.delete_where(
@@ -271,12 +271,15 @@ async def get_assigned_headless_urls() -> dict[str, str]:
 
 
 async def get_teams_with_gamespace_ids() -> dict[str, str]:
-    # `is not` should be correct, but using it returns all teams in the DB instead of just the ones with gamespace IDs.
+    # `is not` should be correct, but using it returns all teams
+    # in the DB instead of just the ones with gamespace IDs.
     teams_with_gamespace_ids = await DBManager.get_rows(
-        DBManager.TeamData, DBManager.TeamData.gamespace_id != None
+        DBManager.TeamData, DBManager.TeamData.ship_gamespace_id != None
     )
 
-    result = {team["id"]: team["gamespace_id"] for team in teams_with_gamespace_ids}
+    result = {
+        team["id"]: team["ship_gamespace_id"] for team in teams_with_gamespace_ids
+    }
     formatted_result = json.dumps(result, indent=2)
     logging.debug(f"get_teams_with_gamespace_ids result: {formatted_result}")
     return result
