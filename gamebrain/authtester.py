@@ -17,33 +17,33 @@ else:
 GAMEBOARD_URL = "https://foundry.local/gameboard/api"
 
 GB_CLIENT_ID_UNPRIV = "gb-test-client-unpriv"
-GB_CLIENT_SECRET_UNPRIV = "46ec755e2bab4070a9634214620389b5"
+GB_CLIENT_SECRET_UNPRIV = "50c6cad84df145e3bcf101df76c31fcd"
 GB_CLIENT_ID_PRIV = "gb-test-client-priv"
-GB_CLIENT_SECRET_PRIV = "cbcf8df872684a82b370f461513ad0b3"
+GB_CLIENT_SECRET_PRIV = "c358f2840ee747e7b2d405225740755b"
 GB_ADMIN_API_KEY = "a" * 32
 GS_CLIENT_ID = "gs-test-client"
-GS_CLIENT_SECRET = "43bcc0072ab54a349368b20f1c31b0cd"
+GS_CLIENT_SECRET = "ffeba3ea22a4494fa46f5c6d93811774"
 TOKEN_URL = "https://foundry.local/identity/connect/token"
 CA_CERT_PATH = "/usr/local/share/ca-certificates/foundry-appliance-root-ca.crt"
 GAME_CLIENT_ID = "game-client"
-GAME_CLIENT_SECRET = "a78ea5460fdd4293abe5c8e09f5bba57"
+GAME_CLIENT_SECRET = "a7f467ab5bf14e23b81c67a38fb97136"
 GAMEBOARD_SCRIPT_CLIENT = "gameboard-script-test"
-GAMEBOARD_SCRIPT_SECRET = "0887738d326547ae92f06f04b4d434e2"
+GAMEBOARD_SCRIPT_SECRET = "9f776c36bd2746c3946bbd4f15ac3f7a"
 TOPOMOJO_API_BASE_URL = "https://foundry.local/topomojo/api"
-TOPOMOJO_X_API_KEY = "xaFmE0_YIo8QjDszdh0L79ySlpI79KfA"
+TOPOMOJO_X_API_KEY = "hjQC_zO2tijlbjPnjIy258fW3J8E3Gc5"
 
 TEST_USER_1 = "testplayer1@foundry.local"
 TEST_USER_1_ID = "0ee37ac5-7a64-4dca-9049-8a64f370d241"
-TEST_TEAM_1 = "a538cd94ef92416bbb547ee924056edb"
+TEST_TEAM_1 = "97f176fa52c84b8aa048d62fdb800097"
 TEST_USER_2 = "testplayer4@foundry.local"
-TEST_TEAM_2 = "30d5396dcb324a43a85368054622d09b"
+TEST_TEAM_2 = "3cf53975e2d94f57a06e9b058fdefbb2"
 TEST_SESSION_TIME = "testplayersession@foundry.local"
-TEST_SESSION_USER_ID = "dd716a9d-8b22-465b-8fbb-1bfa45a404c2"
-TEST_PASS = "7FB77QEc8yhDxAa!"
+TEST_SESSION_USER_ID = "44131b54-4610-4df7-aa9c-bdeba144fd45"
+TEST_PASS = "TESTPASS"
 FOUNDRY_ADMIN_EMAIL = "administrator@foundry.local"
 FOUNDRY_ADMIN_PASSWORD = "foundry"
 
-GAME_ID = "f63c8e41fd994e16bad08075dd2a666c"
+GAME_ID = "ee7bc919d07941ccad9b80576022a8b3"
 
 
 def main():
@@ -51,12 +51,14 @@ def main():
     warnings.filterwarnings("ignore")
 
     missing_api_key_session = Client(verify=False)
-    invalid_api_key_session = Client(headers={"X-API-Key": "x" * 32}, verify=False)
+    invalid_api_key_session = Client(
+        headers={"X-API-Key": "x" * 32}, verify=False)
     gamebrain_admin_session = Client(
         headers={"X-API-Key": GB_ADMIN_API_KEY}, verify=False
     )
 
-    gamestate_session = OAuth2Client(GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
+    gamestate_session = OAuth2Client(
+        GS_CLIENT_ID, GS_CLIENT_SECRET, verify=False)
     gamestate_session.fetch_token(TOKEN_URL)
 
     gamebrain_priv_session = OAuth2Client(
@@ -64,8 +66,10 @@ def main():
     )
     gamebrain_priv_session.fetch_token(TOKEN_URL)
 
-    user_session = OAuth2Client(GAME_CLIENT_ID, GAME_CLIENT_SECRET, verify=False)
-    user_session.fetch_token(TOKEN_URL, username=TEST_USER_1, password=TEST_PASS)
+    user_session = OAuth2Client(
+        GAME_CLIENT_ID, GAME_CLIENT_SECRET, verify=False)
+    user_session.fetch_token(
+        TOKEN_URL, username=TEST_USER_1, password=TEST_PASS)
 
     session_time_test_admin = OAuth2Client(
         GAMEBOARD_SCRIPT_CLIENT, GAMEBOARD_SCRIPT_SECRET, verify=False
@@ -151,7 +155,8 @@ def main():
     # pprint.pprint(resp.json())
 
     print("Jump to invalid location (expect failure")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/Jump/invalid/{TEST_TEAM_1}")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/Jump/invalid/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     print("Jump to locked location (expect failure")
@@ -162,8 +167,7 @@ def main():
 
     print("Jump to unlocked location (expect success)")
     resp = gamestate_session.get(
-        f"{GAMEBRAIN_URL}/GameData/Jump/cantina/{TEST_TEAM_1}"
-    )
+        f"{GAMEBRAIN_URL}/GameData/Jump/cantina/{TEST_TEAM_1}")
     pprint.pprint(resp.json())
 
     print("Getting GameData again")
@@ -171,7 +175,8 @@ def main():
     pprint.pprint(resp.json())
 
     print("Scan new location (expect success)")
-    resp = gamestate_session.get(f"{GAMEBRAIN_URL}/GameData/ScanLocation/{TEST_TEAM_1}")
+    resp = gamestate_session.get(
+        f"{GAMEBRAIN_URL}/GameData/ScanLocation/{TEST_TEAM_1}")
     # pprint.pprint(resp.json())
 
     print("Changing power mode (expect success)")
@@ -224,7 +229,8 @@ def main():
         print(session)
         if session["userId"] == TEST_SESSION_USER_ID:
             player_id = session["id"]
-            session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
+            session_time_test_admin.delete(
+                f"{GAMEBOARD_URL}/player/{player_id}")
             print(f"Deleted player {player_id}")
 
     # Then create a new session.
@@ -257,13 +263,16 @@ def main():
     # print(f"Deleted player {player_id}")
 
     # Or test automatic cleanup by marking the gamespace complete in TM:
-    topomojo_session = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
-    topomojo_session.post(f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
+    topomojo_session = Client(
+        headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
+    topomojo_session.post(
+        f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
     # Then just wait a bit to see it happen in the gamebrain log... I should probably improve testing.
 
     while True:
         time.sleep(10.0)
-        resp = gamestate_session.get(f"{GAMEBRAIN_URL}/gamestate/team_active/{team_id}")
+        resp = gamestate_session.get(
+            f"{GAMEBRAIN_URL}/gamestate/team_active/{team_id}")
         result = resp.json()
         print(f"Checked if team {team_id} is active: {result}")
         if not result:
