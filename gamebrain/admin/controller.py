@@ -22,7 +22,13 @@ from ..db import (
     store_team,
     get_assigned_headless_urls,
 )
-from ..gamedata.cache import GameStateManager, TeamID, MissionID, NonExistentTeam
+from ..gamedata.cache import (
+    GameStateManager,
+    TeamID,
+    MissionID,
+    NonExistentTeam,
+    TaskID,
+)
 from ..util import url_path_join, TeamLocks
 
 
@@ -134,16 +140,42 @@ async def get_team_name(game_id: GameID, team_id: TeamID) -> str:
     return f"Unknown Name for Team {team_id}"
 
 
+class TeamGamespaceInfo:
+    ship_gamespace: GamespaceID
+    uncontested_gamespaces: dict[TaskID, GamespaceID]
+
+
+class ShipGamespaceNotFound(Exception):
+    ...
+
+
+def retrieve_gamespace_info(
+    uncontested_gamespaces: list[GamespaceID],
+) -> TeamGamespaceInfo:
+    team_gamespace_info = TeamGamespaceInfo()
+
+    # TODO: Do a real implementation that actually pulls info from TopoMojo.
+    try:
+        ship_gamespace = uncontested_gamespaces.pop()
+    except IndexError:
+        raise ShipGamespaceNotFound
+
+    team_gamespace_info.ship_gamespace = ship_gamespace
+    team_gamespace_info.uncontested_gamespaces = {
+        str(i): g for i, g in enumerate(uncontested_gamespaces)
+    }
+
+    return team_gamespace_info
+
+
 class TeamDeploymentData(BaseModel):
-    team_id: TeamID
     team_name: str
-    ship_gamespace_id: GamespaceID
     uncontested_gamespaces: list[GamespaceID]
 
 
 class DeploymentData(BaseModel):
     game_id: GameID
-    teams: list[TeamDeploymentData]
+    teams: dict[TeamID, TeamDeploymentData]
     contested_gamespaces: list[GamespaceID]
 
 
@@ -160,10 +192,15 @@ async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
     for team in deployment_data.teams:
         team_id = team.team_id
 
+        team_gamespace_info = retrieve_gamespace_info(
+            team.uncontested_gamespaces)
+
         await GameStateManager.new_team(team_id)
 
         await store_team(
-            team_id, ship_gamespace_id=team.ship_gamespace_id, team_name=team.team_name
+            team_id,
+            ship_gamespace_id=team_gamespace_info.ship_gamespace,
+            team_name=team.team_name,
         )
 
     return DeploymentResponse(__root__=assignments)
