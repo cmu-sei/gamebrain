@@ -1,6 +1,7 @@
 # Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 # Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
+import datetime
 import json
 import os
 import pprint
@@ -33,13 +34,15 @@ TOPOMOJO_API_BASE_URL = "https://foundry.local/topomojo/api"
 TOPOMOJO_X_API_KEY = "hjQC_zO2tijlbjPnjIy258fW3J8E3Gc5"
 
 TEST_USER_1 = "testplayer1@foundry.local"
-TEST_USER_1_ID = "0ee37ac5-7a64-4dca-9049-8a64f370d241"
+TEST_USER_1_ID = "2f470899-f6f9-4041-a1f7-7b96727894df"
 TEST_TEAM_1 = "97f176fa52c84b8aa048d62fdb800097"
 TEST_USER_2 = "testplayer4@foundry.local"
+TEST_USER_2_ID = "624ee970-33a6-48c8-850e-a51702a36887"
 TEST_TEAM_2 = "3cf53975e2d94f57a06e9b058fdefbb2"
 TEST_SESSION_TIME = "testplayersession@foundry.local"
 TEST_SESSION_USER_ID = "44131b54-4610-4df7-aa9c-bdeba144fd45"
 TEST_PASS = "TESTPASS"
+TEST_WORKSPACE = "f0f9c45076d34941a32d7baa4c4b3261"
 FOUNDRY_ADMIN_EMAIL = "administrator@foundry.local"
 FOUNDRY_ADMIN_PASSWORD = "foundry"
 
@@ -78,21 +81,35 @@ def main():
         TOKEN_URL, username=FOUNDRY_ADMIN_EMAIL, password=FOUNDRY_ADMIN_PASSWORD
     )
 
-    print(f"Deploying for Team {TEST_TEAM_1}")
+    # workspace_id: str, expiration_time: str, team_members: List[Dict], total_points: int
+    deploy_data = {
+        "game_id": GAME_ID,
+        "teams": {
+            TEST_TEAM_1: {
+                "team_name": "Test Team 1",
+                "uncontested_gamespaces": ["a" * 32],
+            },
+            TEST_TEAM_2: {
+                "team_name": "Test Team 2",
+                "uncontested_gamespaces": ["b" * 32],
+            },
+        },
+        "contested_gamespaces": ["c" * 32],
+    }
+
+    print(f"Deploying shared game.")
     resp = gamebrain_admin_session.post(
-        f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{TEST_TEAM_1}", timeout=60.0
+        f"{GAMEBRAIN_URL}/admin/deploy", json=deploy_data
     )
     deployment = resp.json()
     print(deployment)
-    assert deployment["gamespaceId"] is not None
-    assert deployment["headlessUrl"] is not None
 
     user_token = user_session.token["access_token"]
 
     print("Testing get_team endpoint")
     json_data = {
         "user_token": user_token,
-        "server_container_hostname": f"server-{deployment['headlessUrl'][-1]}",
+        "server_container_hostname": f"server-{deployment[TEST_TEAM_1][-1]}",
     }
     print(json_data)
     resp = gamestate_session.post(
@@ -208,9 +225,7 @@ def main():
     current_status = game_data.get("currentStatus")
     print(json.dumps(current_status, indent=2))
 
-    resp = gamebrain_admin_session.get(
-        f"{GAMEBRAIN_URL}/admin/undeploy/{TEST_TEAM_1}", timeout=60.0
-    )
+    resp = gamebrain_admin_session.get(f"{GAMEBRAIN_URL}/admin/undeploy")
     print(resp.json())
 
     # Testing out grabbing the session remaining time for the Gamebrain deploy endpoint.
@@ -251,23 +266,6 @@ def main():
     expiration = data["sessionEnd"]
     team_id = data["teamId"]
     print(f"Session expiration time: {expiration}")
-
-    resp = gamebrain_admin_session.post(
-        f"{GAMEBRAIN_URL}/admin/deploy/{GAME_ID}/{team_id}", timeout=60.0
-    )
-    print(resp.json())
-    gamespace_id = resp.json()["gamespaceId"]
-
-    # Clean up.
-    # session_time_test_admin.delete(f"{GAMEBOARD_URL}/player/{player_id}")
-    # print(f"Deleted player {player_id}")
-
-    # Or test automatic cleanup by marking the gamespace complete in TM:
-    topomojo_session = Client(
-        headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
-    topomojo_session.post(
-        f"{TOPOMOJO_API_BASE_URL}/gamespace/{gamespace_id}/complete")
-    # Then just wait a bit to see it happen in the gamebrain log... I should probably improve testing.
 
     while True:
         time.sleep(10.0)

@@ -186,70 +186,57 @@ class DeploymentResponse(BaseModel):
 @admin_router.post("/deploy")
 async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
     assignments = await HeadlessManager.assign_headless(
-        [team.team_id for team in deployment_data.teams]
+        [team_id for team_id in deployment_data.teams]
     )
 
-    for team in deployment_data.teams:
-        team_id = team.team_id
-
+    for team_id, team_data in deployment_data.teams.items():
         team_gamespace_info = retrieve_gamespace_info(
-            team.uncontested_gamespaces)
+            team_data.uncontested_gamespaces)
 
         await GameStateManager.new_team(team_id)
 
         await store_team(
             team_id,
             ship_gamespace_id=team_gamespace_info.ship_gamespace,
-            team_name=team.team_name,
+            team_name=team_data.team_name,
         )
 
     return DeploymentResponse(__root__=assignments)
 
 
-@admin_router.get("/undeploy/{team_id}")
-async def undeploy(
-    team_id: TeamID,
-):
-    async with TeamLocks(team_id):
-        team_data = await get_team(team_id)
-        if not team_data:
-            raise HTTPException(status_code=404, detail="Team not found.")
+@admin_router.post("/undeploy")
+async def undeploy():
+    active_teams = await get_teams_active()
 
-        if gamespace_id := team_data.get("gamespace_id"):
-            await topomojo.complete_gamespace(gamespace_id)
+    for team_id in active_teams:
+        async with TeamLocks(team_id):
+            team_data = await get_team(team_id)
+            if not team_data:
+                logging.error(
+                    f"get_teams_active() call returned team {team_id}, "
+                    "but no such team appears to exist."
+                )
+                continue
+
             await expire_team_gamespace(team_id)
 
 
-class DeployResponse(BaseModel):
-    headlessUrl: HeadlessUrl | None
-    gamespaceId: GamespaceID | None
-    vms: list[ConsoleUrl]
-    totalPoints: int
-
-
 class ActiveTeamsResponse(BaseModel):
-    __root__: dict[TeamID, DeployResponse]
+    __root__: dict[TeamID, HeadlessUrl]
 
 
 @admin_router.get("/teams_active")
 async def get_teams_active() -> ActiveTeamsResponse:
     teams = await get_teams()
-    total_points = await GameStateManager.get_total_points()
     active_teams = {}
     for team in teams:
-        gamespace_id = team.get("gamespace_id")
+        ship_gamespace_id = team.get("ship_gamespace_id")
         headless_url = team.get("headless_url")
         vm_data = team.get("vm_data")
-        if not (gamespace_id and headless_url and vm_data):
+        if not (ship_gamespace_id and headless_url and vm_data):
             # Team is inactive.
             continue
-        console_urls = console_urls_from_vm_data(gamespace_id, vm_data)
-        active_teams[team.get("id")] = DeployResponse(
-            gamespaceId=gamespace_id,
-            headlessUrl=headless_url,
-            vms=console_urls,
-            totalPoints=total_points,
-        )
+        active_teams[team.get("id")] = headless_url
 
     response = ActiveTeamsResponse(__root__=active_teams)
     logging.info(f"Active teams: {json.dumps(response.dict(), indent=2)}")
