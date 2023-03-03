@@ -4,15 +4,17 @@
 
 This application controls the game logic for the Cubespace game. It interacts with both Gameboard and Topomojo in its operation - Gameboard to know when to deploy a game and post scores, and Topomojo to check the state of the team's workspace.
 
-## settings.yaml
+## Configuration
+
+### settings.yaml
 
 The `settings.yaml` file holds all of the environment settings, as well as a few game settings. There is an example `settings.yaml` in this directory with each field commented.
 
-## initial_state.json
+### initial_state.json
 
 `initial_state.json` contains the 2022 game missions, tasks, and locations.
 
-> ### comm_map
+#### `comm_map`
 
 A JSON object containing objects with the following fields:
 
@@ -26,7 +28,7 @@ A JSON object containing objects with the following fields:
   locationID: LocationID - The identifier of the location at which this event will play.
 ```
 
-> ### location_map
+#### `location_map`
 
 A JSON object containing objects with the following fields:
 
@@ -44,7 +46,7 @@ A JSON object containing objects with the following fields:
   networkName: str - The name of the network to switch to when the antenna is extended at this location on the Antenna VM specified in settings.yaml. To switch any network interface aside from the first, TopoMojo requires a suffix of ":0", ":1", ":2", etc. The suffix is not required for changing the first network interface.
 ```
 
-> ### mission_map
+#### `mission_map`
 
 A JSON object containing objects with the following fields:
 
@@ -60,7 +62,7 @@ A JSON object containing objects with the following fields:
   points: int - The number of points awarded for this mission's completion.
 ```
 
-> ### task_map
+#### `task_map`
 
 A JSON object containing objects with the following fields:
 
@@ -80,7 +82,7 @@ A JSON object containing objects with the following fields:
   cancelWhen: TaskBranch - Criteria to clear this task from the task log. Can be used to clear a remediation task once it's done.
 ```
 
-> #### TaskBranch
+##### `TaskBranch`
 
 ```
   type: Literal[
@@ -104,11 +106,11 @@ A JSON object containing objects with the following fields:
   indirectPrerequisiteTasks: list[TaskID] - A list of tasks that are required before this task is marked complete. Only valid for "indirect" completion branches.
 ```
 
-> ### team_map
+#### `team_map`
 
 Internal use only. It is not recommended to use this field.
 
-> ### team_initial_state
+#### `team_initial_state`
 
 This section controls the starting conditions for a team that has just started a run of the game. Its top-level structure is a JSON object with the following structure, and note the last two fields are both lists:
 
@@ -120,7 +122,7 @@ This section controls the starting conditions for a team that has just started a
   missions: list[MissionDataTeamSpecific]
 ```
 
-> #### CurrentLocationGameplayDataTeamSpecific
+##### `CurrentLocationGameplayDataTeamSpecific`
 
 ```
   currentLocation: str - Starting location.
@@ -135,7 +137,7 @@ This section controls the starting conditions for a team that has just started a
   incomingTransmissionObject: CommEventData | null - The full comm event data of an active comm event. See the comm_map section for details.
 ```
 
-> #### SessionDataTeamSpecific
+##### `SessionDataTeamSpecific`
 
 ```
   teamInfoName: str - The display name of the team. This value gets updated with the team's Gameboard team ID.
@@ -143,7 +145,7 @@ This section controls the starting conditions for a team that has just started a
   jumpCutsceneURL: str - The cutscene video to be displayed when jumping to a new location.
 ```
 
-> #### ShipDataTeamSpecific
+##### `ShipDataTeamSpecific`
 
 The fields for this structure are all required, but the URLs can be set to empty strings ("") or any default URL. They are updated via endpoint called from Gameboard after deployment. The power settings can be set to "off" or "on" but they are not currently in use.
 
@@ -160,7 +162,7 @@ The fields for this structure are all required, but the URLs can be set to empty
   pilotPower: Literal["off", "on"] - Pilot console power. Currently unused.
 ```
 
-> #### LocationDataTeamSpecific
+##### `LocationDataTeamSpecific`
 
 ```
   locationID: LocationID - The identifier for this location.
@@ -170,7 +172,7 @@ The fields for this structure are all required, but the URLs can be set to empty
   networkEstablished: bool - Unused.
 ```
 
-> #### MissionDataTeamSpecific
+##### `MissionDataTeamSpecific`
 
 ```
   missionID: MissionID - The identifier for this mission.
@@ -180,7 +182,7 @@ The fields for this structure are all required, but the URLs can be set to empty
   taskList: list[TaskDataTeamSpecific] - See below for TaskDataTeamSpecific structure.
 ```
 
-> ##### TaskDataTeamSpecific
+###### `TaskDataTeamSpecific`
 
 ```
   taskID: TaskID - The identifier for this task.
@@ -189,7 +191,7 @@ The fields for this structure are all required, but the URLs can be set to empty
 ```
 
 
-## Setup
+## Build and Run
 
 After setting up your environment and settings, you need to install dependencies. If you are using Docker, you can just run `docker build . -t gamebrain:latest` to build and tag an image that can be used with any Docker environment. Otherwise you will need to create a Python 3.10+ [virtual environment](https://docs.python.org/3/tutorial/venv.html) and then run `pip install -r requirements.txt` in this directory to install all of the project dependencies.
 
