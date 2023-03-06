@@ -112,7 +112,7 @@ The object supports the following fields:
 
 #### `team_map`
 
-The team mapping is for Gamebrain internal use only, and should not be used in any state JSON.
+The team mapping is for Gamebrain internal use only when a team is first created. This is a deprecated value and should be provided in the initial JSON as an empty dictionary. This will be removed in a future version.
 
 
 #### `team_initial_state`
