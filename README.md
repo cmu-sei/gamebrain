@@ -12,21 +12,24 @@ The `settings.yaml` file holds all of the environment settings, as well as a few
 
 ### initial_state.json
 
-`initial_state.json` contains the 2022 game missions, tasks, and locations.
+`initial_state.json` is an example flle containing the 2022 game missions, tasks, and locations. It is provided as an example of the structure, but the contents should be changed to reflect your intended use case. 
 
 #### `comm_map`
 
-A JSON object containing objects with the following fields:
+The communications mapping is a JSON object which provides information needed by the communications system. This system is responsible for managing when video based content is provided to end users within the shipboard interface. These messages can appear for a variety of reasons - in response to being "hailed" by another ship, in response to "scanning" an area, or other events related to the narrative. 
 
-```
-  commID: CommID - A unique identifier for this comm event.
-  videoURL: str - Which video should play when this comm event is viewed.
-  commTemplate: Literal["incoming", "probe", "badTranslation"] - "incoming" denotes a message coming from an alien, "probe" represents the result of a scan, and "badTranslation" denotes that a challenge must be completed. These are primarily flavor options.
-  translationMessage: str - Message shown before initiating the scan.
-  scanInfoMessage: str - Message shown after scanning.
-  firstContact: bool - Whether this event is considered to be the first contact event for some location.
-  locationID: LocationID - The identifier of the location at which this event will play.
-```
+The object supports the following fields:
+
+| Field name | type | Description |
+| --- | --- | --- |
+| commID | string | An identifier for a comm event. Must be unique. |
+| videoURL | string | Which video should play when this comm event is viewed. |
+| commTemplate | Literal["incoming", "probe", "badTranslation"] | "incoming" denotes a message coming from an alien, "probe" represents the result of a scan, and "badTranslation" denotes that a challenge must be completed before content is available. |
+| translationMessage | string | This text will be displayed to a player as placeholder text if no scan has been is initiated. This is most often used as a call to action such as - "No scan data available, intitiate scan to access." |
+| scanInfoMessage | string | This text will be shown after scanning. |
+| firstContact | bool | This determines if this event is considered to be the first contact event for some location. First contact events unlock follow-on activities at that location (such as allowing access to challenge content). This is intended to prevent participants from accessing material without having viewed the relevant lead-in content). |
+| locationID | string | The identifier of the location at which this event will play. This string must match a valid location name. |
+
 
 #### `location_map`
 
