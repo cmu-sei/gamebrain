@@ -24,7 +24,7 @@ The object supports the following fields:
 | --- | --- | --- |
 | commID | string | An identifier for a comm event. Must be unique. |
 | videoURL | string | Which video should play when this comm event is viewed. |
-| commTemplate | Literal | Valid values are: "incoming", "probe", "badTranslation". "incoming" denotes a message coming from an alien, "probe" represents the result of a scan, and "badTranslation" denotes that a challenge must be completed before content is available. |
+| commTemplate | Literal | Valid values are: "incoming", "probe", "badTranslation". <br/>"incoming" denotes a message coming from an alien <br/>"probe" represents the result of a scan <br/>"badTranslation" denotes that a challenge must be completed before content is available. |
 | translationMessage | string | This text will be displayed to a player as placeholder text if no scan has been is initiated. This is most often used as a call to action such as - "No scan data available, intitiate scan to access." |
 | scanInfoMessage | string | This text will be shown after scanning. |
 | firstContact | bool | This determines if this event is considered to be the first contact event for some location. First contact events unlock follow-on activities at that location (such as allowing access to challenge content). This is intended to prevent participants from accessing material without having viewed the relevant lead-in content). |
