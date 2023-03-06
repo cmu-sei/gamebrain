@@ -33,14 +33,18 @@ The object supports the following fields:
 
 #### `location_map`
 
-A JSON object containing objects with the following fields:
 
-```
-  locationID: LocationID - a unique identifier for this location.
-  name: str - The name shown in the navigation console for this location.
-  imageID: str - The image shown in the navigation console for this location. Part of the game client assets.
-  backdropID: str - The image shown when at this location. Part of the game client assets.
-  surroundings: str - Text shown when at the location.
+The location mapping is a JSON object which provides information about the various locations which participants can travel to during the course of a game. 
+
+The object supports the following fields: 
+
+| Field name | type | Description |
+| --- | --- | --- |
+| locationID | string | An identifier for a location. Must be unique. | 
+| name | string | The name shown in the Cubespace navigation console for this location |
+| imageID | string | The image shown in the Cubespace navigation console for this location. Must match the Cubespace client asset name. |
+| backdropID | string | The image shown in the background by Cubespace when at this location. Must match the Cubespace client asset name. |
+| surroundings: str - Text shown when at the location.
   unlockCode: str - Code that players can input at the navigation console to unlock this location. Only relevant if not unlocked initially.
   trajectoryLaunch: int - Top dial value at the piloting console.
   trajectoryCorrection: int - Middle dial value at the piloting console.
