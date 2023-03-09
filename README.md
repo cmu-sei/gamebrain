@@ -4,6 +4,35 @@
 
 This application controls the game logic for the [Cubespace](https://github.com/cmu-sei/cubespace) game. It interacts with both [Gameboard](https://github.com/cmu-sei/gameboard) and [TopoMojo](https://github.com/cmu-sei/topomojo) in its operation - Gameboard to know when to deploy a game and post scores, and TopoMojo to check the state of the team's workspace.
 
+## Getting Started
+
+You can run Gamebrain with Docker or Python directly:
+
+### Docker
+
+You can build and run the app with Docker:
+
+1. Build and tag an image that can be used in any Docker environment:
+
+        docker build -t gamebrain:latest .
+        
+2. Run the Docker image as a container serving on port 8000:
+
+        docker run -p 8000:8000 gamebrain
+
+### Python
+
+To run the app locally with Python:
+
+1. Create a Python 3.10+ [virtual environment](https://docs.python.org/3/tutorial/venv.html).
+2. Install the project dependencies.
+
+        pip install -r requirements.txt
+
+3. [Uvicorn](https://www.uvicorn.org/#usage) is installed as a dependency, and it is recommended. Start the server.
+
+        uvicorn gamebrain.app:APP
+
 ## Configuration
 
 ### settings.yaml
@@ -226,33 +255,3 @@ This object supports the following fields:
 | taskID | string | The identifier for this task. Must be unique. |
 | visible | bool | Whether this task is displayed in the mission log task list. |
 | complete | bool | Whether this task is complete. |
-
-
-## Build and Run
-
-After setting up your environment and settings, you need to install dependencies.
-
-### Docker
-
-You can build and run the app with Docker:
-
-1. Build and tag an image that can be used in any Docker environment:
-
-        docker build -t gamebrain:latest .
-        
-2. Run the Docker image as a container serving on port 8000:
-
-        docker run -p 8000:8000 gamebrain
-
-### Python
-
-To run the app locally with Python:
-
-1. Create a Python 3.10+ [virtual environment](https://docs.python.org/3/tutorial/venv.html).
-2. Install the project dependencies.
-
-        pip install -r requirements.txt
-
-3. [Uvicorn](https://www.uvicorn.org/#usage) is installed as a dependency, and it is recommended. Start the server.
-
-        uvicorn gamebrain.app:APP
