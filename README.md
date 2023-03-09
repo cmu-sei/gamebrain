@@ -234,11 +234,15 @@ After setting up your environment and settings, you need to install dependencies
 
 ### Docker
 
-If you are using Docker, you can just run `docker build . -t gamebrain:latest` to build and tag an image that can be used with any Docker environment.
+You can build and run the app with Docker:
 
-    docker build . -t gamebrain:latest
+1. Build and tag an image that can be used in any Docker environment:
 
-    docker run gamebrain
+        docker build -t gamebrain:latest .
+        
+2. Run the Docker image as a container serving on port 8000:
+
+        docker run -p 8000:8000 gamebrain
 
 ### Python
 
