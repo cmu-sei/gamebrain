@@ -123,12 +123,6 @@ async def liveness_check():
     return
 
 
-@APP.get("/request_client")
-async def request_client(request: Request):
-    print(request.client)
-    return request.client
-
-
 class GetTeamPostData(BaseModel):
     user_token: str
     server_container_hostname: str
