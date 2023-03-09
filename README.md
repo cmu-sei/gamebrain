@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application controls the game logic for the Cubespace game. It interacts with both Gameboard and Topomojo in its operation - Gameboard to know when to deploy a game and post scores, and Topomojo to check the state of the team's workspace.
+This application controls the game logic for the [Cubespace](https://github.com/cmu-sei/cubespace) game. It interacts with both [Gameboard](https://github.com/cmu-sei/gameboard) and [TopoMojo](https://github.com/cmu-sei/topomojo) in its operation - Gameboard to know when to deploy a game and post scores, and TopoMojo to check the state of the team's workspace.
 
 ## Configuration
 
@@ -230,6 +230,25 @@ This object supports the following fields:
 
 ## Build and Run
 
-After setting up your environment and settings, you need to install dependencies. If you are using Docker, you can just run `docker build . -t gamebrain:latest` to build and tag an image that can be used with any Docker environment. Otherwise you will need to create a Python 3.10+ [virtual environment](https://docs.python.org/3/tutorial/venv.html) and then run `pip install -r requirements.txt` in this directory to install all of the project dependencies.
+After setting up your environment and settings, you need to install dependencies.
 
-[Uvicorn](https://www.uvicorn.org/#usage) is installed as a dependency, and it is recommended. `uvicorn gamebrain.app:APP` should start the server.
+### Docker
+
+If you are using Docker, you can just run `docker build . -t gamebrain:latest` to build and tag an image that can be used with any Docker environment.
+
+    docker build . -t gamebrain:latest
+
+    docker run gamebrain
+
+### Python
+
+To run the app locally with Python:
+
+1. Create a Python 3.10+ [virtual environment](https://docs.python.org/3/tutorial/venv.html).
+2. Install the project dependencies.
+
+        pip install -r requirements.txt
+
+3. [Uvicorn](https://www.uvicorn.org/#usage) is installed as a dependency, and it is recommended. Start the server.
+
+        uvicorn gamebrain.app:APP
