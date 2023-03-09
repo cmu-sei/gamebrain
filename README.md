@@ -6,7 +6,7 @@ This application controls the game logic for the [Cubespace](https://github.com/
 
 ## Getting Started
 
-You can run Gamebrain with Docker or Python directly:
+You can run Gamebrain with Docker or directly with Python:
 
 ### Docker
 
