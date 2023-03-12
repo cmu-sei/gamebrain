@@ -101,6 +101,10 @@ async def get_gamespace(gamespace_id: str) -> Optional[Any]:
     return await _topomojo_get(f"gamespace/{gamespace_id}")
 
 
+async def get_preview(gamespace_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"preview/{gamespace_id}")
+
+
 async def get_vms_by_gamespace_id(gamespace_id: str) -> Optional[Any]:
     return await _topomojo_get(f"vms", {"filter": gamespace_id})
 
@@ -165,7 +169,8 @@ async def change_vm_params(vm_id: str, params: dict):
 async def change_vm_net(vm_id: str, new_net: str):
     possible_nets = await get_vm_nets(vm_id)
     if not possible_nets or "net" not in possible_nets:
-        logging.error(f"Could not retrieve network information for VM {vm_id}.")
+        logging.error(
+            f"Could not retrieve network information for VM {vm_id}.")
         return
 
     possible_nets = possible_nets["net"]
@@ -185,7 +190,8 @@ async def change_vm_net(vm_id: str, new_net: str):
         target_network = f"{target_network}:{interface[0]}"
 
     params = {"key": "net", "value": target_network}
-    logging.info(f"Attempting to change VM {vm_id} to network {target_network}.")
+    logging.info(
+        f"Attempting to change VM {vm_id} to network {target_network}.")
     return await change_vm_params(vm_id, params)
 
 
