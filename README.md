@@ -233,7 +233,7 @@ A JSON object containing objects with the following fields:
   trajectoryCorrection: int - Middle dial value at the piloting console.
   trajectoryCube: int - Bottom dial value at the piloting console.
   firstContactEvent: str - The identifier of this location's first contact event, if there is one.
-  networkName: str - The name of the network to switch to when the antenna is extended at this location on the Antenna VM specified in settings.yaml. To switch any network interface aside from the first, TopoMojo requires a suffix of ":0", ":1", ":2", etc. The suffix is not required for changing the first network interface.
+  networkName: str - The name of the network to switch to when the antenna is extended at this location on the Antenna VM specified in settings.yaml.
 ```
 
 > ### mission_map
