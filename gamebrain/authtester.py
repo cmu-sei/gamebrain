@@ -66,8 +66,46 @@ TEST_PASS = "TESTPASS"
 TEST_WORKSPACE = "f0f9c45076d34941a32d7baa4c4b3261"
 FOUNDRY_ADMIN_EMAIL = "administrator@foundry.local"
 FOUNDRY_ADMIN_PASSWORD = "foundry"
+TEST_SHIP_WORKSPACE = "956591cdcf5045628c98114a76111411"
+TEST_CONTESTED_WORKSPACE = "426334acb1f54ed9907bf1188169265c"
+TEST_UNCONTESTED_WORKSPACE = "f0f9c45076d34941a32d7baa4c4b3261"
 
 GAME_ID = "ee7bc919d07941ccad9b80576022a8b3"
+
+
+def register_gamespace(
+    workspace_id: str, expiration_time: str, team_members: list[dict]
+):
+    """
+    team_members: Each dict contains 'id' and 'approvedName' keys.
+    """
+    post_data = {
+        "resourceId": workspace_id,
+        "graderKey": "",
+        "graderUrl": "",
+        "variant": 0,
+        "playerCount": len(team_members),
+        "maxAttempts": 3,
+        "maxMinutes": 20,
+        "points": 100,
+        "allowReset": True,
+        "allowPreview": True,
+        "startGamespace": True,
+        "expirationTime": expiration_time,
+        "players": [
+            {"subjectId": player["id"], "subjectName": player["approvedName"]}
+            for player in team_members
+        ],
+    }
+    endpoint = "gamespace"
+
+    client = Client(headers={"X-API-Key": TOPOMOJO_X_API_KEY}, verify=False)
+    response = client.post(
+        url=f"{TOPOMOJO_API_BASE_URL}/{endpoint}", json=post_data)
+
+    print(f"TopoMojo Register Gamespace response: {response.status_code}")
+
+    return response
 
 
 def main():
@@ -102,25 +140,68 @@ def main():
         TOKEN_URL, username=FOUNDRY_ADMIN_EMAIL, password=FOUNDRY_ADMIN_PASSWORD
     )
 
+    gs_expiration_time = datetime.datetime.now() + datetime.timedelta(minutes=20)
+
+    ship_gamespace_team_1 = register_gamespace(
+        TEST_SHIP_WORKSPACE,
+        gs_expiration_time.isoformat(),
+        [{"id": TEST_TEAM_1, "approvedName": "Test Player 1"}],
+    ).json()
+    print(ship_gamespace_team_1)
+
+    uncon_gamespace_team_1 = register_gamespace(
+        TEST_UNCONTESTED_WORKSPACE,
+        gs_expiration_time.isoformat(),
+        [{"id": TEST_TEAM_1, "approvedName": "Test Player 1"}],
+    ).json()
+    print(uncon_gamespace_team_1)
+
+    ship_gamespace_team_2 = register_gamespace(
+        TEST_SHIP_WORKSPACE,
+        gs_expiration_time.isoformat(),
+        [{"id": TEST_USER_1_ID, "approvedName": "Test Player 2"}],
+    ).json()
+    print(ship_gamespace_team_2)
+
+    uncon_gamespace_team_2 = register_gamespace(
+        TEST_UNCONTESTED_WORKSPACE,
+        gs_expiration_time.isoformat(),
+        [{"id": TEST_USER_2_ID, "approvedName": "Test Player 2"}],
+    ).json()
+    print(uncon_gamespace_team_2)
+
+    con_gamespace = register_gamespace(
+        TEST_CONTESTED_WORKSPACE,
+        gs_expiration_time.isoformat(),
+        [{"id": TEST_TEAM_1, "approvedName": "Test Team 1"}],
+    ).json()
+    print(con_gamespace)
+
     # workspace_id: str, expiration_time: str, team_members: List[Dict], total_points: int
     deploy_data = {
         "game_id": GAME_ID,
         "teams": {
             TEST_TEAM_1: {
                 "team_name": "Test Team 1",
-                "uncontested_gamespaces": ["a" * 32],
+                "uncontested_gamespaces": [
+                    ship_gamespace_team_1["id"],
+                    uncon_gamespace_team_1["id"],
+                ],
             },
             TEST_TEAM_2: {
                 "team_name": "Test Team 2",
-                "uncontested_gamespaces": ["b" * 32],
+                "uncontested_gamespaces": [
+                    ship_gamespace_team_2["id"],
+                    uncon_gamespace_team_2["id"],
+                ],
             },
         },
-        "contested_gamespaces": ["c" * 32],
+        "contested_gamespaces": [con_gamespace["id"]],
     }
 
-    print(f"Deploying shared game.")
+    print("Deploying shared game.")
     resp = gamebrain_admin_session.post(
-        f"{GAMEBRAIN_URL}/admin/deploy", json=deploy_data
+        url=f"{GAMEBRAIN_URL}/admin/deploy", json=deploy_data
     )
     deployment = resp.json()
     print(deployment)

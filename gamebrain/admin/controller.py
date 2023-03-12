@@ -25,10 +25,10 @@
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+import yaml
 
 from ..auth import admin_api_key_dependency
 from ..clients import gameboard, topomojo
@@ -48,7 +48,11 @@ from ..gamedata.cache import (
     TeamID,
     MissionID,
     NonExistentTeam,
-    TaskID,
+)
+from ..gamedata.model import (
+    GamespaceData,
+    ContestedGamespaceInfo,
+    UncontestedGamespaceInfo,
 )
 from ..util import url_path_join, TeamLocks
 
@@ -161,32 +165,73 @@ async def get_team_name(game_id: GameID, team_id: TeamID) -> str:
     return f"Unknown Name for Team {team_id}"
 
 
-class TeamGamespaceInfo:
-    ship_gamespace: GamespaceID
-    uncontested_gamespaces: dict[TaskID, GamespaceID]
-
-
 class ShipGamespaceNotFound(Exception):
     ...
 
 
-def retrieve_gamespace_info(
+class TooManyShipGamespacesFound(Exception):
+    ...
+
+
+async def retrieve_uncontested_gamespace_info(
     uncontested_gamespaces: list[GamespaceID],
-) -> TeamGamespaceInfo:
-    team_gamespace_info = TeamGamespaceInfo()
-
-    # TODO: Do a real implementation that actually pulls info from TopoMojo.
-    try:
-        ship_gamespace = uncontested_gamespaces.pop()
-    except IndexError:
+) -> UncontestedGamespaceInfo:
+    gs_info = await retrieve_gamespace_info(uncontested_gamespaces)
+    if not isinstance(gs_info, UncontestedGamespaceInfo):
         raise ShipGamespaceNotFound
+    return gs_info
 
-    team_gamespace_info.ship_gamespace = ship_gamespace
-    team_gamespace_info.uncontested_gamespaces = {
-        str(i): g for i, g in enumerate(uncontested_gamespaces)
-    }
 
-    return team_gamespace_info
+async def retrieve_contested_gamespace_info(
+    contested_gamespaces: list[GamespaceID],
+) -> ContestedGamespaceInfo:
+    gs_info = await retrieve_gamespace_info(contested_gamespaces)
+    if not isinstance(gs_info, ContestedGamespaceInfo):
+        raise TooManyShipGamespacesFound
+    return gs_info
+
+
+async def retrieve_gamespace_info(
+    gamespaces: list[GamespaceID],
+) -> UncontestedGamespaceInfo | ContestedGamespaceInfo:
+    ship_gamespace = None
+    gamespace_data = {}
+
+    for gamespace_id in gamespaces:
+        preview_data = await topomojo.get_preview(gamespace_id)
+        print(preview_data)
+        markdown = preview_data.get("markdown")
+        if not markdown:
+            logging.error(
+                f"Gamespace {gamespace_id} preview did not "
+                "contain a 'markdown' field."
+            )
+            raise KeyError()
+        gs_data_yaml = yaml.safe_load(markdown)
+        try:
+            gs_data = GamespaceData(**gs_data_yaml, gamespaceID=gamespace_id)
+        except ValidationError:
+            logging.error(
+                f"Gamespace {gamespace_id} had a document that could "
+                "not be parsed as YAML."
+            )
+            continue
+
+        if gs_data.taskID is None:
+            if ship_gamespace is not None:
+                raise TooManyShipGamespacesFound
+            ship_gamespace = gamespace_id
+        else:
+            gamespace_data[gs_data.taskID] = gs_data
+
+    if ship_gamespace:
+        gs_info = UncontestedGamespaceInfo(
+            ship_gamespace=ship_gamespace, uncontested_gamespaces=gamespace_data
+        )
+    else:
+        gs_info = ContestedGamespaceInfo(contested_gamespaces=gamespace_data)
+
+    return gs_info
 
 
 class TeamDeploymentData(BaseModel):
@@ -210,9 +255,18 @@ async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
         [team_id for team_id in deployment_data.teams]
     )
 
+    contested_gs_info = await retrieve_contested_gamespace_info(
+        deployment_data.contested_gamespaces
+    )
+
+    uncontested_gs_info = {}
+
     for team_id, team_data in deployment_data.teams.items():
-        team_gamespace_info = retrieve_gamespace_info(
-            team_data.uncontested_gamespaces)
+        team_gamespace_info = await retrieve_uncontested_gamespace_info(
+            team_data.uncontested_gamespaces
+        )
+
+        uncontested_gs_info[team_id] = team_gamespace_info
 
         await GameStateManager.new_team(team_id)
 
@@ -221,6 +275,9 @@ async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
             ship_gamespace_id=team_gamespace_info.ship_gamespace,
             team_name=team_data.team_name,
         )
+
+    await GameStateManager.init_challenges(contested_gs_info, uncontested_gs_info)
+    await GameStateManager.start_game_timers()
 
     return DeploymentResponse(__root__=assignments)
 
@@ -240,6 +297,8 @@ async def undeploy():
                 continue
 
             await expire_team_gamespace(team_id)
+    await GameStateManager.uninit_challenges()
+    await GameStateManager.stop_game_timers()
 
 
 class ActiveTeamsResponse(BaseModel):
