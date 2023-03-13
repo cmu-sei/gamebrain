@@ -327,7 +327,7 @@ def main():
     current_status = game_data.get("currentStatus")
     print(json.dumps(current_status, indent=2))
 
-    resp = gamebrain_admin_session.get(f"{GAMEBRAIN_URL}/admin/undeploy")
+    resp = gamebrain_admin_session.post(f"{GAMEBRAIN_URL}/admin/undeploy")
     print(resp.json())
 
     # Testing out grabbing the session remaining time for the Gamebrain deploy endpoint.
