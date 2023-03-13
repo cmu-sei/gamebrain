@@ -198,8 +198,7 @@ async def retrieve_gamespace_info(
     gamespace_data = {}
 
     for gamespace_id in gamespaces:
-        preview_data = await topomojo.get_preview(gamespace_id)
-        print(preview_data)
+        preview_data = await topomojo.get_gamespace(gamespace_id)
         markdown = preview_data.get("markdown")
         if not markdown:
             logging.error(
