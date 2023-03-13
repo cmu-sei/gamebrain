@@ -1,32 +1,62 @@
+# (Optional) A URL path prefix for all endpoints. Default is "/gamebrain".
 app_root_prefix: /
+# (Optional) This is a path to a CA certificate file used to authenticate Gameboard and Topomojo. Default is null, which makes the application trust the system's default CA certificates instead.
 ca_cert_path: /usr/local/share/ca-certificates/foundry-appliance-root-ca.crt
+# This is a key that will be shared with Gameboard API so that it can deploy and undeploy Cubespace games. Also used to call test endpoints.
 gamebrain_admin_api_key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+# This is a section that has various subkeys related to interactions with Identity server.
 identity:
+  # Used to communicate with Identity.
   base_url: https://foundry.local/identity
+  # Used as a suffix to the base URL when retrieving a token.
   token_endpoint: connect/token
+  # Used to validate received tokens.
   jwks_endpoint: .well-known/openid-configuration/jwks
+  # A client should be made in Identity specifically for Gamebrain. Its ID should be provided here. Currently this client must be a Resource Owner.
   client_id: gamebrain-client
+  # Generate a secret for the Gamebrain client and supply it here.
   client_secret: 0c1a8e7be6624c83bc9b8b2c9b99ac31
+  # Configuration section for JWT **scopes** for API endpoints. The name is a holdover from early development.
   jwt_audiences:
+    # This scope is required for an individual player's identity token.
     gamebrain_api_unpriv: gamebrain-api-unpriv
+    # (Optional) This scope is deprecated, but currently required to be specified. An empty string is fine.
     gamebrain_api_priv: gamebrain-api-priv
+    # This scope is required for any interactions with the game logic API. This should be included in the Cubespace server's authentication token.
     gamestate_api: gamestate-api
+  # Usually will be the same as base_url, but not necessarily. Check other tokens from Identity to verify the issuer.
   jwt_issuer: https://foundry.local/identity
+  # A real user account needs to be created for Gameboard interactions.
   token_user: administrator@foundry.local
+  # The password for the above account.
   token_password: foundry
+# This is a section with keys related to interactions with Topomojo.
 topomojo:
+  # This will usually be a URL to Topomojo ending in `/api` or `/api/`.
   base_api_url: https://foundry.local/topomojo/api/
+  # Generate a secret for the created bot account and insert it here.
   x_api_key: hjQC_zO2tijlbjPnjIy258fW3J8E3Gc5
+  # Gamebrain will need a configured bot account in Topomojo with Observer permission enabled in order to do its work. The name of that bot account should be inserted here.
   x_api_client: Administrator
+# This is a section with keys related to interactions with Gameboard.
 gameboard:
+  # Gameboard's base URL.
   base_url: https://foundry.local/gameboard/
+  # Gameboard's API URL. This will usually, but not necessarily, start with `base_url` and then end with `/api` or `/api/`.
   base_api_url: https://foundry.local/gameboard/api/
+# This section contains database-related configuration.
 db:
+  # This option is directly passed to create_async_engine (https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#sqlalchemy.ext.asyncio.create_async_engine). By default, `requirements.txt` only includes the `asyncpg` package, and that is the only one that has been tested. It should be possible to swap the async engine to use another database by installing another async package, but it has never been tested.
   connection_string: postgresql+asyncpg://gamebrain:gamebrain@127.0.0.1:5432/gamebrain
+  # (Optional) Mostly used for testing. This will drop all tables associated with Gamebrain on startup. Defaults to false.
   drop_app_tables: true
+  # (Optional) Mostly used for testing. Print out all SQL commands executed. Defaults to false.
   echo_sql: false
+# These settings set certain game parameters that are not set within the game initial state file.
 game:
+  # (Optional) Maximum time a gamespace can exist (subject to Topomojo settings). Why is this here instead of Topomojo settings? I have no idea.
   gamespace_duration_minutes: 30
+  # This subsection is deprecated.
   event_actions:
     - event_message_partial: "Mission 1"
       action:
@@ -38,12 +68,33 @@ game:
         action_type: dispatch
         vm_name: ubuntu
         command: touch /home/tmtest/it-worked
+  # This is the name of the VM used as a gateway to challenges within the game's Topomojo workspace. It will have its network changed at each location when the in-game antenna is extended or retracted based on data in the game state.
   antenna_vm_name: "extend-antenna-test"
+  # This is the main grading VM. This VM will have some scripting that allows it to report completed codexes.
   grading_vm_name: "challenge-server"
+  # This is the command that will periodically run on the above grading VM. The command should print the following keys in JSON format (values can be "success" or "fail" for the first six listed keys, "up" or "down" for the remainder):
+  # ```
+  # {
+  #   exoArch: fail,
+  #   redRaider: success,
+  #   ancientRuins: fail,
+  #   xenoCult: fail,
+  #   museum: fail,
+  #   finalGoal: fail,
+  #   comms: up,
+  #   flight: up,
+  #   nav: down,
+  #   pilot: up
+  # }
+  # ```
   grading_vm_dispatch_command: "cat /home/user/challengeServer/custom_scripts/requestGrade.py"
+  # A list of dictionaries with the following keys:
   challenge_tasks:
+      # Task ID that corresponds to a task in the JSON game data which needs to be completed within the team's gamespace.
     - task_id: "redradr6"
+      # A VM to run a command on. This VM should not be accessible to players.
       vm_name: "pirate-attacker"
+      # A command to execute on the target VM. The result of the command should include the string "success" or "fail".
       dispatch_command: "cat /home/user/LanguageFile"
     - task_id: "exoarch6"
       vm_name: "station-scada-system"
@@ -51,11 +102,17 @@ game:
     - task_id: "cllctn6"
       vm_name:  "museum-approach"
       dispatch_command: bash -c "cat /home/user/audit && rm /home/user/audit"
+  # The location ID of the "win" location, as it is specified within the game initial state JSON.
   final_destination_name: "final"
+  # The name of a file to create on the **grading VM** to make it aware that the final goal is complete within the game.
   final_destination_file_path: "/home/user/challengeServer/custom_scripts/final_goal"
+  # Deprecated.
   gamestate_test_mode: false
+  # The Gameboard Game ID which launches teams into the Cubespace game.
   game_id: ee7bc919d07941ccad9b80576022a8b3
+  # `key: value` pairs addressing each cubespace headless server. The key is the `hostname` the server program can see within its environment. The value is a public URL to the server.
   headless_client_urls:
     "server-1": "https://foundry.local/gameserver/1"
     "server-2": "https://foundry.local/gameserver/2"
+# (Optional) Whether to turn performance profiling on or not. Mostly used for development purposes. Default is false.
 profiling: false
