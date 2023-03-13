@@ -851,7 +851,7 @@ class GameStateManager:
         for (
             task_id,
             gamespace_data,
-        ) in contested_challenge_info.contested_challenges.items():
+        ) in contested_challenge_info.contested_gamespaces.items():
             npc_ship_id = get_npc_ship_id(task_id)
             if not npc_ship_id:
                 continue
@@ -861,7 +861,10 @@ class GameStateManager:
         for team_id, gamespace_info in uncontested_challenge_info.items():
             cls._cache.uncontested_challenges[team_id] = {}
 
-            for task_id, gamespace_data in gamespace_info:
+            for (
+                task_id,
+                gamespace_data,
+            ) in gamespace_info.uncontested_gamespaces.items():
                 npc_ship_id = get_npc_ship_id(task_id)
                 if not npc_ship_id:
                     continue
