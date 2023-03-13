@@ -61,12 +61,12 @@ class GamespaceData(BaseModel):
     gamespaceID: GamespaceID
 
 
-class UncontestedGamespaceInfo:
+class UncontestedGamespaceInfo(BaseModel):
     ship_gamespace: GamespaceID
     uncontested_gamespaces: dict[TaskID, GamespaceData]
 
 
-class ContestedGamespaceInfo:
+class ContestedGamespaceInfo(BaseModel):
     contested_gamespaces: dict[TaskID, GamespaceData]
 
 
