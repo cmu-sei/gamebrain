@@ -285,7 +285,7 @@ async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
 async def undeploy():
     active_teams = await get_teams_active()
 
-    for team_id in active_teams:
+    for team_id in active_teams.__root__:
         async with TeamLocks(team_id):
             team_data = await get_team(team_id)
             if not team_data:
