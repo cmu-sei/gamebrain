@@ -24,6 +24,7 @@
 
 import asyncio
 from collections import defaultdict
+import datetime
 import json
 import logging
 from typing import Literal
@@ -32,8 +33,12 @@ from pydantic import BaseModel
 
 from ..db import get_team
 from .model import (
+    NPCShipData,
     GameDataTeamSpecific,
     GameDataResponse,
+    GamespaceData,
+    ContestedGamespaceInfo,
+    UncontestedGamespaceInfo,
     InternalCommEvent,
     InternalGlobalTaskData,
     InternalTeamTaskData,
@@ -65,11 +70,19 @@ LocationID = str
 MissionID = str
 TaskID = str
 TeamID = str
+NPCShipID = str
+GamespaceID = str
 
 JsonStr = str
 
 VmName = str
 VmURL = str
+
+NPCShipMap = dict[NPCShipID, NPCShipData]
+ContestedChallengeMap = dict[NPCShipID, GamespaceData]
+UncontestedChallengeMap = dict[NPCShipID, GamespaceData]
+
+JUMP_TIME_DELTA = datetime.timedelta(minutes=10)
 
 
 class NonExistentTeam(Exception):
@@ -212,11 +225,15 @@ class GlobalData(BaseModel):
     location_map: LocationMap
     mission_map: MissionMap
     task_map: TaskMap
+    npc_ships: NPCShipMap = {}
+    contested_challenges: ContestedChallengeMap = {}
+    uncontested_challenges: dict[TeamID, UncontestedChallengeMap] = {}
 
 
 class GameDataCacheSnapshot(GlobalData):
     team_map: TeamMap
     team_initial_state: GameDataTeamSpecific
+    jump_cycle_number: int = 0
 
     def to_internal(self) -> "InternalCache":
         comm_to_task_mapping = {}
@@ -231,6 +248,10 @@ class GameDataCacheSnapshot(GlobalData):
             task_map=self.task_map.to_internal(),
             team_map=self.team_map.to_internal(),
             team_initial_state=self.team_initial_state.to_internal(),
+            npc_ships=self.npc_ships,
+            jump_cycle_number=self.jump_cycle_number,
+            contested_challenges=self.contested_challenges,
+            uncontested_challenges=self.uncontested_challenges,
         )
 
 
@@ -241,6 +262,10 @@ class InternalCache(BaseModel):
     task_map: InternalTaskMap
     team_map: InternalTeamMap
     team_initial_state: InternalTeamGameData
+    npc_ships: NPCShipMap
+    jump_cycle_number: int = 0
+    contested_challenges: ContestedChallengeMap = {}
+    uncontested_challenges: dict[TeamID, UncontestedChallengeMap] = {}
 
     def to_snapshot(self) -> GameDataCacheSnapshot:
         return GameDataCacheSnapshot(
@@ -250,10 +275,15 @@ class InternalCache(BaseModel):
             task_map=self.task_map.to_snapshot(),
             team_map=self.team_map.to_snapshot(),
             team_initial_state=self.team_initial_state.to_snapshot(),
+            npc_ships=self.npc_ships,
+            jump_cycle_number=self.jump_cycle_number,
+            contested_challenges=self.contested_challenges,
+            uncontested_challenges=self.uncontested_challenges,
         )
 
 
-# I wasn't sure if the output models should really be here, but there wasn't really any other obvious place to put them.
+# I wasn't sure if the output models should really be here,
+# but there wasn't really any other obvious place to put them.
 SuccessOrFail = Literal["success", "fail"]
 UpOrDown = Literal["up", "down"]
 
@@ -276,6 +306,9 @@ class GameStateManager:
     _cache: InternalCache
 
     _settings: "SettingsModel"
+    _active_game_timer_task = None
+
+    _next_npc_ship_jump: datetime.datetime = None
 
     @staticmethod
     def _log_completion(
@@ -296,15 +329,9 @@ class GameStateManager:
             logging.warning(message)
 
     @staticmethod
-    async def _get_vm_id_from_name(team_id: TeamID, vm_name: str) -> GenericResponse:
-        team_db_data = await get_team(team_id)
-        gamespace_id = team_db_data.get("gamespace_id")
-
-        if not gamespace_id:
-            message = f"No Gamespace for Team {team_id}"
-            logging.error(message)
-            return GenericResponse(success=False, message=message)
-
+    async def _get_vm_id_from_name_for_gamespace(
+        gamespace_id: GamespaceID, vm_name: str
+    ) -> GenericResponse:
         vms = await topomojo.get_vms_by_gamespace_id(gamespace_id)
         if not vms:
             message = f"No VMs registered for Gamespace {gamespace_id}"
@@ -334,6 +361,22 @@ class GameStateManager:
                 message=message,
             )
 
+    @staticmethod
+    async def _get_vm_id_from_name_for_team(
+        team_id: TeamID, vm_name: str
+    ) -> GenericResponse:
+        team_db_data = await get_team(team_id)
+        gamespace_id = team_db_data.get("gamespace_id")
+
+        if not gamespace_id:
+            message = f"No Gamespace for Team {team_id}"
+            logging.error(message)
+            return GenericResponse(success=False, message=message)
+
+        return await GameStateManager._get_vm_id_from_name_for_gamespace(
+            gamespace_id, vm_name
+        )
+
     @classmethod
     def _set_task_comm_event_active(
         cls,
@@ -356,7 +399,8 @@ class GameStateManager:
             {} if not comm_event else comm_event.to_snapshot()
         )
         if team_data.currentStatus.incomingTransmission:
-            logging.info(f"Set comm event {global_task.commID} for team {team_id}.")
+            logging.info(
+                f"Set comm event {global_task.commID} for team {team_id}.")
         else:
             logging.info(f"Did not set comm event for team {team_id}.")
 
@@ -372,7 +416,8 @@ class GameStateManager:
             team_data.tasks[global_task.taskID] = InternalTeamTaskData(
                 taskID=global_task.taskID, visible=True, complete=False
             )
-            team_data.missions[global_task.missionID].tasks.append(global_task.taskID)
+            team_data.missions[global_task.missionID].tasks.append(
+                global_task.taskID)
             logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
             cls._find_comm_event_to_activate(team_id, team_data)
 
@@ -483,7 +528,8 @@ class GameStateManager:
                 team_id, team_data, completion_criteria.unlockLocation
             )
         if global_task.next:
-            next_global_task = cls._cache.task_map.__root__.get(global_task.next)
+            next_global_task = cls._cache.task_map.__root__.get(
+                global_task.next)
             if not next_global_task:
                 logging.error(
                     f"Task {global_task.taskID} indicated its next task was {global_task.next}, but that task "
@@ -502,7 +548,8 @@ class GameStateManager:
                 )
                 return True
             mission.complete = True
-            global_mission = cls._cache.mission_map.__root__.get(mission.missionID)
+            global_mission = cls._cache.mission_map.__root__.get(
+                mission.missionID)
             if not global_mission:
                 logging.error(
                     f"Team {team_id} had unlocked a mission with ID {mission.missionID}, but it does not "
@@ -573,7 +620,8 @@ class GameStateManager:
                     )
                 ):
                     continue
-                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+                cls._complete_task_and_unlock_next(
+                    team_id, team_data, global_task)
             elif (
                 global_task.cancelWhen
                 and global_task.cancelWhen.locationID == current_location
@@ -636,6 +684,130 @@ class GameStateManager:
                 )
 
     @classmethod
+    async def _npc_jump_contested(cls, ship_id: NPCShipID, destination: LocationID):
+        challenge_data = cls._cache.contested_challenges.get(ship_id)
+        if not challenge_data:
+            logging.error(
+                "Contested NPC ship jump attempted with invalid ship ID " f"{ship_id}."
+            )
+            return
+
+        response = await cls._get_vm_id_from_name_for_gamespace(
+            challenge_data.gamespaceID, challenge_data.gatewayVmName
+        )
+
+        if response.success is False:
+            logging.error(
+                f"Contested NPC jump for ship {ship_id} failed "
+                f"with reason {response.message}."
+            )
+            return
+        location_data = cls._cache.location_map.__root__[destination]
+        location_net = location_data.networkName
+        new_net = f"{location_net}:{challenge_data.gatewayNic}"
+
+        vm_id = response.message
+
+        await topomojo.change_vm_net(vm_id, new_net)
+
+    @classmethod
+    async def _npc_jump_uncontested(cls, ship_id: NPCShipID, destination: LocationID):
+        challenge_data_teams = cls._cache.uncontested_challenges.get(ship_id)
+        if not challenge_data_teams:
+            logging.error(
+                "Uncontested NPC ship jump attempted with invalid ship ID "
+                f"{ship_id}."
+            )
+            return
+
+        for team_id, challenge_data in challenge_data_teams.items():
+            response = await cls._get_vm_id_from_name_for_gamespace(
+                challenge_data.gamespaceID, challenge_data.gatewayVmName
+            )
+
+            if response.success is False:
+                logging.error(
+                    f"Uncontested NPC jump for ship {ship_id} failed "
+                    f"with reason {response.message}."
+                )
+                continue
+            location_data = cls._cache.location_map.__root__[destination]
+            location_net = location_data.networkName
+            new_net = f"{location_net}:{challenge_data.gatewayNic}"
+
+            vm_id = response.message
+
+            await topomojo.change_vm_net(vm_id, new_net)
+
+    @classmethod
+    async def _npc_jump(cls, ship_id: NPCShipID, destination: LocationID):
+        uncontested_list = list(
+            map(
+                lambda t: ship_id in cls._cache.uncontested_challenges[t],
+                cls._cache.uncontested_challenges.keys(),
+            )
+        )
+        if ship_id in cls._cache.contested_challenges:
+            await cls._npc_jump_contested(ship_id, destination)
+        elif all(uncontested_list):
+            await cls._npc_jump_uncontested(ship_id, destination)
+        elif any(uncontested_list):
+            logging.error(
+                f"NPC Ship {ship_id} attempted to jump, but at least one team "
+                "does not have this ship in its list of uncontested challenges."
+            )
+        else:
+            logging.error(
+                f"NPC Ship {ship_id} attempted to jump, but it was "
+                "not associated with any challenges."
+            )
+
+    @classmethod
+    async def _game_timer_task(cls):
+        cls._next_npc_ship_jump = datetime.datetime.now()
+
+        while True:
+            async with cls._lock:
+                if datetime.datetime.now() < cls._next_npc_ship_jump:
+                    continue
+
+                for ship, route in cls._cache.npc_ships.items:
+                    destination = route[cls._cache.jump_cycle_number % len(
+                        route)]
+                    await cls._npc_jump(ship, destination)
+
+                cls._next_npc_ship_jump += JUMP_TIME_DELTA
+                cls._cache.jump_cycle_number += 1
+
+            asyncio.sleep(2)
+
+    @staticmethod
+    def _handle_task_result(task: asyncio.Task) -> None:
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            logging.info("Task %r cancelled.")
+        except Exception:  # pylint: disable=broad-except
+            logging.exception("Exception raised by task = %r", task)
+
+    @classmethod
+    async def start_game_timers(cls):
+        async with cls._lock:
+            cls._game_timer_task = asyncio.create_task(cls._game_timer_task())
+            cls._game_timer_task.add_done_callback(cls._handle_task_result)
+
+    @classmethod
+    async def stop_game_timers(cls):
+        async with cls._lock:
+            if cls._game_timer_task is None:
+                logging.warning(
+                    "stop_game_timers called without timers being started.")
+                return
+
+            cls._game_timer_task.cancel()
+            cls._game_timer_task = None
+
+    @classmethod
     async def get_total_points(cls) -> int:
         async with cls._lock:
             return sum(
@@ -655,6 +827,54 @@ class GameStateManager:
             cls._basic_validation(initial_state)
             cls._cache = initial_state.to_internal()
             cls._settings = settings
+
+    @classmethod
+    async def init_challenges(
+        cls,
+        contested_challenge_info: ContestedGamespaceInfo,
+        uncontested_challenge_info: dict[TeamID, UncontestedGamespaceInfo],
+    ):
+        def get_npc_ship_id(task_id):
+            global_task_data = cls._cache.task_map.__root__.get(task_id)
+            if not global_task_data:
+                logging.error(
+                    f"Gamespace {gamespace_data.gamespaceID} had an "
+                    f"invalid task ID {task_id}."
+                )
+                return
+
+            mission_id = global_task_data.missionID
+            global_mission_data = cls._cache.mission_map.__root__[mission_id]
+
+            return global_mission_data.npcShip
+
+        for (
+            task_id,
+            gamespace_data,
+        ) in contested_challenge_info.contested_gamespaces.items():
+            npc_ship_id = get_npc_ship_id(task_id)
+            if not npc_ship_id:
+                continue
+
+            cls._cache.contested_challenges[npc_ship_id] = gamespace_data
+
+        for team_id, gamespace_info in uncontested_challenge_info.items():
+            cls._cache.uncontested_challenges[team_id] = {}
+
+            for (
+                task_id,
+                gamespace_data,
+            ) in gamespace_info.uncontested_gamespaces.items():
+                npc_ship_id = get_npc_ship_id(task_id)
+                if not npc_ship_id:
+                    continue
+
+                cls._cache.uncontested_challenges[team_id][npc_ship_id] = gamespace_data
+
+    @classmethod
+    async def uninit_challenges(cls):
+        cls._cache.contested_challenges = {}
+        cls._cache.uncontested_challenges = {}
 
     @classmethod
     async def new_team(cls, team_id: TeamID):
@@ -697,15 +917,19 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
+            team_data.ship.nextJumpTime = cls._next_npc_ship_jump.isoformat()
+
             full_loc_data = []
             for location_id, location in team_data.locations.items():
                 loc_global = cls._cache.location_map.__root__[location_id]
-                loc_full = LocationDataFull(**loc_global.dict() | location.dict())
+                loc_full = LocationDataFull(
+                    **loc_global.dict() | location.dict())
                 full_loc_data.append(loc_full)
 
             full_mission_data = []
             for mission in team_data.missions.values():
-                mission_global = cls._cache.mission_map.__root__[mission.missionID]
+                mission_global = cls._cache.mission_map.__root__[
+                    mission.missionID]
                 task_list = []
                 for task_id in mission.tasks:
                     team_task = team_data.tasks.get(task_id)
@@ -771,7 +995,8 @@ class GameStateManager:
                 )
                 return
 
-            cls._complete_task_and_unlock_next(team_id, team_data, global_task_data)
+            cls._complete_task_and_unlock_next(
+                team_id, team_data, global_task_data)
 
     @classmethod
     async def dispatch_challenge_task_failed(cls, team_id: TeamID, task_id: str):
@@ -839,7 +1064,8 @@ class GameStateManager:
                         f"Grading dispatch for team {team_id} "
                         f"indicates codex completion for task {task_id}"
                     )
-                    global_task_data = cls._cache.task_map.__root__.get(task_id)
+                    global_task_data = cls._cache.task_map.__root__.get(
+                        task_id)
                     if not global_task_data:
                         logging.error(
                             f"Dispatch for team {team_id} indicated completion for {task_id}, "
@@ -872,11 +1098,16 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            team_data.ship.workstation1URL = vm_urls.get("operator-terminal-1", "")
-            team_data.ship.workstation2URL = vm_urls.get("operator-terminal-2", "")
-            team_data.ship.workstation3URL = vm_urls.get("operator-terminal-3", "")
-            team_data.ship.workstation4URL = vm_urls.get("operator-terminal-4", "")
-            team_data.ship.workstation5URL = vm_urls.get("operator-terminal-5", "")
+            team_data.ship.workstation1URL = vm_urls.get(
+                "operator-terminal-1", "")
+            team_data.ship.workstation2URL = vm_urls.get(
+                "operator-terminal-2", "")
+            team_data.ship.workstation3URL = vm_urls.get(
+                "operator-terminal-3", "")
+            team_data.ship.workstation4URL = vm_urls.get(
+                "operator-terminal-4", "")
+            team_data.ship.workstation5URL = vm_urls.get(
+                "operator-terminal-5", "")
             team_data.ship.codexURL = vm_urls.get("codex-decoder", "")
 
             logging.info(
@@ -895,7 +1126,7 @@ class GameStateManager:
                     success=False, message="First Contact Event Incomplete"
                 )
 
-            vm_id_response = await cls._get_vm_id_from_name(
+            vm_id_response = await cls._get_vm_id_from_name_for_team(
                 team_id, cls._settings.game.antenna_vm_name
             )
             if not vm_id_response.success:
@@ -905,15 +1136,19 @@ class GameStateManager:
             location_data = cls._cache.location_map.__root__[
                 team_data.currentStatus.currentLocation
             ]
-            new_net = location_data.networkName
+            location_net = location_data.networkName
+            uncon_net = f"{location_net}:{team_data.ship.uncontestedNic}"
+            con_net = f"{location_net}:{team_data.ship.contestedNic}"
 
-            await topomojo.change_vm_net(vm_id, new_net)
+            await topomojo.change_vm_net(vm_id, uncon_net)
+            await topomojo.change_vm_net(vm_id, con_net)
 
             team_data.currentStatus.antennaExtended = True
             team_data.currentStatus.networkConnected = True
-            team_data.currentStatus.networkName = new_net
+            team_data.currentStatus.networkName = location_net
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, "antennaExtended")
+            cls._mark_task_complete_if_unlocked(
+                team_id, team_data, "antennaExtended")
 
             return GenericResponse(
                 success=True, message=f"Team {team_id} extended their antenna."
@@ -926,16 +1161,19 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            vm_id_response = await cls._get_vm_id_from_name(
+            vm_id_response = await cls._get_vm_id_from_name_for_team(
                 team_id, cls._settings.game.antenna_vm_name
             )
             if not vm_id_response.success:
                 return vm_id_response
             vm_id = vm_id_response.message
 
-            await topomojo.change_vm_net(
-                vm_id, cls._settings.game.antenna_retracted_network
-            )
+            empty_net = cls._settings.game.antenna_retracted_network
+            uncon_net = f"{empty_net}:{team_data.ship.uncontestedNic}"
+            con_net = f"{empty_net}:{team_data.ship.contestedNic}"
+
+            await topomojo.change_vm_net(vm_id, uncon_net)
+            await topomojo.change_vm_net(vm_id, con_net)
 
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False
@@ -943,7 +1181,8 @@ class GameStateManager:
                 cls._settings.game.antenna_retracted_network
             )
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, "antennaRetracted")
+            cls._mark_task_complete_if_unlocked(
+                team_id, team_data, "antennaRetracted")
 
             return GenericResponse(
                 success=True, message=f"Team {team_id} retracted their antenna."
@@ -995,7 +1234,9 @@ class GameStateManager:
     ):
         global_location = cls._cache.location_map.__root__.get(location_id)
         if not global_location:
-            logging.error(f"Team {team_id} tried to unlock location {location_id} but it doesn't exist.")
+            logging.error(
+                f"Team {team_id} tried to unlock location {location_id} but it doesn't exist."
+            )
             return
         # "visited" is used to signify that the first contact has been completed for a location
         # In the case where a location has no associated comm event, it should automatically be considered visited.
@@ -1004,7 +1245,7 @@ class GameStateManager:
         team_data.locations[location_id] = InternalTeamLocationData(
             locationID=location_id,
             visited=scanned_and_visited,
-            scanned=scanned_and_visited
+            scanned=scanned_and_visited,
         )
 
         # Each Comm Event has a LocationID, so gather the ones associated with the new location.
@@ -1166,7 +1407,8 @@ class GameStateManager:
                 team_data.currentStatus.currentLocation
             ]
 
-            team_location_data = team_data.locations.get(location_data.locationID)
+            team_location_data = team_data.locations.get(
+                location_data.locationID)
             if not team_location_data:
                 logging.error(
                     f"Team had current location {team_data.currentStatus.currentLocation}, "
@@ -1266,7 +1508,8 @@ class GameStateManager:
                 current_location_id = team_data.currentStatus.currentLocation
                 team_comm_location_id = current_comm_event.locationID
                 if current_location_id == team_comm_location_id:
-                    team_comm_location = team_data.locations.get(team_comm_location_id)
+                    team_comm_location = team_data.locations.get(
+                        team_comm_location_id)
                     if not team_comm_location:
                         logging.error(
                             f"Team {team_id} tried to complete comm event {current_comm_event.commID}, "

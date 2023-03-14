@@ -48,6 +48,32 @@ CommID = str
 MissionID = str
 LocationID = str
 TaskID = str
+NPCShipID = str
+GamespaceID = str
+
+
+class GamespaceData(BaseModel):
+    # A workspace without a task ID denotes a ship gamespace.
+    taskID: TaskID | None
+    gatewayVmName: str
+    gatewayNic: int
+    # Filled in by Gamebrain, not Topomojo.
+    gamespaceID: GamespaceID
+
+
+class UncontestedGamespaceInfo(BaseModel):
+    ship_gamespace: GamespaceID
+    uncontested_gamespaces: dict[TaskID, GamespaceData]
+
+
+class ContestedGamespaceInfo(BaseModel):
+    contested_gamespaces: dict[TaskID, GamespaceData]
+
+
+class NPCShipData(BaseModel):
+    shipID: NPCShipID
+    route: list[LocationID]
+    currentLocation: LocationID
 
 
 class TaskBranch(BaseModel):
@@ -99,6 +125,8 @@ class MissionData(BaseModel):
     roleList: list[str]
     taskList: list[TaskDataIdentifierStub]
     points: int = 0
+    isContested: bool = False
+    npcShip: str = None
 
 
 class MissionDataTeamSpecific(BaseModel):
@@ -107,6 +135,7 @@ class MissionDataTeamSpecific(BaseModel):
     visible: bool = False
     complete: bool = False
     taskList: list[TaskDataTeamSpecific]
+    gamespaceID: str = None
 
 
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
@@ -158,6 +187,10 @@ class ShipDataTeamSpecific(BaseModel):
     flightPower: PowerStatus = PowerStatus.off
     navPower: PowerStatus = PowerStatus.off
     pilotPower: PowerStatus = PowerStatus.off
+    nextJumpTime: str = ""
+    # NICs are zero-indexed and contested/uncontested should be different.
+    contestedNic: int
+    uncontestedNic: int
 
 
 class SessionDataTeamSpecific(BaseModel):
@@ -209,7 +242,8 @@ class GameDataTeamSpecific(BaseModel):
             try:
                 # Get the first task that is not marked complete for this mission.
                 current_task = next(
-                    filter(lambda t: t.complete is False, mission_data.taskList)
+                    filter(lambda t: t.complete is False,
+                           mission_data.taskList)
                 ).taskID
             except StopIteration:
                 current_task = None
@@ -221,7 +255,8 @@ class GameDataTeamSpecific(BaseModel):
             for task_data in mission_data.taskList:
                 task_model = InternalTeamTaskData(**task_data.dict())
                 tasks[task_data.taskID] = task_model
-                missions[mission_data.missionID]["tasks"].append(task_data.taskID)
+                missions[mission_data.missionID]["tasks"].append(
+                    task_data.taskID)
 
         return InternalTeamGameData(
             currentStatus=self.currentStatus,
