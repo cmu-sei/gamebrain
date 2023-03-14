@@ -917,7 +917,10 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            team_data.ship.nextJumpTime = cls._next_npc_ship_jump.isoformat()
+            if cls._next_npc_ship_jump:
+                team_data.ship.nextJumpTime = cls._next_npc_ship_jump.isoformat()
+            else:
+                team_data.ship.nextJumpTime = datetime.datetime.max.isoformat()
 
             full_loc_data = []
             for location_id, location in team_data.locations.items():
