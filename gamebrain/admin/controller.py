@@ -51,8 +51,7 @@ from ..gamedata.cache import (
 )
 from ..gamedata.model import (
     GamespaceData,
-    ContestedGamespaceInfo,
-    UncontestedGamespaceInfo,
+    TeamGamespaceInfo,
 )
 from ..util import url_path_join, TeamLocks
 
@@ -173,27 +172,9 @@ class TooManyShipGamespacesFound(Exception):
     ...
 
 
-async def retrieve_uncontested_gamespace_info(
-    uncontested_gamespaces: list[GamespaceID],
-) -> UncontestedGamespaceInfo:
-    gs_info = await retrieve_gamespace_info(uncontested_gamespaces)
-    if not isinstance(gs_info, UncontestedGamespaceInfo):
-        raise ShipGamespaceNotFound
-    return gs_info
-
-
-async def retrieve_contested_gamespace_info(
-    contested_gamespaces: list[GamespaceID],
-) -> ContestedGamespaceInfo:
-    gs_info = await retrieve_gamespace_info(contested_gamespaces)
-    if not isinstance(gs_info, ContestedGamespaceInfo):
-        raise TooManyShipGamespacesFound
-    return gs_info
-
-
 async def retrieve_gamespace_info(
     gamespaces: list[GamespaceID],
-) -> UncontestedGamespaceInfo | ContestedGamespaceInfo:
+) -> TeamGamespaceInfo:
     ship_gamespace = None
     gamespace_data = {}
 
@@ -217,31 +198,30 @@ async def retrieve_gamespace_info(
             continue
 
         if gs_data.taskID is None:
-            if ship_gamespace is not None:
+            if ship_gamespace:
                 raise TooManyShipGamespacesFound
             ship_gamespace = gamespace_id
         else:
             gamespace_data[gs_data.taskID] = gs_data
 
-    if ship_gamespace:
-        gs_info = UncontestedGamespaceInfo(
-            ship_gamespace=ship_gamespace, uncontested_gamespaces=gamespace_data
-        )
-    else:
-        gs_info = ContestedGamespaceInfo(contested_gamespaces=gamespace_data)
+    if not ship_gamespace:
+        raise ShipGamespaceNotFound
 
-    return gs_info
+    team_gs_info = TeamGamespaceInfo(
+        ship_gamespace=ship_gamespace, gamespaces=gamespace_data
+    )
+
+    return team_gs_info
 
 
 class TeamDeploymentData(BaseModel):
     team_name: str
-    uncontested_gamespaces: list[GamespaceID]
+    gamespaces: list[GamespaceID]
 
 
 class DeploymentData(BaseModel):
     game_id: GameID
     teams: dict[TeamID, TeamDeploymentData]
-    contested_gamespaces: list[GamespaceID]
 
 
 class DeploymentResponse(BaseModel):
@@ -254,18 +234,12 @@ async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
         [team_id for team_id in deployment_data.teams]
     )
 
-    contested_gs_info = await retrieve_contested_gamespace_info(
-        deployment_data.contested_gamespaces
-    )
-
-    uncontested_gs_info = {}
+    gamespace_info = {}
 
     for team_id, team_data in deployment_data.teams.items():
-        team_gamespace_info = await retrieve_uncontested_gamespace_info(
-            team_data.uncontested_gamespaces
-        )
+        team_gamespace_info = await retrieve_gamespace_info(team_data.gamespaces)
 
-        uncontested_gs_info[team_id] = team_gamespace_info
+        gamespace_info[team_id] = team_gamespace_info
 
         await GameStateManager.new_team(team_id)
 
@@ -275,7 +249,7 @@ async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
             team_name=team_data.team_name,
         )
 
-    await GameStateManager.init_challenges(contested_gs_info, uncontested_gs_info)
+    await GameStateManager.init_challenges(gamespace_info)
     await GameStateManager.start_game_timers()
 
     return DeploymentResponse(__root__=assignments)

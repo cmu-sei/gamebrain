@@ -61,13 +61,9 @@ class GamespaceData(BaseModel):
     gamespaceID: GamespaceID
 
 
-class UncontestedGamespaceInfo(BaseModel):
+class TeamGamespaceInfo(BaseModel):
     ship_gamespace: GamespaceID
-    uncontested_gamespaces: dict[TaskID, GamespaceData]
-
-
-class ContestedGamespaceInfo(BaseModel):
-    contested_gamespaces: dict[TaskID, GamespaceData]
+    gamespaces: dict[TaskID, GamespaceData]
 
 
 class NPCShipData(BaseModel):
@@ -125,8 +121,11 @@ class MissionData(BaseModel):
     roleList: list[str]
     taskList: list[TaskDataIdentifierStub]
     points: int = 0
-    isContested: bool = False
-    npcShip: str = None
+    npcShip: str = ""
+    # The unlocks after completing a mission, in the order of which team
+    # completes the mission first. The last list of mission IDs will be used
+    # for all subsequent completions.
+    firstNthCompletionUnlocks: list[list[MissionID]] = []
 
 
 class MissionDataTeamSpecific(BaseModel):
@@ -188,9 +187,8 @@ class ShipDataTeamSpecific(BaseModel):
     navPower: PowerStatus = PowerStatus.off
     pilotPower: PowerStatus = PowerStatus.off
     nextJumpTime: str = ""
-    # NICs are zero-indexed and contested/uncontested should be different.
-    contestedNic: int
-    uncontestedNic: int
+    # NICs are zero-indexed.
+    antennaNic: int
 
 
 class SessionDataTeamSpecific(BaseModel):
