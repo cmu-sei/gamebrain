@@ -622,7 +622,6 @@ class GameStateManager:
                 team_id, team_data, next_global_task
             )
         if not global_task.next or global_task.completesMission:
-            # TODO: 3/24/23 Refactor this whole section.
             mission = team_data.missions.get(global_task.missionID)
             if not mission:
                 logging.error(
