@@ -37,8 +37,7 @@ from .model import (
     GameDataTeamSpecific,
     GameDataResponse,
     GamespaceData,
-    ContestedGamespaceInfo,
-    UncontestedGamespaceInfo,
+    TeamGamespaceInfo,
     InternalCommEvent,
     InternalGlobalTaskData,
     InternalTeamTaskData,
@@ -79,8 +78,7 @@ VmName = str
 VmURL = str
 
 NPCShipMap = dict[NPCShipID, NPCShipData]
-ContestedChallengeMap = dict[NPCShipID, GamespaceData]
-UncontestedChallengeMap = dict[NPCShipID, GamespaceData]
+ChallengeMap = dict[NPCShipID, GamespaceData]
 
 JUMP_TIME_DELTA = datetime.timedelta(minutes=10)
 
@@ -226,8 +224,7 @@ class GlobalData(BaseModel):
     mission_map: MissionMap
     task_map: TaskMap
     npc_ships: NPCShipMap = {}
-    contested_challenges: ContestedChallengeMap = {}
-    uncontested_challenges: dict[TeamID, UncontestedChallengeMap] = {}
+    challenges: dict[TeamID, ChallengeMap] = {}
 
 
 class GameDataCacheSnapshot(GlobalData):
@@ -250,8 +247,7 @@ class GameDataCacheSnapshot(GlobalData):
             team_initial_state=self.team_initial_state.to_internal(),
             npc_ships=self.npc_ships,
             jump_cycle_number=self.jump_cycle_number,
-            contested_challenges=self.contested_challenges,
-            uncontested_challenges=self.uncontested_challenges,
+            challenges=self.challenges,
         )
 
 
@@ -264,8 +260,7 @@ class InternalCache(BaseModel):
     team_initial_state: InternalTeamGameData
     npc_ships: NPCShipMap
     jump_cycle_number: int = 0
-    contested_challenges: ContestedChallengeMap = {}
-    uncontested_challenges: dict[TeamID, UncontestedChallengeMap] = {}
+    challenges: dict[TeamID, ChallengeMap] = {}
 
     def to_snapshot(self) -> GameDataCacheSnapshot:
         return GameDataCacheSnapshot(
@@ -277,8 +272,7 @@ class InternalCache(BaseModel):
             team_initial_state=self.team_initial_state.to_snapshot(),
             npc_ships=self.npc_ships,
             jump_cycle_number=self.jump_cycle_number,
-            contested_challenges=self.contested_challenges,
-            uncontested_challenges=self.uncontested_challenges,
+            challenges=self.challenges,
         )
 
 
@@ -413,9 +407,10 @@ class GameStateManager:
     ):
         if not team_data.tasks.get(global_task.taskID):
             # If the new task was already unlocked, don't reset its status.
-            team_data.tasks[global_task.taskID] = InternalTeamTaskData(
+            team_task = InternalTeamTaskData(
                 taskID=global_task.taskID, visible=True, complete=False
             )
+            team_data.tasks[global_task.taskID] = team_task
             team_data.missions[global_task.missionID].tasks.append(
                 global_task.taskID)
             logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
@@ -489,6 +484,93 @@ class GameStateManager:
         return True
 
     @classmethod
+    def _handle_mission_unlock(
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        global_mission: InternalGlobalMissionData,
+    ):
+        first_task = cls._cache.task_map.__root__.get(
+            global_mission.first_task)
+
+        if not first_task:
+            logging.error(
+                f"Mission {global_mission.missionID} "
+                f"indicated its first task is {global_mission.first_task} "
+                "which does not exist in the game data."
+            )
+            return
+
+        cls._unlock_tasks_until_completion_criteria(
+            team_id, team_data, first_task)
+
+        mission_task_ids = list(
+            map(
+                lambda t: t.taskID,
+                filter(
+                    lambda t: t.missionID == global_mission.missionID,
+                    cls._cache.task_map.__root__.values(),
+                ),
+            )
+        )
+        task_list = [
+            InternalTeamTaskData(taskID=task_id) for task_id in mission_task_ids
+        ]
+        unlocked_mission = InternalTeamMissionData(
+            missionID=global_mission.missionID,
+            taskList=task_list,
+            tasks=mission_task_ids,
+        )
+
+        team_data.missions[global_mission.missionID] = unlocked_mission
+
+    @classmethod
+    def _complete_mission_and_unlock_next(
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        team_mission: InternalTeamMissionData,
+        global_mission: InternalGlobalMissionData,
+    ):
+        def get_mission_completion_for_teams():
+            total_completions = 0
+            for team_id, team_data in cls._cache.team_map.__root__.items():
+                team_mission = team_data.missions.get(global_mission.missionID)
+                if not team_mission:
+                    # This team has not even unlocked the mission, so move on.
+                    continue
+                total_completions += int(team_mission.complete)
+            return total_completions
+
+        team_mission.complete = True
+
+        if not global_mission.firstNthCompletionUnlocks:
+            return
+
+        times_completed = get_mission_completion_for_teams()
+
+        idx = (
+            times_completed
+            if (times_completed < len(global_mission.firstNthCompletionUnlocks))
+            else -1
+        )
+        new_missions = global_mission.firstNthCompletionUnlocks[idx]
+
+        for mission_id in new_missions:
+            unlocked_global_mission = cls._cache.mission_map.__root__.get(
+                mission_id)
+            if not unlocked_global_mission:
+                logging.error(
+                    f"Mission {global_mission.missionID} indicates "
+                    f"mission {mission_id} should be unlocked, but "
+                    "there is no such mission."
+                )
+                continue
+
+            cls._handle_mission_unlock(
+                team_id, team_data, unlocked_global_mission)
+
+    @classmethod
     def _complete_task_and_unlock_next(
         cls,
         team_id: TeamID,
@@ -540,6 +622,7 @@ class GameStateManager:
                 team_id, team_data, next_global_task
             )
         if not global_task.next or global_task.completesMission:
+            # TODO: 3/24/23 Refactor this whole section.
             mission = team_data.missions.get(global_task.missionID)
             if not mission:
                 logging.error(
@@ -547,7 +630,6 @@ class GameStateManager:
                     f"{global_task.missionID}, which they have not unlocked."
                 )
                 return True
-            mission.complete = True
             global_mission = cls._cache.mission_map.__root__.get(
                 mission.missionID)
             if not global_mission:
@@ -556,20 +638,23 @@ class GameStateManager:
                     "exist in the global data."
                 )
             else:
-                task = asyncio.create_task(
-                    gameboard.mission_update(
-                        team_id,
-                        global_mission.missionID,
-                        global_mission.title,
-                        global_mission.points,
-                    )
-                )
-                task.add_done_callback(
-                    lambda _: logging.info(
-                        f"Team {team_id} completed mission "
-                        f"{global_mission.missionID} and was awarded {global_mission.points} points."
-                    )
-                )
+                cls._complete_mission_and_unlock_next(
+                    team_id, team_data, mission)
+                # TODO: This stuff will go away when the scoring changes are in.
+                # task = asyncio.create_task(
+                #     gameboard.mission_update(
+                #         team_id,
+                #         global_mission.missionID,
+                #         global_mission.title,
+                #         global_mission.points,
+                #     )
+                # )
+                # task.add_done_callback(
+                #     lambda _: logging.info(
+                #         f"Team {team_id} completed mission "
+                #         f"{global_mission.missionID} and was awarded {global_mission.points} points."
+                #     )
+                # )
 
             team_data.session.teamCodexCount = sum(
                 (
@@ -684,35 +769,8 @@ class GameStateManager:
                 )
 
     @classmethod
-    async def _npc_jump_contested(cls, ship_id: NPCShipID, destination: LocationID):
-        challenge_data = cls._cache.contested_challenges.get(ship_id)
-        if not challenge_data:
-            logging.error(
-                "Contested NPC ship jump attempted with invalid ship ID " f"{ship_id}."
-            )
-            return
-
-        response = await cls._get_vm_id_from_name_for_gamespace(
-            challenge_data.gamespaceID, challenge_data.gatewayVmName
-        )
-
-        if response.success is False:
-            logging.error(
-                f"Contested NPC jump for ship {ship_id} failed "
-                f"with reason {response.message}."
-            )
-            return
-        location_data = cls._cache.location_map.__root__[destination]
-        location_net = location_data.networkName
-        new_net = f"{location_net}:{challenge_data.gatewayNic}"
-
-        vm_id = response.message
-
-        await topomojo.change_vm_net(vm_id, new_net)
-
-    @classmethod
-    async def _npc_jump_uncontested(cls, ship_id: NPCShipID, destination: LocationID):
-        challenge_data_teams = cls._cache.uncontested_challenges.get(ship_id)
+    async def _npc_jump_net_change(cls, ship_id: NPCShipID, destination: LocationID):
+        challenge_data_teams = cls._cache.challenges.get(ship_id)
         if not challenge_data_teams:
             logging.error(
                 "Uncontested NPC ship jump attempted with invalid ship ID "
@@ -741,20 +799,18 @@ class GameStateManager:
 
     @classmethod
     async def _npc_jump(cls, ship_id: NPCShipID, destination: LocationID):
-        uncontested_list = list(
+        challenge_list = list(
             map(
-                lambda t: ship_id in cls._cache.uncontested_challenges[t],
-                cls._cache.uncontested_challenges.keys(),
+                lambda t: ship_id in cls._cache.challenges[t],
+                cls._cache.challenges.keys(),
             )
         )
-        if ship_id in cls._cache.contested_challenges:
-            await cls._npc_jump_contested(ship_id, destination)
-        elif all(uncontested_list):
-            await cls._npc_jump_uncontested(ship_id, destination)
-        elif any(uncontested_list):
+        if all(challenge_list):
+            await cls._npc_jump_net_change(ship_id, destination)
+        elif any(challenge_list):
             logging.error(
                 f"NPC Ship {ship_id} attempted to jump, but at least one team "
-                "does not have this ship in its list of uncontested challenges."
+                "does not have this ship in its list of challenges."
             )
         else:
             logging.error(
@@ -831,8 +887,7 @@ class GameStateManager:
     @classmethod
     async def init_challenges(
         cls,
-        contested_challenge_info: ContestedGamespaceInfo,
-        uncontested_challenge_info: dict[TeamID, UncontestedGamespaceInfo],
+        team_gamespaces: dict[TeamID, TeamGamespaceInfo],
     ):
         def get_npc_ship_id(task_id):
             global_task_data = cls._cache.task_map.__root__.get(task_id)
@@ -848,33 +903,22 @@ class GameStateManager:
 
             return global_mission_data.npcShip
 
-        for (
-            task_id,
-            gamespace_data,
-        ) in contested_challenge_info.contested_gamespaces.items():
-            npc_ship_id = get_npc_ship_id(task_id)
-            if not npc_ship_id:
-                continue
-
-            cls._cache.contested_challenges[npc_ship_id] = gamespace_data
-
-        for team_id, gamespace_info in uncontested_challenge_info.items():
-            cls._cache.uncontested_challenges[team_id] = {}
+        for team_id, gamespace_info in team_gamespaces.items():
+            cls._cache.challenges[team_id] = {}
 
             for (
                 task_id,
                 gamespace_data,
-            ) in gamespace_info.uncontested_gamespaces.items():
+            ) in gamespace_info.gamespaces.items():
                 npc_ship_id = get_npc_ship_id(task_id)
                 if not npc_ship_id:
                     continue
 
-                cls._cache.uncontested_challenges[team_id][npc_ship_id] = gamespace_data
+                cls._cache.challenges[team_id][npc_ship_id] = gamespace_data
 
     @classmethod
     async def uninit_challenges(cls):
-        cls._cache.contested_challenges = {}
-        cls._cache.uncontested_challenges = {}
+        cls._cache.challenges = {}
 
     @classmethod
     async def new_team(cls, team_id: TeamID):
@@ -1140,11 +1184,9 @@ class GameStateManager:
                 team_data.currentStatus.currentLocation
             ]
             location_net = location_data.networkName
-            uncon_net = f"{location_net}:{team_data.ship.uncontestedNic}"
-            con_net = f"{location_net}:{team_data.ship.contestedNic}"
+            new_net = f"{location_net}:{team_data.ship.antennaNic}"
 
-            await topomojo.change_vm_net(vm_id, uncon_net)
-            await topomojo.change_vm_net(vm_id, con_net)
+            await topomojo.change_vm_net(vm_id, new_net)
 
             team_data.currentStatus.antennaExtended = True
             team_data.currentStatus.networkConnected = True
@@ -1172,11 +1214,9 @@ class GameStateManager:
             vm_id = vm_id_response.message
 
             empty_net = cls._settings.game.antenna_retracted_network
-            uncon_net = f"{empty_net}:{team_data.ship.uncontestedNic}"
-            con_net = f"{empty_net}:{team_data.ship.contestedNic}"
+            new_net = f"{empty_net}:{team_data.ship.antennaNic}"
 
-            await topomojo.change_vm_net(vm_id, uncon_net)
-            await topomojo.change_vm_net(vm_id, con_net)
+            await topomojo.change_vm_net(vm_id, new_net)
 
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False

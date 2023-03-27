@@ -170,33 +170,25 @@ def main():
     ).json()
     print(uncon_gamespace_team_2)
 
-    con_gamespace = register_gamespace(
-        TEST_CONTESTED_WORKSPACE,
-        gs_expiration_time.isoformat(),
-        [{"id": TEST_TEAM_1, "approvedName": "Test Team 1"}],
-    ).json()
-    print(con_gamespace)
-
     # workspace_id: str, expiration_time: str, team_members: List[Dict], total_points: int
     deploy_data = {
         "game_id": GAME_ID,
         "teams": {
             TEST_TEAM_1: {
                 "team_name": "Test Team 1",
-                "uncontested_gamespaces": [
+                "gamespaces": [
                     ship_gamespace_team_1["id"],
                     uncon_gamespace_team_1["id"],
                 ],
             },
             TEST_TEAM_2: {
                 "team_name": "Test Team 2",
-                "uncontested_gamespaces": [
+                "gamespaces": [
                     ship_gamespace_team_2["id"],
                     uncon_gamespace_team_2["id"],
                 ],
             },
         },
-        "contested_gamespaces": [con_gamespace["id"]],
     }
 
     print("Deploying shared game.")
@@ -337,6 +329,7 @@ def main():
         f"{GAMEBOARD_URL}/players", params={"gid": GAME_ID, "WantsGame": True}
     )
     data = resp.json()
+    print(f"Players GET response: {data}")
     if resp.status_code not in range(200, 300):
         print(
             f"Player call failed with status code {resp.status_code} and data: {data}"
@@ -346,9 +339,16 @@ def main():
         print(session)
         if session["userId"] == TEST_SESSION_USER_ID:
             player_id = session["id"]
-            session_time_test_admin.delete(
-                f"{GAMEBOARD_URL}/player/{player_id}")
-            print(f"Deleted player {player_id}")
+            resp = session_time_test_admin.delete(
+                f"{GAMEBOARD_URL}/player/{player_id}/session"
+            )
+            if resp.status_code not in range(200, 300):
+                print(
+                    f"Player delete failed with status code {resp.status_code} "
+                    f"and data: {data}"
+                )
+            else:
+                print(f"Deleted player {player_id}")
 
     # Then create a new session.
     resp = session_time_test_admin.post(
@@ -356,13 +356,13 @@ def main():
         json={"gameId": GAME_ID, "userId": TEST_SESSION_USER_ID},
     )
     data = resp.json()
+    print(f"Player POST response: {data}")
     player_id = data["id"]
     print(f"Created player {player_id}")
 
     # Then start the created session.
     resp = session_time_test_admin.put(
-        f"{GAMEBOARD_URL}/player/start", json={"id": player_id}
-    )
+        f"{GAMEBOARD_URL}/player/{player_id}/start")
     print(f"player/start status: {resp.status_code}")
     data = resp.json()
     expiration = data["sessionEnd"]
