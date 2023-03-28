@@ -1545,6 +1545,11 @@ class GameStateManager:
                     f"Team {team_id} tried to complete a comm event, "
                     "but they do not currently have a comm event."
                 )
+                return GenericResponse(
+                    success=False,
+                    message=f"Team {team_id} did not have "
+                    "an active comm event to complete.",
+                )
 
             if current_comm_event and current_comm_event.firstContact:
                 current_location_id = team_data.currentStatus.currentLocation
