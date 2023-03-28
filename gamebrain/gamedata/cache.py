@@ -300,7 +300,8 @@ class GameStateManager:
     _cache: InternalCache
 
     _settings: "SettingsModel"
-    _active_game_timer_task = None
+    _active_game_timer_task: asyncio.Task = None
+    _active_dispatch_timer_task: asyncio.Task = None
 
     _next_npc_ship_jump: datetime.datetime = None
 
@@ -836,6 +837,11 @@ class GameStateManager:
 
             await asyncio.sleep(2)
 
+    @classmethod
+    async def _dispatch_timer_task(cls):
+        while True:
+            await asyncio.sleep(2)
+
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
         try:
@@ -853,6 +859,12 @@ class GameStateManager:
             cls._active_game_timer_task.add_done_callback(
                 cls._handle_task_result)
 
+            cls._active_dispatch_timer_task = asyncio.create_task(
+                cls._dispatch_timer_task()
+            )
+            cls._active_dispatch_timer_task.add_done_callback(
+                cls._handle_task_result)
+
     @classmethod
     async def stop_game_timers(cls):
         async with cls._lock:
@@ -863,6 +875,9 @@ class GameStateManager:
 
             cls._active_game_timer_task.cancel()
             cls._active_game_timer_task = None
+
+            cls._active_dispatch_timer_task.cancel()
+            cls._active_dispatch_timer_task = None
 
     @classmethod
     async def get_total_points(cls) -> int:
