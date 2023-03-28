@@ -826,7 +826,7 @@ class GameStateManager:
                 if datetime.datetime.now() < cls._next_npc_ship_jump:
                     continue
 
-                for ship, route in cls._cache.npc_ships.items:
+                for ship, route in cls._cache.npc_ships.items():
                     destination = route[cls._cache.jump_cycle_number % len(
                         route)]
                     await cls._npc_jump(ship, destination)
@@ -834,7 +834,7 @@ class GameStateManager:
                 cls._next_npc_ship_jump += JUMP_TIME_DELTA
                 cls._cache.jump_cycle_number += 1
 
-            asyncio.sleep(2)
+            await asyncio.sleep(2)
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
