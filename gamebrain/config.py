@@ -214,7 +214,7 @@ class Global:
         await GameStateManager.init(initial_cache, settings)
 
         cls._init_db_sync_task()
-        cls._init_grader_task()
+        # cls._init_grader_task()
         cls._init_cleanup_task()
 
     @classmethod
