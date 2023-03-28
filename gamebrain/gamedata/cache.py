@@ -848,19 +848,21 @@ class GameStateManager:
     @classmethod
     async def start_game_timers(cls):
         async with cls._lock:
-            cls._game_timer_task = asyncio.create_task(cls._game_timer_task())
-            cls._game_timer_task.add_done_callback(cls._handle_task_result)
+            cls._active_game_timer_task = asyncio.create_task(
+                cls._game_timer_task())
+            cls._active_game_timer_task.add_done_callback(
+                cls._handle_task_result)
 
     @classmethod
     async def stop_game_timers(cls):
         async with cls._lock:
-            if cls._game_timer_task is None:
+            if cls._active_game_timer_task is None:
                 logging.warning(
                     "stop_game_timers called without timers being started.")
                 return
 
-            cls._game_timer_task.cancel()
-            cls._game_timer_task = None
+            cls._active_game_timer_task.cancel()
+            cls._active_game_timer_task = None
 
     @classmethod
     async def get_total_points(cls) -> int:
