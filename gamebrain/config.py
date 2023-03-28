@@ -209,7 +209,8 @@ class Global:
         else:
             with open("initial_state.json") as f:
                 initial_cache = GameDataCacheSnapshot(**json.load(f))
-            logging.info("Initializing game data cache from initial_state.json.")
+            logging.info(
+                "Initializing game data cache from initial_state.json.")
         await GameStateManager.init(initial_cache, settings)
 
         cls._init_db_sync_task()
@@ -223,7 +224,8 @@ class Global:
         if settings.ca_cert_path:
             ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
         cls.jwks = httpx.get(
-            url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
+            url_path_join(settings.identity.base_url,
+                          settings.identity.jwks_endpoint),
             verify=ssl_context,
         ).json()
 
@@ -241,7 +243,8 @@ class Global:
 
     @classmethod
     def _init_grader_task(cls):
-        cls.grader_task = asyncio.create_task(GamespaceStatusTask.init(get_settings()))
+        cls.grader_task = asyncio.create_task(
+            GamespaceStatusTask.init(get_settings()))
         cls.grader_task.add_done_callback(cls._handle_task_result)
 
     @classmethod
