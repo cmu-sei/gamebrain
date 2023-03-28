@@ -145,7 +145,8 @@ async def get_team_from_user(
 
     user_id = payload["sub"]
 
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
 
     player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
 
@@ -244,12 +245,14 @@ async def change_vm_net(
 async def _change_vm_net(vm_id: str, new_net: str):
     vm = await db.get_vm(vm_id)
     if not vm:
-        raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
+        raise HTTPException(
+            status_code=400, detail="Specified VM cannot be found.")
     team_id = vm["team_id"]
 
     possible_networks = (await topomojo.get_vm_nets(vm_id)).get("net")
     if possible_networks is None:
-        raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
+        raise HTTPException(
+            status_code=400, detail="Specified VM cannot be found.")
 
     for net in possible_networks:
         if net.startswith(new_net):
@@ -270,7 +273,6 @@ async def create_challenge_secrets(
     team_id: str,
     secrets: List[str],
 ):
-
     await db.store_team(team_id)
     await db.store_challenge_secrets(team_id, secrets)
 
@@ -286,10 +288,11 @@ async def add_media_urls(
 async def get_is_team_active(
     team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())
 ) -> bool:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
 
     team = await db.get_team(team_id)
-    return bool(team.get("gamespace_id"))
+    return bool(team.get("ship_gamespace_id"))
 
 
 @gamestate_router.websocket("/websocket/events")
