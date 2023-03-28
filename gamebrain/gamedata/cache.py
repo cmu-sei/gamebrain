@@ -847,7 +847,7 @@ class GameStateManager:
         try:
             task.result()
         except asyncio.CancelledError:
-            logging.info("Task %r cancelled.")
+            logging.info("Task %r cancelled.", task)
         except Exception:  # pylint: disable=broad-except
             logging.exception("Exception raised by task = %r", task)
 
