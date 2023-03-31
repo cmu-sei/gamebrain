@@ -839,28 +839,30 @@ class GameStateManager:
         DispatchStatusMap = dict[DispatchID, DispatchStatus]
         dispatches: dict[GamespaceID, DispatchStatusMap] = {}
 
-        for _, challenge_map in cls._cache.challenges.items():
-            for _, gamespace_data in challenge_map.items():
-                gs_id = gamespace_data.gamespaceID
+        async with cls._lock:
+            for _, challenge_map in cls._cache.challenges.items():
+                for _, gamespace_data in challenge_map.items():
+                    gs_id = gamespace_data.gamespaceID
 
-                dispatch_status_map: DispatchStatusMap = {}
+                    dispatch_status_map: DispatchStatusMap = {}
 
-                for dispatch in gamespace_data.dispatches:
-                    dispatch_status_map[dispatch.id] = DispatchStatus(dispatch)
-                for disp_id in gamespace_data.initial_dispatches:
-                    disp_status = dispatch_status_map.get(disp_id)
-                    if not disp_status:
-                        logging.error(
-                            f"Gamespace {gs_id} lists {disp_id} as an initial "
-                            "dispatch, but it was not in the gamespace data."
+                    for dispatch in gamespace_data.dispatches:
+                        dispatch_status_map[dispatch.id] = DispatchStatus(
+                            dispatch)
+                    for disp_id in gamespace_data.initial_dispatches:
+                        disp_status = dispatch_status_map.get(disp_id)
+                        if not disp_status:
+                            logging.error(
+                                f"Gamespace {gs_id} lists {disp_id} as an initial "
+                                "dispatch, but it was not in the gamespace data."
+                            )
+                            continue
+                        remaining_time = datetime.timedelta(
+                            seconds=disp_status.dispatch_data.trigger_delay
                         )
-                        continue
-                    remaining_time = datetime.timedelta(
-                        seconds=disp_status.dispatch_data.trigger_delay
-                    )
-                    disp_status.remaining_time = remaining_time
+                        disp_status.remaining_time = remaining_time
 
-                dispatches[gs_id] = dispatch_status_map
+                    dispatches[gs_id] = dispatch_status_map
 
         while True:
             await asyncio.sleep(2)
@@ -869,39 +871,39 @@ class GameStateManager:
     @classmethod
     async def _mission_timer_task(cls):
         while True:
-            for team_id, challenge_map in cls._cache.challenges.items():
-                team_data = cls._cache.team_map.__root__.get(team_id)
-                if team_data is None:
-                    logging.error(
-                        f"Team {team_id} is in the challenge map, "
-                        "but not the team map."
-                    )
-                    continue
-                team_challenges = await gameboard.mission_update(team_id)
-                if not team_challenges:
-                    # It's already being logged.
-                    continue
-
-                for challenge in team_challenges:
-                    markdown = challenge.Markdown
-                    gamespace_id = challenge.Id
-                    gs_data_yaml = yaml.safe_load(markdown)
-                    try:
-                        gs_data = GamespaceData(
-                            **gs_data_yaml, gamespaceID=gamespace_id
-                        )
-                    except ValidationError:
+            async with cls._lock:
+                for team_id, challenge_map in cls._cache.challenges.items():
+                    team_data = cls._cache.team_map.__root__.get(team_id)
+                    if team_data is None:
                         logging.error(
-                            f"Gamespace {gamespace_id} had a document that "
-                            "could not be parsed as YAML."
+                            f"Team {team_id} is in the challenge map, "
+                            "but not the team map."
                         )
                         continue
-
-                    if challenge.IsActive or not challenge.EndTime:
-                        # We're looking for completed challenges here.
+                    team_challenges = await gameboard.mission_update(team_id)
+                    if not team_challenges:
+                        # It's already being logged.
                         continue
 
-                    async with cls._lock:
+                    for challenge in team_challenges:
+                        markdown = challenge.Markdown
+                        gamespace_id = challenge.Id
+                        gs_data_yaml = yaml.safe_load(markdown)
+                        try:
+                            gs_data = GamespaceData(
+                                **gs_data_yaml, gamespaceID=gamespace_id
+                            )
+                        except ValidationError:
+                            logging.error(
+                                f"Gamespace {gamespace_id} had a document that "
+                                "could not be parsed as YAML."
+                            )
+                            continue
+
+                        if challenge.IsActive or not challenge.EndTime:
+                            # We're looking for completed challenges here.
+                            continue
+
                         global_task = cls._cache.task_map.__root__.get(
                             gs_data.taskID)
                         if global_task is None:
