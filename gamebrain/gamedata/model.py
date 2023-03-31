@@ -50,6 +50,26 @@ LocationID = str
 TaskID = str
 NPCShipID = str
 GamespaceID = str
+DispatchID = str
+Regex = str
+
+
+# This model corresponds to data in a Workspace's document.
+class Dispatch(BaseModel):
+    id: DispatchID
+    vm_name: str
+    # command will sometimes need weird workarounds such as the following:
+    # bash -c "cat /home/user/audit && rm /home/user/audit"
+    command: str
+    # Minimum time in seconds before this dispatch is created.
+    trigger_delay: int
+    # Patterns to search in the command output for success/fail.
+    success_text: Regex = ""
+    # List of dispatches to trigger on success/fail/every completion.
+    if_success: list[DispatchID] = []
+    fail_text: Regex = ""
+    if_fail: list[DispatchID] = []
+    always_run: list[DispatchID] = []
 
 
 class GamespaceData(BaseModel):
@@ -57,6 +77,8 @@ class GamespaceData(BaseModel):
     taskID: TaskID | None
     gatewayVmName: str
     gatewayNic: int
+    dispatches: list[Dispatch] = []
+    initial_dispatches: list[DispatchID] = []
     # Filled in by Gamebrain, not Topomojo.
     gamespaceID: GamespaceID
 

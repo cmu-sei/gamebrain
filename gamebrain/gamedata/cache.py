@@ -24,6 +24,7 @@
 
 import asyncio
 from collections import defaultdict
+from dataclasses import dataclass
 import datetime
 import json
 import logging
@@ -33,6 +34,8 @@ from pydantic import BaseModel
 
 from ..db import get_team
 from .model import (
+    DispatchID,
+    Dispatch,
     NPCShipData,
     GameDataTeamSpecific,
     GameDataResponse,
@@ -839,8 +842,42 @@ class GameStateManager:
 
     @classmethod
     async def _dispatch_timer_task(cls):
+        # TODO: Store this data in the cache to be able
+        # to restore the state after restart.
+        @dataclass
+        class DispatchStatus:
+            dispatch_data: Dispatch
+            remaining_time: datetime.timedelta | None = None
+
+        DispatchStatusMap = dict[DispatchID, DispatchStatus]
+        dispatches: dict[GamespaceID, DispatchStatusMap] = {}
+
+        for _, challenge_map in cls._cache.challenges.items():
+            for _, gamespace_data in challenge_map.items():
+                gs_id = gamespace_data.gamespaceID
+
+                dispatch_status_map: DispatchStatusMap = {}
+
+                for dispatch in gamespace_data.dispatches:
+                    dispatch_status_map[dispatch.id] = DispatchStatus(dispatch)
+                for disp_id in gamespace_data.initial_dispatches:
+                    disp_status = dispatch_status_map.get(disp_id)
+                    if not disp_status:
+                        logging.error(
+                            f"Gamespace {gs_id} lists {disp_id} as an initial "
+                            "dispatch, but it was not in the gamespace data."
+                        )
+                        continue
+                    remaining_time = datetime.timedelta(
+                        seconds=disp_status.dispatch_data.trigger_delay
+                    )
+                    disp_status.remaining_time = remaining_time
+
+                dispatches[gs_id] = dispatch_status_map
+
         while True:
             await asyncio.sleep(2)
+            # TODO: Do dispatcher things here.
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
