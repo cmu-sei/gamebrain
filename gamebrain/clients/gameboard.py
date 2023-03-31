@@ -24,12 +24,14 @@
 
 import asyncio
 import json as jsonlib
+from logging import error
 import time
 import ssl
 from typing import Any, Optional
 
 from authlib.integrations.httpx_client.oauth2_client import AsyncOAuth2Client
 from httpx import AsyncClient
+from pydantic import BaseModel, ValidationError
 
 from .common import _service_request_and_log, HttpMethod
 from ..util import url_path_join
@@ -165,15 +167,45 @@ async def create_challenge(game_id: str, team_id: str):
     )
 
 
-async def mission_update(
-    team_id: str, mission_id: str, mission_name: str, points_scored: int
-):
-    return await _gameboard_post(
-        "unity/mission-update",
-        {
-            "teamId": team_id,
-            "missionId": mission_id,
-            "missionName": mission_name,
-            "pointsScored": points_scored,
-        },
-    )
+# TODO: Make a gameboardmodels.py and move this there. Then make return models
+# for the other functions in here.
+class GameEngineGameState(BaseModel):
+    Id: str
+    Name: str
+    ManagerId: str
+    ManagerName: str
+    Markdown: str
+    Audience: str
+    LaunchpointUrl: str
+    IsActive: bool
+
+    Players: list[Any]
+    Vms: list[Any]
+    Challenge: Any
+    # The following fields are .NET DateTimeOffset format, which does not
+    # automatically get parsed by datetime.datetime.fromisoformat(). It may
+    # be necessary to create a constructor to validate these if they get used.
+    WhenCreated: str
+    StartTime: str
+    EndTime: str
+    ExpirationTime: str
+
+
+async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
+    result = await _gameboard_get("gameEngine/state", {"teamId": team_id})
+    if result is None:
+        return None
+
+    challenge_states = []
+    for challenge_status in result:
+        try:
+            game_state = GameEngineGameState(**challenge_status)
+        except ValidationError:
+            error(
+                "Gameboard gameEngine/state returned an item that could not "
+                f"be validated as a GameEngineGameState: {challenge_status}"
+            )
+        else:
+            challenge_states.append(game_state)
+
+    return challenge_states
