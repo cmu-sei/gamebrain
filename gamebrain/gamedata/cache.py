@@ -30,7 +30,8 @@ import json
 import logging
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+import yaml
 
 from ..db import get_team
 from .model import (
@@ -305,6 +306,7 @@ class GameStateManager:
     _settings: "SettingsModel"
     _active_game_timer_task: asyncio.Task = None
     _active_dispatch_timer_task: asyncio.Task = None
+    _active_mission_timer_task: asyncio.Task = None
 
     _next_npc_ship_jump: datetime.datetime = None
 
@@ -643,21 +645,6 @@ class GameStateManager:
             else:
                 cls._complete_mission_and_unlock_next(
                     team_id, team_data, mission)
-                # TODO: This stuff will go away when the scoring changes are in.
-                # task = asyncio.create_task(
-                #     gameboard.mission_update(
-                #         team_id,
-                #         global_mission.missionID,
-                #         global_mission.title,
-                #         global_mission.points,
-                #     )
-                # )
-                # task.add_done_callback(
-                #     lambda _: logging.info(
-                #         f"Team {team_id} completed mission "
-                #         f"{global_mission.missionID} and was awarded {global_mission.points} points."
-                #     )
-                # )
 
             team_data.session.teamCodexCount = sum(
                 (
@@ -879,6 +866,77 @@ class GameStateManager:
             await asyncio.sleep(2)
             # TODO: Do dispatcher things here.
 
+    @classmethod
+    async def _mission_timer_task(cls):
+        while True:
+            for team_id, challenge_map in cls._cache.challenges.items():
+                team_data = cls._cache.team_map.__root__.get(team_id)
+                if team_data is None:
+                    logging.error(
+                        f"Team {team_id} is in the challenge map, "
+                        "but not the team map."
+                    )
+                    continue
+                team_challenges = await gameboard.mission_update(team_id)
+                if not team_challenges:
+                    # It's already being logged.
+                    continue
+
+                for challenge in team_challenges:
+                    markdown = challenge.Markdown
+                    gamespace_id = challenge.Id
+                    gs_data_yaml = yaml.safe_load(markdown)
+                    try:
+                        gs_data = GamespaceData(
+                            **gs_data_yaml, gamespaceID=gamespace_id
+                        )
+                    except ValidationError:
+                        logging.error(
+                            f"Gamespace {gamespace_id} had a document that "
+                            "could not be parsed as YAML."
+                        )
+                        continue
+
+                    if challenge.IsActive or not challenge.EndTime:
+                        # We're looking for completed challenges here.
+                        continue
+
+                    async with cls._lock:
+                        global_task = cls._cache.task_map.__root__.get(
+                            gs_data.taskID)
+                        if global_task is None:
+                            logging.error(
+                                f"Team challenge {gamespace_id} listed task "
+                                f"{gs_data.taskID} but it does not exist."
+                            )
+                            continue
+
+                        global_mission = cls._cache.mission_map.__root__.get(
+                            global_task.missionID
+                        )
+                        if global_mission is None:
+                            logging.error(
+                                f"Task {global_task.taskID} listed mission "
+                                f"{global_task.missionID} but it does not exist."
+                            )
+
+                        team_mission = team_data.missions.get(
+                            global_mission.missionID)
+                        if team_mission is None:
+                            logging.error(
+                                f"Team {team_id} apparently completed "
+                                f"challenge {challenge.Id}, but had not "
+                                "unlocked its corresponding mission yet."
+                            )
+                            continue
+
+                        if not team_mission.complete:
+                            cls._complete_mission_and_unlock_next(
+                                team_id, team_data, team_mission, global_mission
+                            )
+
+            await asyncio.sleep(2)
+
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
         try:
@@ -902,6 +960,12 @@ class GameStateManager:
             cls._active_dispatch_timer_task.add_done_callback(
                 cls._handle_task_result)
 
+            cls._active_mission_timer_task = asyncio.create_task(
+                cls._mission_timer_task()
+            )
+            cls._active_mission_timer_task.add_done_callback(
+                cls._handle_task_result)
+
     @classmethod
     async def stop_game_timers(cls):
         async with cls._lock:
@@ -915,6 +979,9 @@ class GameStateManager:
 
             cls._active_dispatch_timer_task.cancel()
             cls._active_dispatch_timer_task = None
+
+            cls._active_mission_timer_task.cancel()
+            cls._active_mission_timer_task = None
 
     @classmethod
     async def get_total_points(cls) -> int:
