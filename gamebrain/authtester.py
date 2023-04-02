@@ -319,6 +319,8 @@ def main():
     current_status = game_data.get("currentStatus")
     print(json.dumps(current_status, indent=2))
 
+    time.sleep(10.0)
+
     resp = gamebrain_admin_session.post(f"{GAMEBRAIN_URL}/admin/undeploy")
     print(resp.json())
 

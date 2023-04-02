@@ -813,6 +813,9 @@ class GameStateManager:
         cls._next_npc_ship_jump = datetime.datetime.now()
 
         while True:
+            # Sleep before the operation so the task will sleep after continue.
+            await asyncio.sleep(2)
+
             async with cls._lock:
                 if datetime.datetime.now() < cls._next_npc_ship_jump:
                     continue
@@ -824,8 +827,6 @@ class GameStateManager:
 
                 cls._next_npc_ship_jump += JUMP_TIME_DELTA
                 cls._cache.jump_cycle_number += 1
-
-            await asyncio.sleep(2)
 
     @classmethod
     async def _dispatch_timer_task(cls):
@@ -865,12 +866,16 @@ class GameStateManager:
                     dispatches[gs_id] = dispatch_status_map
 
         while True:
+            # Sleep before the operation so the task will sleep after continue.
             await asyncio.sleep(2)
             # TODO: Do dispatcher things here.
 
     @classmethod
     async def _mission_timer_task(cls):
         while True:
+            # Sleep before the operation so the task will sleep after continue.
+            await asyncio.sleep(2)
+
             async with cls._lock:
                 for team_id, challenge_map in cls._cache.challenges.items():
                     team_data = cls._cache.team_map.__root__.get(team_id)
@@ -936,8 +941,6 @@ class GameStateManager:
                             cls._complete_mission_and_unlock_next(
                                 team_id, team_data, team_mission, global_mission
                             )
-
-            await asyncio.sleep(2)
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
@@ -1025,22 +1028,24 @@ class GameStateManager:
 
             return global_mission_data.npcShip
 
-        for team_id, gamespace_info in team_gamespaces.items():
-            cls._cache.challenges[team_id] = {}
+        async with cls._lock:
+            for team_id, gamespace_info in team_gamespaces.items():
+                cls._cache.challenges[team_id] = {}
 
-            for (
-                task_id,
-                gamespace_data,
-            ) in gamespace_info.gamespaces.items():
-                npc_ship_id = get_npc_ship_id(task_id)
-                if not npc_ship_id:
-                    continue
+                for (
+                    task_id,
+                    gamespace_data,
+                ) in gamespace_info.gamespaces.items():
+                    npc_ship_id = get_npc_ship_id(task_id)
+                    if not npc_ship_id:
+                        continue
 
-                cls._cache.challenges[team_id][npc_ship_id] = gamespace_data
+                    cls._cache.challenges[team_id][npc_ship_id] = gamespace_data
 
     @classmethod
     async def uninit_challenges(cls):
-        cls._cache.challenges = {}
+        async with cls._lock:
+            cls._cache.challenges = {}
 
     @classmethod
     async def new_team(cls, team_id: TeamID):
