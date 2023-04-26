@@ -61,6 +61,8 @@ Settings.init_settings(Global.settings_path)
 LOGLEVEL = get_settings().log_level
 print(f"Got log level: {LOGLEVEL}")
 logging.basicConfig(level=LOGLEVEL)
+uvicorn_logger = logging.getLogger("uvicorn.access")
+uvicorn_logger.setLevel(LOGLEVEL)
 
 startup = []
 shutdown = []
