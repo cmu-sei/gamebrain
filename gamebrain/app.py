@@ -58,7 +58,7 @@ from .util import url_path_join
 
 Settings.init_settings(Global.settings_path)
 
-LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
+LOGLEVEL = get_settings().log_level
 print(f"Got log level: {LOGLEVEL}")
 logging.basicConfig(level=LOGLEVEL)
 
