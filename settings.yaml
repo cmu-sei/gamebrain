@@ -1,3 +1,5 @@
+# (Optional) One of DEBUG, INFO, WARNING, ERROR, or CRITICAL (values are in increasing order of severity).
+log_level: WARNING
 # (Optional) A URL path prefix for all endpoints. Default is "/gamebrain".
 app_root_prefix: /
 # (Optional) This is a path to a CA certificate file used to authenticate Gameboard and Topomojo. Default is null, which makes the application trust the system's default CA certificates instead.

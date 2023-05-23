@@ -141,6 +141,8 @@ class SettingsModel(BaseModel):
     game: GameSettingsModel
     profiling: bool = False
     gamebrain_admin_api_key: str
+    log_level: Literal["DEBUG", "INFO",
+                       "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     @validator("ca_cert_path")
     def path_exists(cls, v):
