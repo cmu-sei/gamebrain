@@ -891,8 +891,8 @@ class GameStateManager:
                         continue
 
                     for challenge in team_challenges:
-                        markdown = challenge.Markdown
-                        gamespace_id = challenge.Id
+                        markdown = challenge.markdown
+                        gamespace_id = challenge.id
                         gs_data_yaml = yaml.safe_load(markdown)
                         try:
                             gs_data = GamespaceData(
@@ -905,7 +905,7 @@ class GameStateManager:
                             )
                             continue
 
-                        if challenge.IsActive or not challenge.EndTime:
+                        if challenge.isActive or not challenge.endTime:
                             # We're looking for completed challenges here.
                             continue
 

@@ -31,10 +31,11 @@ from typing import Any, Optional
 
 from authlib.integrations.httpx_client.oauth2_client import AsyncOAuth2Client
 from httpx import AsyncClient
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from .common import _service_request_and_log, HttpMethod
 from ..util import url_path_join
+from .gameboardmodels import GameEngineGameState
 
 
 GameID = str
@@ -165,30 +166,6 @@ async def create_challenge(game_id: str, team_id: str):
             "points": get_settings().game.total_points,
         },
     )
-
-
-# TODO: Make a gameboardmodels.py and move this there. Then make return models
-# for the other functions in here.
-class GameEngineGameState(BaseModel):
-    Id: str
-    Name: str
-    ManagerId: str
-    ManagerName: str
-    Markdown: str
-    Audience: str
-    LaunchpointUrl: str
-    IsActive: bool
-
-    Players: list[Any]
-    Vms: list[Any]
-    Challenge: Any
-    # The following fields are .NET DateTimeOffset format, which does not
-    # automatically get parsed by datetime.datetime.fromisoformat(). It may
-    # be necessary to create a constructor to validate these if they get used.
-    WhenCreated: str
-    StartTime: str
-    EndTime: str
-    ExpirationTime: str
 
 
 async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
