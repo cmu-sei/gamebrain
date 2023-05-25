@@ -31,6 +31,7 @@ from pydantic import BaseModel, ValidationError
 import yaml
 
 from ..auth import admin_api_key_dependency
+from .controllermodels import Deployment
 from ..clients import gameboard, topomojo
 from ..clients.gameboard import GameID
 from ..clients.topomojo import GamespaceID
@@ -214,39 +215,30 @@ async def retrieve_gamespace_info(
     return team_gs_info
 
 
-class TeamDeploymentData(BaseModel):
-    team_name: str
-    gamespaces: list[GamespaceID]
-
-
-class DeploymentData(BaseModel):
-    game_id: GameID
-    teams: dict[TeamID, TeamDeploymentData]
-
-
 class DeploymentResponse(BaseModel):
     __root__: dict[TeamID, HeadlessUrl]
 
 
 @admin_router.post("/deploy")
-async def deploy(deployment_data: DeploymentData) -> DeploymentResponse:
+async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     assignments = await HeadlessManager.assign_headless(
-        [team_id for team_id in deployment_data.teams]
+        [team.id for team in deployment_data.teams]
     )
 
     gamespace_info = {}
 
-    for team_id, team_data in deployment_data.teams.items():
-        team_gamespace_info = await retrieve_gamespace_info(team_data.gamespaces)
+    for team in deployment_data.teams:
+        team_gamespace_ids = list(map(lambda gs: gs.id, team.gamespaces))
+        team_gamespace_info = await retrieve_gamespace_info(team_gamespace_ids)
 
-        gamespace_info[team_id] = team_gamespace_info
+        gamespace_info[team.id] = team_gamespace_info
 
-        await GameStateManager.new_team(team_id)
+        await GameStateManager.new_team(team.id)
 
         await store_team(
-            team_id,
+            team.id,
             ship_gamespace_id=team_gamespace_info.ship_gamespace,
-            team_name=team_data.team_name,
+            team_name=team.name,
         )
 
     await GameStateManager.init_challenges(gamespace_info)
