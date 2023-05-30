@@ -31,6 +31,7 @@ from typing import Dict, List, Optional
 from dateutil.parser import isoparse
 from sqlalchemy import (
     Column,
+    DateTime,
     Integer,
     String,
     Boolean,
@@ -61,6 +62,16 @@ class DBManager:
         id = Column(String(40), primary_key=True)
         team_id = Column(String(36), ForeignKey(
             "team_data.id"), nullable=False)
+
+    class GameSession(orm_base):
+        __tablename__ = "game_session"
+
+        id = Column(Integer, primary_key=True)
+        session_start = Column(DateTime, nullable=False)
+        session_end = Column(DateTime, nullable=False)
+        deployer_initial_time = Column(DateTime, nullable=False)
+
+        teams = relationship("TeamData", lazy="joined")
 
     class TeamData(orm_base):
         __tablename__ = "team_data"
@@ -203,6 +214,21 @@ async def store_team(
         kwargs["team_name"] = team_name
     team_data = DBManager.TeamData(id=team_id, **kwargs)
     await DBManager.merge_rows([team_data])
+
+
+async def store_game_session(
+        team_ids: [str],
+        session_start: datetime,
+        session_end: datetime,
+        deployer_initial_time: datetime
+):
+    session_data = DBManager.GameSession(
+        teams=team_ids,
+        session_start=session_start,
+        session_end=session_end,
+        deployer_initial_time=deployer_initial_time
+    )
+    await DBManager.merge_rows(session_data)
 
 
 async def expire_team_gamespace(team_id: str):
