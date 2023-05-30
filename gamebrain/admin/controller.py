@@ -43,6 +43,7 @@ from ..db import (
     store_virtual_machines,
     store_team,
     get_assigned_headless_urls,
+    store_game_session
 )
 from ..gamedata.cache import (
     GameStateManager,
@@ -227,11 +228,14 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
 
     gamespace_info = {}
 
+    session_teams = []
+
     for team in deployment_data.teams:
         team_gamespace_ids = list(map(lambda gs: gs.id, team.gamespaces))
         team_gamespace_info = await retrieve_gamespace_info(team_gamespace_ids)
 
         gamespace_info[team.id] = team_gamespace_info
+        session_teams.append(team.id)
 
         await GameStateManager.new_team(team.id)
 
@@ -240,6 +244,13 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
             ship_gamespace_id=team_gamespace_info.ship_gamespace,
             team_name=team.name,
         )
+
+    await store_game_session(
+        session_teams,
+        deployment_data.session.sessionBegin,
+        deployment_data.session.sessionEnd,
+        deployment_data.session.now
+    )
 
     await GameStateManager.init_challenges(gamespace_info)
     await GameStateManager.start_game_timers()
