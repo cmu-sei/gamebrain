@@ -237,7 +237,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
         gamespace_info[team.id] = team_gamespace_info
         session_teams.append(team.id)
 
-        await GameStateManager.new_team(team.id)
+        await GameStateManager.new_team(team.id, deployment_data.session)
 
         await store_team(
             team.id,

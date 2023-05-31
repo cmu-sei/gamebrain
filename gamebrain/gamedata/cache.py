@@ -33,6 +33,7 @@ from typing import Literal
 from pydantic import BaseModel, ValidationError
 import yaml
 
+from ..admin.controllermodels import DeploymentSession
 from ..db import get_team
 from .model import (
     DispatchID,
@@ -1048,12 +1049,21 @@ class GameStateManager:
             cls._cache.challenges = {}
 
     @classmethod
-    async def new_team(cls, team_id: TeamID):
+    async def new_team(
+            cls,
+            team_id: TeamID,
+            deployment_session: DeploymentSession
+    ):
         async with cls._lock:
             new_team_state = InternalTeamGameData(
                 **cls._cache.team_initial_state.dict()
             )
             new_team_state.session.teamInfoName = team_id
+            new_team_state.session.gameStartTime = \
+                deployment_session.sessionBegin
+            new_team_state.session.gameEndTime = deployment_session.sessionEnd
+            new_team_state.session.gameCurrentTime = deployment_session.now
+
             cls._cache.team_map.__root__[team_id] = new_team_state
 
     @classmethod
