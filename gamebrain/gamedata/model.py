@@ -82,10 +82,15 @@ class GamespaceData(BaseModel):
     initial_dispatches: list[DispatchID] = []
     # Filled in by Gamebrain, not Topomojo.
     gamespaceID: GamespaceID
+    # Only the ship workspace should have the following values.
+    useGalaxyDisplayMap: bool | None
+    useCodices: bool | None
+    timerTitle: str | None
 
 
 class TeamGamespaceInfo(BaseModel):
-    ship_gamespace: GamespaceID
+    ship_gamespace_id: GamespaceID
+    ship_gamespace_data: GamespaceData
     gamespaces: dict[TaskID, GamespaceData]
 
 

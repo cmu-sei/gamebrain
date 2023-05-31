@@ -177,7 +177,8 @@ class TooManyShipGamespacesFound(Exception):
 async def retrieve_gamespace_info(
     gamespaces: list[GamespaceID],
 ) -> TeamGamespaceInfo:
-    ship_gamespace = None
+    ship_gamespace_id = None
+    ship_gamespace_data = None
     gamespace_data = {}
 
     for gamespace_id in gamespaces:
@@ -200,17 +201,20 @@ async def retrieve_gamespace_info(
             continue
 
         if gs_data.taskID is None:
-            if ship_gamespace:
+            if ship_gamespace_id:
                 raise TooManyShipGamespacesFound
-            ship_gamespace = gamespace_id
+            ship_gamespace_id = gamespace_id
+            ship_gamespace_data = gs_data
         else:
             gamespace_data[gs_data.taskID] = gs_data
 
-    if not ship_gamespace:
+    if not ship_gamespace_id:
         raise ShipGamespaceNotFound
 
     team_gs_info = TeamGamespaceInfo(
-        ship_gamespace=ship_gamespace, gamespaces=gamespace_data
+        ship_gamespace_id=ship_gamespace_id,
+        ship_gamespace_data=ship_gamespace_data,
+        gamespaces=gamespace_data
     )
 
     return team_gs_info
@@ -237,11 +241,15 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
         gamespace_info[team.id] = team_gamespace_info
         session_teams.append(team.id)
 
-        await GameStateManager.new_team(team.id, deployment_data.session)
+        await GameStateManager.new_team(
+            team.id,
+            deployment_data.session,
+            team_gamespace_info.ship_gamespace_data
+        )
 
         await store_team(
             team.id,
-            ship_gamespace_id=team_gamespace_info.ship_gamespace,
+            ship_gamespace_id=team_gamespace_info.ship_gamespace_id,
             team_name=team.name,
         )
 

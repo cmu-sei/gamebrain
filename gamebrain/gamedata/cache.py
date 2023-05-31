@@ -1052,7 +1052,8 @@ class GameStateManager:
     async def new_team(
             cls,
             team_id: TeamID,
-            deployment_session: DeploymentSession
+            deployment_session: DeploymentSession,
+            ship_gamespace_info: GamespaceData,
     ):
         async with cls._lock:
             new_team_state = InternalTeamGameData(
@@ -1063,6 +1064,10 @@ class GameStateManager:
                 deployment_session.sessionBegin
             new_team_state.session.gameEndTime = deployment_session.sessionEnd
             new_team_state.session.gameCurrentTime = deployment_session.now
+            new_team_state.session.useGalaxyDisplayMap = \
+                ship_gamespace_info.useGalaxyDisplayMap
+            new_team_state.session.useCodices = ship_gamespace_info.useCodices
+            new_team_state.session.timerTitle = ship_gamespace_info.timerTitle
 
             cls._cache.team_map.__root__[team_id] = new_team_state
 
