@@ -22,6 +22,7 @@
 
 # DM23-0100
 
+from datetime import datetime
 import enum
 from typing import Literal
 
@@ -157,6 +158,12 @@ class MissionDataTeamSpecific(BaseModel):
     complete: bool = False
     taskList: list[TaskDataTeamSpecific]
     gamespaceID: str = None
+    possibleMaximumScore: int = 0
+    baseSolveVale: int = 0
+    bonusRemaining: int = 0
+    currentScore: int = 0
+    totalTeams: int = 0
+    solveTeams: int = 0
 
 
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
@@ -217,6 +224,12 @@ class SessionDataTeamSpecific(BaseModel):
     teamInfoName: str = None
     teamCodexCount: int = 0
     jumpCutsceneURL: str
+    useGalaxyDisplayMap: bool = False
+    useCodices: bool = True
+    timerTitle: str = ""
+    gameStartTime: datetime = datetime.fromordinal(1)
+    gameEndTime: datetime = datetime.fromordinal(1)
+    gameCurrentTime: datetime = datetime.fromordinal(1)
 
 
 class CommEventData(BaseModel):
