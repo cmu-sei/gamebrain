@@ -168,7 +168,7 @@ class MissionDataTeamSpecific(BaseModel):
     taskList: list[TaskDataTeamSpecific]
     gamespaceID: str = None
     possibleMaximumScore: int = 0
-    baseSolveVale: int = 0
+    baseSolveValue: int = 0
     bonusRemaining: int = 0
     currentScore: int = 0
     totalTeams: int = 0
