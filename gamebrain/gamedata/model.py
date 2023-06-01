@@ -86,6 +86,10 @@ class GamespaceData(BaseModel):
     useGalaxyDisplayMap: bool | None
     useCodices: bool | None
     timerTitle: str | None
+    galaxyMapXPos: float = 0.0
+    galaxyMapYPos: float = 0.0
+    targetGalaxyMapYPos: float = 0.0
+    targetGalaxyMapXPos: float = 0.0
 
 
 class TeamGamespaceInfo(BaseModel):
@@ -169,6 +173,12 @@ class MissionDataTeamSpecific(BaseModel):
     currentScore: int = 0
     totalTeams: int = 0
     solveTeams: int = 0
+
+    # The next four come from the workspace document.
+    galaxyMapXPos: float = 0.0
+    galaxyMapYPos: float = 0.0
+    targetGalaxyMapXPos: float = 0.0
+    targetGalaxyMapYPos: float = 0.0
 
 
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
