@@ -23,6 +23,7 @@
 # DM23-0100
 
 import asyncio
+from datetime import datetime
 import json
 import logging
 
@@ -251,6 +252,14 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
             team.id,
             ship_gamespace_id=team_gamespace_info.ship_gamespace_id,
             team_name=team.name,
+        )
+
+    gamebrain_time = datetime.now()
+    if abs(gamebrain_time - deployment_data.session.now) > 2.0:
+        logging.warning(
+            f"Deployment at Gamebrain time {gamebrain_time} "
+            "differs more than 2 seconds from deployer time "
+            f"of {deployment_data.session.now}"
         )
 
     await store_game_session(
