@@ -35,6 +35,7 @@ import yaml
 
 from ..admin.controllermodels import DeploymentSession
 from ..db import get_team
+from ..clients.gameboardmodels import GameEngineQuestionView
 from .model import (
     DispatchID,
     Dispatch,
@@ -872,6 +873,58 @@ class GameStateManager:
             # TODO: Do dispatcher things here.
 
     @classmethod
+    def _handle_first_year_tasks(
+            cls,
+            team_id: TeamID,
+            team_data: InternalTeamGameData,
+            task_id: TaskID,
+            challenge_questions: [GameEngineQuestionView]
+    ) -> bool:
+        """
+        Special handling for game tasks from PC4. Returns True if the given
+        task is named the same as one of the special tasks from PC4, False
+        otherwise.
+        """
+        if task_id in ("redradr6", "exoarch6", "cllctn6"):
+            for question in challenge_questions:
+                if question.text != task_id:
+                    continue
+
+                if task_id == "cllctn6":
+                    try:
+                        last_failed_audit = datetime.datetime.fromisoformat(
+                            question.answer)
+                    except TypeError:
+                        logging.warning(
+                            f"Question {task_id} in PC4 game had a null answer.")
+                        return True
+                    except ValueError:
+                        # This means the answer was a non-ISO-format string.
+                        # Which is expected to be a hex value.
+                        ...
+                    else:
+                        if team_data.pc4_handling_cllctn6 < last_failed_audit:
+                            await cls._dispatch_challenge_task_failed(
+                                team_id,
+                                task_id
+                            )
+                        team_data.pc4_handling_cllctn6 = datetime.datetime.now()
+
+                if not question.isCorrect:
+                    return True
+
+                global_task = cls._cache.task_map.__root__.get(task_id)
+                if not global_task:
+                    logging.error(
+                        f"Gamespace had task ID {task_id}, "
+                        "but it does not exist in the game data."
+                    )
+                cls._complete_task_and_unlock_next(
+                    team_id, team_data, global_task)
+            return True
+        return False
+
+    @classmethod
     async def _mission_timer_task(cls):
         while True:
             # Sleep before the operation so the task will sleep after continue.
@@ -904,6 +957,14 @@ class GameStateManager:
                                 f"Gamespace {gamespace_id} had a document that "
                                 "could not be parsed as YAML."
                             )
+                            continue
+
+                        if cls._handle_first_year_tasks(
+                            team_id,
+                            team_data,
+                            gs_data.taskID,
+                            challenge.challenge.questions
+                        ):
                             continue
 
                         if challenge.isActive or not challenge.endTime:
@@ -1221,44 +1282,51 @@ class GameStateManager:
     @classmethod
     async def dispatch_challenge_task_failed(cls, team_id: TeamID, task_id: str):
         async with cls._lock:
-            team_data = cls._cache.team_map.__root__.get(team_id)
-            if not team_data:
-                logging.error(
-                    f"Dispatch task reported team {team_id} failed a task, but that team does not exist."
-                )
-                return
+            await cls._dispatch_challenge_task_failed(team_id, task_id)
 
-            if task_id not in team_data.tasks:
-                # Team has not yet unlocked the relevant task, so just don't do anything.
-                return
+    @classmethod
+    async def _dispatch_challenge_task_failed(cls, team_id: TeamID, task_id: str):
+        """
+        Lock is assumed to be held.
+        """
+        team_data = cls._cache.team_map.__root__.get(team_id)
+        if not team_data:
+            logging.error(
+                f"Dispatch task reported team {team_id} failed a task, but that team does not exist."
+            )
+            return
 
-            global_task_data = cls._cache.task_map.__root__.get(task_id)
-            if not global_task_data:
-                logging.error(
-                    f"Dispatch task reported task {task_id} failed for team {team_id}, but no such task exists."
-                )
-                return
+        if task_id not in team_data.tasks:
+            # Team has not yet unlocked the relevant task, so just don't do anything.
+            return
 
-            if not (
-                global_task_data.failWhen
-                and global_task_data.failWhen.type == "challengeFail"
-                and global_task_data.failWhen.unlocks
-            ):
-                return
+        global_task_data = cls._cache.task_map.__root__.get(task_id)
+        if not global_task_data:
+            logging.error(
+                f"Dispatch task reported task {task_id} failed for team {team_id}, but no such task exists."
+            )
+            return
 
-            next_task = global_task_data.failWhen.unlocks
-            if not next_task:
-                return
+        if not (
+            global_task_data.failWhen
+            and global_task_data.failWhen.type == "challengeFail"
+            and global_task_data.failWhen.unlocks
+        ):
+            return
 
-            next_task_data = cls._cache.task_map.__root__.get(next_task)
-            if not next_task_data:
-                logging.error(
-                    f"Task {global_task_data.taskID} has a failWhen block that specifies task "
-                    f"{next_task} to unlock, but the task does not exist in the global data."
-                )
-                return
+        next_task = global_task_data.failWhen.unlocks
+        if not next_task:
+            return
 
-            cls._unlock_specific_task(team_id, team_data, next_task_data)
+        next_task_data = cls._cache.task_map.__root__.get(next_task)
+        if not next_task_data:
+            logging.error(
+                f"Task {global_task_data.taskID} has a failWhen block that specifies task "
+                f"{next_task} to unlock, but the task does not exist in the global data."
+            )
+            return
+
+        cls._unlock_specific_task(team_id, team_data, next_task_data)
 
     @classmethod
     async def dispatch_grading_task_update(
@@ -1787,7 +1855,7 @@ class GameStateManager:
             elif current_power is None:
                 return GenericResponse(
                     success=False,
-                    message=f"TopoMojoAPIFailure",
+                    message="TopoMojoAPIFailure",
                 )
 
             await cls.change_vm_power_status(vm_id, new_setting)
