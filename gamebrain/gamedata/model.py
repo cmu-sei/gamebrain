@@ -174,15 +174,15 @@ class MissionDataTeamSpecific(BaseModel):
     totalTeams: int = 0
     solveTeams: int = 0
 
+
+class MissionDataFull(MissionData, MissionDataTeamSpecific):
+    taskList: list[TaskDataFull]
+
     # The next four come from the workspace document.
     galaxyMapXPos: float = 0.0
     galaxyMapYPos: float = 0.0
     targetGalaxyMapXPos: float = 0.0
     targetGalaxyMapYPos: float = 0.0
-
-
-class MissionDataFull(MissionData, MissionDataTeamSpecific):
-    taskList: list[TaskDataFull]
 
 
 class LocationData(BaseModel):

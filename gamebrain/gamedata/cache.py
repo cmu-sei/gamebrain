@@ -83,7 +83,7 @@ VmName = str
 VmURL = str
 
 NPCShipMap = dict[NPCShipID, NPCShipData]
-ChallengeMap = dict[NPCShipID, GamespaceData]
+ChallengeMap = dict[MissionID, GamespaceData]
 
 JUMP_TIME_DELTA = datetime.timedelta(minutes=10)
 
@@ -759,55 +759,55 @@ class GameStateManager:
                     "which is not in the location map."
                 )
 
-    @classmethod
-    async def _npc_jump_net_change(cls, ship_id: NPCShipID, destination: LocationID):
-        challenge_data_teams = cls._cache.challenges.get(ship_id)
-        if not challenge_data_teams:
-            logging.error(
-                "Uncontested NPC ship jump attempted with invalid ship ID "
-                f"{ship_id}."
-            )
-            return
+    # @classmethod
+    # async def _npc_jump_net_change(cls, ship_id: NPCShipID, destination: LocationID):
+    #     challenge_data_teams = cls._cache.challenges.get(ship_id)
+    #     if not challenge_data_teams:
+    #         logging.error(
+    #             "Uncontested NPC ship jump attempted with invalid ship ID "
+    #             f"{ship_id}."
+    #         )
+    #         return
+    #
+    #     for team_id, challenge_data in challenge_data_teams.items():
+    #         response = await cls._get_vm_id_from_name_for_gamespace(
+    #             challenge_data.gamespaceID, challenge_data.gatewayVmName
+    #         )
+    #
+    #         if response.success is False:
+    #             logging.error(
+    #                 f"Uncontested NPC jump for ship {ship_id} failed "
+    #                 f"with reason {response.message}."
+    #             )
+    #             continue
+    #         location_data = cls._cache.location_map.__root__[destination]
+    #         location_net = location_data.networkName
+    #         new_net = f"{location_net}:{challenge_data.gatewayNic}"
+    #
+    #         vm_id = response.message
+    #
+    #         await topomojo.change_vm_net(vm_id, new_net)
 
-        for team_id, challenge_data in challenge_data_teams.items():
-            response = await cls._get_vm_id_from_name_for_gamespace(
-                challenge_data.gamespaceID, challenge_data.gatewayVmName
-            )
-
-            if response.success is False:
-                logging.error(
-                    f"Uncontested NPC jump for ship {ship_id} failed "
-                    f"with reason {response.message}."
-                )
-                continue
-            location_data = cls._cache.location_map.__root__[destination]
-            location_net = location_data.networkName
-            new_net = f"{location_net}:{challenge_data.gatewayNic}"
-
-            vm_id = response.message
-
-            await topomojo.change_vm_net(vm_id, new_net)
-
-    @classmethod
-    async def _npc_jump(cls, ship_id: NPCShipID, destination: LocationID):
-        challenge_list = list(
-            map(
-                lambda t: ship_id in cls._cache.challenges[t],
-                cls._cache.challenges.keys(),
-            )
-        )
-        if all(challenge_list):
-            await cls._npc_jump_net_change(ship_id, destination)
-        elif any(challenge_list):
-            logging.error(
-                f"NPC Ship {ship_id} attempted to jump, but at least one team "
-                "does not have this ship in its list of challenges."
-            )
-        else:
-            logging.error(
-                f"NPC Ship {ship_id} attempted to jump, but it was "
-                "not associated with any challenges."
-            )
+    # @classmethod
+    # async def _npc_jump(cls, ship_id: NPCShipID, destination: LocationID):
+    #     challenge_list = list(
+    #         map(
+    #             lambda t: ship_id in cls._cache.challenges[t],
+    #             cls._cache.challenges.keys(),
+    #         )
+    #     )
+    #     if all(challenge_list):
+    #         await cls._npc_jump_net_change(ship_id, destination)
+    #     elif any(challenge_list):
+    #         logging.error(
+    #             f"NPC Ship {ship_id} attempted to jump, but at least one team "
+    #             "does not have this ship in its list of challenges."
+    #         )
+    #     else:
+    #         logging.error(
+    #             f"NPC Ship {ship_id} attempted to jump, but it was "
+    #             "not associated with any challenges."
+    #         )
 
     @classmethod
     async def _game_timer_task(cls):
@@ -878,7 +878,7 @@ class GameStateManager:
             await asyncio.sleep(2)
 
             async with cls._lock:
-                for team_id, challenge_map in cls._cache.challenges.items():
+                for team_id, _ in cls._cache.challenges.items():
                     team_data = cls._cache.team_map.__root__.get(team_id)
                     if team_data is None:
                         logging.error(
@@ -1015,7 +1015,21 @@ class GameStateManager:
         cls,
         team_gamespaces: dict[TeamID, TeamGamespaceInfo],
     ):
-        def get_npc_ship_id(task_id):
+        # def get_npc_ship_id(task_id):
+        #     global_task_data = cls._cache.task_map.__root__.get(task_id)
+        #     if not global_task_data:
+        #         logging.error(
+        #             f"Gamespace {gamespace_data.gamespaceID} had an "
+        #             f"invalid task ID {task_id}."
+        #         )
+        #         return
+        #
+        #     mission_id = global_task_data.missionID
+        #     global_mission_data = cls._cache.mission_map.__root__[mission_id]
+        #
+        #     return global_mission_data.npcShip
+
+        def get_mission_id(task_id):
             global_task_data = cls._cache.task_map.__root__.get(task_id)
             if not global_task_data:
                 logging.error(
@@ -1024,10 +1038,7 @@ class GameStateManager:
                 )
                 return
 
-            mission_id = global_task_data.missionID
-            global_mission_data = cls._cache.mission_map.__root__[mission_id]
-
-            return global_mission_data.npcShip
+            return global_task_data.missionID
 
         async with cls._lock:
             for team_id, gamespace_info in team_gamespaces.items():
@@ -1037,11 +1048,12 @@ class GameStateManager:
                     task_id,
                     gamespace_data,
                 ) in gamespace_info.gamespaces.items():
-                    npc_ship_id = get_npc_ship_id(task_id)
-                    if not npc_ship_id:
-                        continue
+                    # npc_ship_id = get_npc_ship_id(task_id)
+                    # if not npc_ship_id:
+                    #     continue
+                    mission_id = get_mission_id(task_id)
 
-                    cls._cache.challenges[team_id][npc_ship_id] = gamespace_data
+                    cls._cache.challenges[team_id][mission_id] = gamespace_data
 
     @classmethod
     async def uninit_challenges(cls):
@@ -1138,8 +1150,27 @@ class GameStateManager:
                     task_list.append(
                         TaskDataFull(**global_task.dict() | team_task.dict())
                     )
+                gamespace_data = cls._cache.challenges[team_id].get(
+                    mission.missionID)
+                position_data = {}
+                if not gamespace_data:
+                    logging.error(
+                        f"Team {team_id}'s mission {mission.missionID} has "
+                        "not been populated with gamespace data.")
+                else:
+                    position_data["galaxyMapXPos"] = \
+                        gamespace_data.galaxyMapXPos
+                    position_data["galaxyMapYPos"] = \
+                        gamespace_data.galaxyMapYPos
+                    position_data["targetGalaxyMapXPos"] = \
+                        gamespace_data.targetGalaxyMapXPos
+                    position_data["targetGalaxyMapYPos"] = \
+                        gamespace_data.targetGalaxyMapYPos
                 mission_full = MissionDataFull(
-                    **mission_global.dict() | mission.dict() | {"taskList": task_list}
+                    **mission_global.dict() |
+                    mission.dict() |
+                    {"taskList": task_list} |
+                    position_data
                 )
                 full_mission_data.append(mission_full)
 
