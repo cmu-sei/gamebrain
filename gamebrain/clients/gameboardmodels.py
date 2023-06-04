@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -63,3 +64,49 @@ class GameEngineGameState(BaseModel):
     startTime: datetime
     endTime: datetime
     expirationTime: datetime
+
+
+class SimpleEntity(BaseModel):
+    id: str = ""
+    name: str = ""
+
+
+class Score(BaseModel):
+    completionScore: int
+    manualBonusScore: int
+    bonusScore: int
+    totalScore: int
+
+
+class GameScoreAutoChallengeBonus(BaseModel):
+    id: str
+    description: str
+    pointValue: int
+
+
+class ManualChallengeBonusViewModel(BaseModel):
+    id: str
+    description: str
+    pointValue: int
+    enteredOn: datetime
+    enteredBy: SimpleEntity
+    challengeId: str
+
+
+class TeamChallengeScoreSummary(BaseModel):
+    challenge: SimpleEntity
+    spec: SimpleEntity
+    team: SimpleEntity
+    score: Score
+    # Actual type is .NET System.TimeSpan, but I don't care.
+    timeElapsed: Any
+    bonuses: [GameScoreAutoChallengeBonus]
+    manualBonuses: [ManualChallengeBonusViewModel]
+    unclaimedBonuses: {GameScoreAutoChallengeBonus}
+
+
+class TeamGameScoreSummary(BaseModel):
+    game: SimpleEntity
+    team: SimpleEntity
+    score: Score
+    challengeScoreSummaries: [TeamChallengeScoreSummary]

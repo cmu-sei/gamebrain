@@ -35,7 +35,7 @@ from pydantic import ValidationError
 
 from .common import _service_request_and_log, HttpMethod
 from ..util import url_path_join
-from .gameboardmodels import GameEngineGameState
+from .gameboardmodels import GameEngineGameState, TeamGameScoreSummary
 
 
 GameID = str
@@ -159,7 +159,7 @@ async def get_teams(game_id: str):
 
 async def create_challenge(game_id: str, team_id: str):
     return await _gameboard_post(
-        f"unity/challenges",
+        "unity/challenges",
         {
             "gameId": game_id,
             "teamId": team_id,
@@ -186,3 +186,17 @@ async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
             challenge_states.append(game_state)
 
     return challenge_states
+
+
+async def team_score(team_id: str) -> TeamGameScoreSummary:
+    result = await _gameboard_get(f"team/{team_id}/score")
+    if result is None:
+        return None
+
+    try:
+        return TeamGameScoreSummary(**result)
+    except ValidationError:
+        error(
+            f"Gameboard team/{team_id}/score returned JSON that could "
+            "not be validated as a TeamGameScoreSummary."
+        )
