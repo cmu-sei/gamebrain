@@ -167,12 +167,7 @@ class MissionDataTeamSpecific(BaseModel):
     complete: bool = False
     taskList: list[TaskDataTeamSpecific]
     gamespaceID: str = None
-    possibleMaximumScore: int = 0
-    baseSolveValue: int = 0
-    bonusRemaining: int = 0
     currentScore: int = 0
-    totalTeams: int = 0
-    solveTeams: int = 0
 
 
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
@@ -183,6 +178,16 @@ class MissionDataFull(MissionData, MissionDataTeamSpecific):
     galaxyMapYPos: float = 0.0
     targetGalaxyMapXPos: float = 0.0
     targetGalaxyMapYPos: float = 0.0
+
+    # Comes from a call to gameboard's team-score.
+    possibleMaximumScore: int = 0
+    baseSolveValue: int = 0
+    bonusRemaining: int = 0
+
+    # Total teams in game overall.
+    totalTeams: int = 0
+    # Teams who have completed the challenge.
+    solveTeams: int = 0
 
 
 class LocationData(BaseModel):
