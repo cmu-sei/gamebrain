@@ -35,7 +35,7 @@ import yaml
 
 from ..admin.controllermodels import DeploymentSession
 from ..db import get_team
-from ..clients.gameboardmodels import GameEngineQuestionView
+from ..clients.gameboardmodels import GameEngineQuestionView, TeamGameScoreSummary
 from .model import (
     DispatchID,
     Dispatch,
@@ -56,6 +56,7 @@ from .model import (
     LocationDataFull,
     MissionData,
     MissionDataFull,
+    MissionScoreData,
     TaskBranchType,
     TaskBranch,
     TaskData,
@@ -231,6 +232,7 @@ class GlobalData(BaseModel):
     task_map: TaskMap
     npc_ships: NPCShipMap = {}
     challenges: dict[TeamID, ChallengeMap] = {}
+    gamespace_to_mission: dict[GamespaceID, MissionID] = {}
 
 
 class GameDataCacheSnapshot(GlobalData):
@@ -254,6 +256,7 @@ class GameDataCacheSnapshot(GlobalData):
             npc_ships=self.npc_ships,
             jump_cycle_number=self.jump_cycle_number,
             challenges=self.challenges,
+            gamespace_to_mission=self.gamespace_to_mission,
         )
 
 
@@ -267,6 +270,7 @@ class InternalCache(BaseModel):
     npc_ships: NPCShipMap
     jump_cycle_number: int = 0
     challenges: dict[TeamID, ChallengeMap] = {}
+    gamespace_to_mission: dict[GamespaceID, MissionID] = {}
 
     def to_snapshot(self) -> GameDataCacheSnapshot:
         return GameDataCacheSnapshot(
@@ -279,6 +283,7 @@ class InternalCache(BaseModel):
             npc_ships=self.npc_ships,
             jump_cycle_number=self.jump_cycle_number,
             challenges=self.challenges,
+            gamespace_to_mission=self.gamespace_to_mission,
         )
 
 
@@ -1115,6 +1120,8 @@ class GameStateManager:
                     mission_id = get_mission_id(task_id)
 
                     cls._cache.challenges[team_id][mission_id] = gamespace_data
+                    gamespace_id = gamespace_data.gamespaceID
+                    cls._cache.gamespace_to_mission[gamespace_id] = mission_id
 
     @classmethod
     async def uninit_challenges(cls):
@@ -1167,6 +1174,46 @@ class GameStateManager:
             return mission_status
 
     @classmethod
+    def _map_team_score_data(
+            cls,
+            team_score_data: TeamGameScoreSummary
+    ) -> {MissionID, MissionScoreData}:
+        """
+        Assumes that the class lock is held.
+        """
+        if not team_score_data:
+            return {}
+
+        mission_map = {}
+        for challenge_score_summary in team_score_data.challengeScoreSummaries:
+            gamespace_id = challenge_score_summary.challenge.id
+            mission_id = cls._cache.gamespace_to_mission[gamespace_id]
+
+            mission_score_data = {
+                "current_score": challenge_score_summary.score.totalScore,
+                "possible_max_score":
+                    challenge_score_summary.score.completionScore +
+                    sum(
+                        map(
+                            lambda b: b.pointValue,
+                            challenge_score_summary.bonuses,
+                        )
+                    ),
+                "base_solve_value":
+                    challenge_score_summary.score.completionScore,
+                "bonus_remaining":
+                    sum(
+                        map(
+                            lambda b: b.pointValue,
+                            challenge_score_summary.unclaimedBonuses,
+                        )
+                    ),
+            }
+            mission_map[mission_id] = MissionScoreData(**mission_score_data)
+
+        return mission_map
+
+    @classmethod
     async def get_team_data(cls, team_id: TeamID | None) -> GameDataResponse | None:
         async with cls._lock:
             if team_id is None:
@@ -1187,6 +1234,9 @@ class GameStateManager:
                 loc_full = LocationDataFull(
                     **loc_global.dict() | location.dict())
                 full_loc_data.append(loc_full)
+
+            team_score_data = await gameboard.team_score(team_id)
+            mission_map = cls._map_team_score_data(team_score_data)
 
             full_mission_data = []
             for mission in team_data.missions.values():
@@ -1227,11 +1277,30 @@ class GameStateManager:
                         gamespace_data.targetGalaxyMapXPos
                     position_data["targetGalaxyMapYPos"] = \
                         gamespace_data.targetGalaxyMapYPos
+
+                score_data = {}
+                mission_score_data = mission_map.get(mission_global.missionID)
+                if mission_score_data:
+                    score_data["currentScore"] = \
+                        mission_score_data.current_score
+                    score_data["possibleMaximumScore"] = \
+                        mission_score_data.possible_max_score
+                    score_data["baseSolveValue"] = \
+                        mission_score_data.base_solve_value
+                    score_data["bonusRemaining"] = \
+                        mission_score_data.bonus_remaining
+                else:
+                    logging.warning(
+                        f"Team {team_id} had no score data for "
+                        f"mission {mission.missionID}"
+                    )
+
                 mission_full = MissionDataFull(
                     **mission_global.dict() |
                     mission.dict() |
                     {"taskList": task_list} |
-                    position_data
+                    position_data |
+                    score_data
                 )
                 full_mission_data.append(mission_full)
 
