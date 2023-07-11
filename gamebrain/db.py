@@ -77,6 +77,8 @@ class DBManager:
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
+        game_session_id = Column(Integer, ForeignKey(
+            "game_session.id"), nullable=False)
         ship_gamespace_id = Column(String(36))
         headless_url = Column(String)
         team_name = Column(String)
@@ -217,16 +219,16 @@ async def store_team(
 
 
 async def store_game_session(
-        team_ids: [str],
-        session_start: datetime,
-        session_end: datetime,
-        deployer_initial_time: datetime
+    team_ids: [str],
+    session_start: datetime,
+    session_end: datetime,
+    deployer_initial_time: datetime,
 ):
     session_data = DBManager.GameSession(
         teams=team_ids,
         session_start=session_start,
         session_end=session_end,
-        deployer_initial_time=deployer_initial_time
+        deployer_initial_time=deployer_initial_time,
     )
     await DBManager.merge_rows(session_data)
 
