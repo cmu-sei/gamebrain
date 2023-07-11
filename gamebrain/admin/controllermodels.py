@@ -17,16 +17,16 @@ class DeploymentSession(BaseModel):
 
 class DeploymentGamespace(BaseModel):
     id: UUID
-    vmUris: [str]
+    vmUris: list[str]
 
 
 class DeploymentTeam(BaseModel):
     id: UUID
     name: str
-    gamespaces: [DeploymentGamespace]
+    gamespaces: list[DeploymentGamespace]
 
 
 class Deployment(BaseModel):
     game: DeploymentGame
     session: DeploymentSession
-    teams: [DeploymentTeam]
+    teams: list[DeploymentTeam]
