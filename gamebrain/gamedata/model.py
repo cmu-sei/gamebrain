@@ -292,6 +292,8 @@ class GameDataTeamSpecific(BaseModel):
     locations: list[LocationDataTeamSpecific]
     missions: list[MissionDataTeamSpecific]
 
+    pc4_handling_cllctn6: datetime = datetime.now()
+
     def to_internal(self) -> "InternalTeamGameData":
         locations = {
             location.locationID: location.dict() for location in self.locations
@@ -390,7 +392,7 @@ class InternalTeamGameData(BaseModel):
     tasks: dict[TaskID, InternalTeamTaskData]
 
     # This is special handling for PC4 games.
-    pc4_handling_cllctn6: datetime
+    pc4_handling_cllctn6: datetime = datetime.now()
 
     def to_snapshot(self) -> GameDataTeamSpecific:
         locations = [location.dict() for location in self.locations.values()]
