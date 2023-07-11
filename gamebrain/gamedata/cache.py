@@ -878,7 +878,7 @@ class GameStateManager:
             # TODO: Do dispatcher things here.
 
     @classmethod
-    def _handle_first_year_tasks(
+    async def _handle_first_year_tasks(
             cls,
             team_id: TeamID,
             team_data: InternalTeamGameData,
@@ -964,7 +964,7 @@ class GameStateManager:
                             )
                             continue
 
-                        if cls._handle_first_year_tasks(
+                        if await cls._handle_first_year_tasks(
                             team_id,
                             team_data,
                             gs_data.taskID,
