@@ -24,9 +24,9 @@ class GameEngineChallengeView(BaseModel):
     sectionCount: int
     sectionIndex: int
     sectionScore: float
-    sectionText:  str | None
+    sectionText: str | None
     lastScoreTime: datetime
-    questions: [GameEngineQuestionView] | None
+    questions: list[GameEngineQuestionView] | None
 
 
 class GameEngineVmState(BaseModel):
@@ -100,13 +100,13 @@ class TeamChallengeScoreSummary(BaseModel):
     score: Score
     # Actual type is .NET System.TimeSpan, but I don't care.
     timeElapsed: Any
-    bonuses: [GameScoreAutoChallengeBonus]
-    manualBonuses: [ManualChallengeBonusViewModel]
-    unclaimedBonuses: {GameScoreAutoChallengeBonus}
+    bonuses: list[GameScoreAutoChallengeBonus]
+    manualBonuses: list[ManualChallengeBonusViewModel]
+    unclaimedBonuses: list[GameScoreAutoChallengeBonus]
 
 
 class TeamGameScoreSummary(BaseModel):
     game: SimpleEntity
     team: SimpleEntity
     score: Score
-    challengeScoreSummaries: [TeamChallengeScoreSummary]
+    challengeScoreSummaries: list[TeamChallengeScoreSummary]
