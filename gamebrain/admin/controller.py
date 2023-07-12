@@ -44,7 +44,7 @@ from ..db import (
     store_virtual_machines,
     store_team,
     get_assigned_headless_urls,
-    store_game_session
+    store_game_session,
 )
 from ..gamedata.cache import (
     GameStateManager,
@@ -188,7 +188,8 @@ async def retrieve_gamespace_info(
         if not markdown:
             logging.error(
                 f"Gamespace {gamespace_id} preview did not "
-                "contain a 'markdown' field."
+                "contain a 'markdown' field. "
+                f"This is the data returned: {preview_data}"
             )
             raise KeyError()
         gs_data_yaml = yaml.safe_load(markdown)
@@ -215,7 +216,7 @@ async def retrieve_gamespace_info(
     team_gs_info = TeamGamespaceInfo(
         ship_gamespace_id=ship_gamespace_id,
         ship_gamespace_data=ship_gamespace_data,
-        gamespaces=gamespace_data
+        gamespaces=gamespace_data,
     )
 
     return team_gs_info
@@ -243,9 +244,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
         session_teams.append(team.id)
 
         await GameStateManager.new_team(
-            team.id,
-            deployment_data.session,
-            team_gamespace_info.ship_gamespace_data
+            team.id, deployment_data.session, team_gamespace_info.ship_gamespace_data
         )
 
         await store_team(
@@ -266,7 +265,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
         session_teams,
         deployment_data.session.sessionBegin,
         deployment_data.session.sessionEnd,
-        deployment_data.session.now
+        deployment_data.session.now,
     )
 
     await GameStateManager.init_challenges(gamespace_info)
