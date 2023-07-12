@@ -93,9 +93,9 @@ async def debug_exception_handler(request: Request, exc: HTTPException):
 
 @APP.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    body = await request.json()
     logging.error(
-        f"Got invalid request headers: {request.headers} and body {str(request)}"
-    )
+        f"Got invalid request headers: {request.headers} and body {body}")
     return await request_validation_exception_handler(request, exc)
 
 
