@@ -77,8 +77,7 @@ class DBManager:
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
-        game_session_id = Column(Integer, ForeignKey(
-            "game_session.id"), nullable=False)
+        game_session_id = Column(Integer, ForeignKey("game_session.id"))
         ship_gamespace_id = Column(String(36))
         headless_url = Column(String)
         team_name = Column(String)
@@ -202,6 +201,7 @@ async def store_team(
     ship_gamespace_id: Optional[str] = None,
     headless_url: Optional[str] | None = "",
     team_name: Optional[str] = None,
+    game_session_id: Optional[int] = None,
 ):
     """
     ship_gamespace_id: Maximum 36 character string.
@@ -214,6 +214,8 @@ async def store_team(
         kwargs["headless_url"] = headless_url
     if team_name:
         kwargs["team_name"] = team_name
+    if game_session_id:
+        kwargs["game_session_id"] = game_session_id
     team_data = DBManager.TeamData(id=team_id, **kwargs)
     await DBManager.merge_rows([team_data])
 
@@ -230,6 +232,9 @@ async def store_game_session(
         session_end=session_end,
         deployer_initial_time=deployer_initial_time,
     )
+    for team_id in team_ids:
+        await store_team(game_session_id=session_data.id)
+
     await DBManager.merge_rows(session_data)
 
 
