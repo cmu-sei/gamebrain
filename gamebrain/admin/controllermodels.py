@@ -1,11 +1,10 @@
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class DeploymentGame(BaseModel):
-    id: UUID
+    id: str
     name: str
 
 
@@ -16,12 +15,12 @@ class DeploymentSession(BaseModel):
 
 
 class DeploymentGamespace(BaseModel):
-    id: UUID
+    id: str
     vmUris: list[str]
 
 
 class DeploymentTeam(BaseModel):
-    id: UUID
+    id: str
     name: str
     gamespaces: list[DeploymentGamespace]
 
