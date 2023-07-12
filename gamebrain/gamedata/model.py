@@ -196,8 +196,8 @@ class MissionDataFull(MissionData, MissionDataTeamSpecific):
     # Teams who have completed the challenge.
     solveTeams: int = 0
 
-    associatedChallenges: [MissionID] | None
-    associatedChallengeCoordinates: [str | None] | None
+    associatedChallenges: list[MissionID] | None
+    associatedChallengeCoordinates: list[str | None] | None
 
 
 class LocationData(BaseModel):
