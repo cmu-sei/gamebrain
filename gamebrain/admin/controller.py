@@ -254,7 +254,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
         )
 
     gamebrain_time = datetime.now(tz=timezone.utc)
-    if abs(gamebrain_time - deployment_data.session.now) > 2.0:
+    if abs(gamebrain_time - deployment_data.session.now).seconds > 2:
         logging.warning(
             f"Deployment at Gamebrain time {gamebrain_time} "
             "differs more than 2 seconds from deployer time "
