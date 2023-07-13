@@ -67,9 +67,9 @@ class DBManager:
         __tablename__ = "game_session"
 
         id = Column(Integer, primary_key=True)
-        session_start = Column(DateTime, nullable=False)
-        session_end = Column(DateTime, nullable=False)
-        deployer_initial_time = Column(DateTime, nullable=False)
+        session_start = Column(DateTime(timezone=True), nullable=False)
+        session_end = Column(DateTime(timezone=True), nullable=False)
+        deployer_initial_time = Column(DateTime(timezone=True), nullable=False)
 
         teams = relationship("TeamData", lazy="joined")
 
