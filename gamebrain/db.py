@@ -227,15 +227,14 @@ async def store_game_session(
     deployer_initial_time: datetime,
 ):
     session_data = DBManager.GameSession(
-        teams=team_ids,
         session_start=session_start,
         session_end=session_end,
         deployer_initial_time=deployer_initial_time,
     )
     for team_id in team_ids:
-        await store_team(game_session_id=session_data.id)
+        await store_team(team_id, game_session_id=session_data.id)
 
-    await DBManager.merge_rows(session_data)
+    await DBManager.merge_rows([session_data])
 
 
 async def expire_team_gamespace(team_id: str):
