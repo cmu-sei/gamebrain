@@ -195,7 +195,7 @@ async def retrieve_gamespace_info(
         gs_data_yaml = yaml.safe_load(markdown)
         try:
             gs_data = GamespaceData(**gs_data_yaml, gamespaceID=gamespace_id)
-        except ValidationError:
+        except (ValidationError, TypeError):
             logging.error(
                 f"Gamespace {gamespace_id} had a document that could "
                 "not be parsed as YAML. Contents: {markdown}"
