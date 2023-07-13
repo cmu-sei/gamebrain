@@ -254,11 +254,16 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
         )
 
     gamebrain_time = datetime.now()
-    if abs(gamebrain_time - deployment_data.session.now) > 2.0:
-        logging.warning(
-            f"Deployment at Gamebrain time {gamebrain_time} "
-            "differs more than 2 seconds from deployer time "
-            f"of {deployment_data.session.now}"
+    try:
+        if abs(gamebrain_time - deployment_data.session.now) > 2.0:
+            logging.warning(
+                f"Deployment at Gamebrain time {gamebrain_time} "
+                "differs more than 2 seconds from deployer time "
+                f"of {deployment_data.session.now}"
+            )
+    except Exception:
+        print(
+            f"Caught time subtraction error. Gamebrain time: {gamebrain_time}. Deployment time: {deployment_data.session.now}"
         )
 
     await store_game_session(
