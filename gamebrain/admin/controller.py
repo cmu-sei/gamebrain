@@ -23,7 +23,7 @@
 # DM23-0100
 
 import asyncio
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import json
 import logging
 
@@ -253,7 +253,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
             team_name=team.name,
         )
 
-    gamebrain_time = datetime.now(tz=UTC)
+    gamebrain_time = datetime.now(tz=timezone.utc)
     if abs(gamebrain_time - deployment_data.session.now) > 2.0:
         logging.warning(
             f"Deployment at Gamebrain time {gamebrain_time} "
