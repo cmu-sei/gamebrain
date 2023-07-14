@@ -879,11 +879,11 @@ class GameStateManager:
 
     @classmethod
     async def _handle_first_year_tasks(
-            cls,
-            team_id: TeamID,
-            team_data: InternalTeamGameData,
-            task_id: TaskID,
-            challenge_questions: [GameEngineQuestionView]
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        task_id: TaskID,
+        challenge_questions: [GameEngineQuestionView],
     ) -> bool:
         """
         Special handling for game tasks from PC4. Returns True if the given
@@ -898,10 +898,12 @@ class GameStateManager:
                 if task_id == "cllctn6":
                     try:
                         last_failed_audit = datetime.datetime.fromisoformat(
-                            question.answer)
+                            question.answer
+                        )
                     except TypeError:
                         logging.warning(
-                            f"Question {task_id} in PC4 game had a null answer.")
+                            f"Question {task_id} in PC4 game had a null answer."
+                        )
                         return True
                     except ValueError:
                         # This means the answer was a non-ISO-format string.
@@ -909,10 +911,7 @@ class GameStateManager:
                         ...
                     else:
                         if team_data.pc4_handling_cllctn6 < last_failed_audit:
-                            await cls._dispatch_challenge_task_failed(
-                                team_id,
-                                task_id
-                            )
+                            await cls._dispatch_challenge_task_failed(team_id, task_id)
                         team_data.pc4_handling_cllctn6 = datetime.datetime.now()
 
                 if not question.isCorrect:
@@ -968,7 +967,7 @@ class GameStateManager:
                             team_id,
                             team_data,
                             gs_data.taskID,
-                            challenge.challenge.questions
+                            challenge.challenge.questions,
                         ):
                             continue
 
@@ -1130,22 +1129,22 @@ class GameStateManager:
 
     @classmethod
     async def new_team(
-            cls,
-            team_id: TeamID,
-            deployment_session: DeploymentSession,
-            ship_gamespace_info: GamespaceData,
+        cls,
+        team_id: TeamID,
+        deployment_session: DeploymentSession,
+        ship_gamespace_info: GamespaceData,
     ):
         async with cls._lock:
             new_team_state = InternalTeamGameData(
                 **cls._cache.team_initial_state.dict()
             )
             new_team_state.session.teamInfoName = team_id
-            new_team_state.session.gameStartTime = \
-                deployment_session.sessionBegin
+            new_team_state.session.gameStartTime = deployment_session.sessionBegin
             new_team_state.session.gameEndTime = deployment_session.sessionEnd
             new_team_state.session.gameCurrentTime = deployment_session.now
-            new_team_state.session.useGalaxyDisplayMap = \
+            new_team_state.session.useGalaxyDisplayMap = (
                 ship_gamespace_info.useGalaxyDisplayMap
+            )
             new_team_state.session.useCodices = ship_gamespace_info.useCodices
             new_team_state.session.timerTitle = ship_gamespace_info.timerTitle
 
@@ -1175,8 +1174,7 @@ class GameStateManager:
 
     @classmethod
     def _map_team_score_data(
-            cls,
-            team_score_data: TeamGameScoreSummary
+        cls, team_score_data: TeamGameScoreSummary
     ) -> {MissionID, MissionScoreData}:
         """
         Assumes that the class lock is held.
@@ -1191,23 +1189,20 @@ class GameStateManager:
 
             mission_score_data = {
                 "current_score": challenge_score_summary.score.totalScore,
-                "possible_max_score":
-                    challenge_score_summary.score.completionScore +
-                    sum(
-                        map(
-                            lambda b: b.pointValue,
-                            challenge_score_summary.bonuses,
-                        )
-                    ),
-                "base_solve_value":
-                    challenge_score_summary.score.completionScore,
-                "bonus_remaining":
-                    sum(
-                        map(
-                            lambda b: b.pointValue,
-                            challenge_score_summary.unclaimedBonuses,
-                        )
-                    ),
+                "possible_max_score": challenge_score_summary.score.completionScore
+                + sum(
+                    map(
+                        lambda b: b.pointValue,
+                        challenge_score_summary.bonuses,
+                    )
+                ),
+                "base_solve_value": challenge_score_summary.score.completionScore,
+                "bonus_remaining": sum(
+                    map(
+                        lambda b: b.pointValue,
+                        challenge_score_summary.unclaimedBonuses,
+                    )
+                ),
             }
             mission_map[mission_id] = MissionScoreData(**mission_score_data)
 
@@ -1235,8 +1230,11 @@ class GameStateManager:
                     **loc_global.dict() | location.dict())
                 full_loc_data.append(loc_full)
 
-            team_score_data = await gameboard.team_score(team_id)
-            mission_map = cls._map_team_score_data(team_score_data)
+            if team_id:
+                team_score_data = await gameboard.team_score(team_id)
+                mission_map = cls._map_team_score_data(team_score_data)
+            else:
+                mission_map = {}
 
             full_mission_data = []
             for mission in team_data.missions.values():
@@ -1261,34 +1259,37 @@ class GameStateManager:
                     task_list.append(
                         TaskDataFull(**global_task.dict() | team_task.dict())
                     )
-                gamespace_data = cls._cache.challenges[team_id].get(
-                    mission.missionID)
+                try:
+                    gamespace_data = cls._cache.challenges[team_id].get(
+                        mission.missionID
+                    )
+                except KeyError:
+                    gamespace_data = None
                 position_data = {}
                 if not gamespace_data:
                     logging.error(
                         f"Team {team_id}'s mission {mission.missionID} has "
-                        "not been populated with gamespace data.")
+                        "not been populated with gamespace data."
+                    )
                 else:
-                    position_data["galaxyMapXPos"] = \
-                        gamespace_data.galaxyMapXPos
-                    position_data["galaxyMapYPos"] = \
-                        gamespace_data.galaxyMapYPos
-                    position_data["targetGalaxyMapXPos"] = \
-                        gamespace_data.targetGalaxyMapXPos
-                    position_data["targetGalaxyMapYPos"] = \
-                        gamespace_data.targetGalaxyMapYPos
+                    position_data["galaxyMapXPos"] = gamespace_data.galaxyMapXPos
+                    position_data["galaxyMapYPos"] = gamespace_data.galaxyMapYPos
+                    position_data[
+                        "targetGalaxyMapXPos"
+                    ] = gamespace_data.targetGalaxyMapXPos
+                    position_data[
+                        "targetGalaxyMapYPos"
+                    ] = gamespace_data.targetGalaxyMapYPos
 
                 score_data = {}
                 mission_score_data = mission_map.get(mission_global.missionID)
                 if mission_score_data:
-                    score_data["currentScore"] = \
-                        mission_score_data.current_score
-                    score_data["possibleMaximumScore"] = \
-                        mission_score_data.possible_max_score
-                    score_data["baseSolveValue"] = \
-                        mission_score_data.base_solve_value
-                    score_data["bonusRemaining"] = \
-                        mission_score_data.bonus_remaining
+                    score_data["currentScore"] = mission_score_data.current_score
+                    score_data[
+                        "possibleMaximumScore"
+                    ] = mission_score_data.possible_max_score
+                    score_data["baseSolveValue"] = mission_score_data.base_solve_value
+                    score_data["bonusRemaining"] = mission_score_data.bonus_remaining
                 else:
                     logging.warning(
                         f"Team {team_id} had no score data for "
@@ -1296,11 +1297,11 @@ class GameStateManager:
                     )
 
                 mission_full = MissionDataFull(
-                    **mission_global.dict() |
-                    mission.dict() |
-                    {"taskList": task_list} |
-                    position_data |
-                    score_data
+                    **mission_global.dict()
+                    | mission.dict()
+                    | {"taskList": task_list}
+                    | position_data
+                    | score_data
                 )
                 full_mission_data.append(mission_full)
 
