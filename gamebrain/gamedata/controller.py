@@ -52,10 +52,13 @@ async def get_gamedata(
     team_id: TeamID | None = None,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GameDataResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         game_data = await GameStateManager.get_team_data(team_id)
-        logging.debug(f"Team {team_id} GameData: \n{json.dumps(game_data.dict(), indent=2)}")
+        logging.debug(
+            f"Team {team_id} GameData: \n{json.dumps(game_data.dict(), indent=2, default=str)}"
+        )
         return game_data
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
@@ -67,7 +70,8 @@ async def get_locationunlock(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> LocationUnlockResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.unlock_location(team_id, coordinates)
     except NonExistentTeam:
@@ -80,7 +84,8 @@ async def get_jump(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.jump(team_id, location_id)
     except NonExistentTeam:
@@ -92,7 +97,8 @@ async def get_extendantenna(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         result = await GameStateManager.extend_antenna(team_id)
         logging.info(f"ExtendAntenna result: \n{result.json(indent=2)}")
@@ -106,7 +112,8 @@ async def get_retractantenna(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         result = await GameStateManager.retract_antenna(team_id)
         logging.info(f"RetractAntenna result: \n{result.json(indent=2)}")
@@ -120,7 +127,8 @@ async def get_scanlocation(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> ScanResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.scan(team_id)
     except NonExistentTeam:
@@ -133,7 +141,8 @@ async def get_powermode(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.set_power_mode(team_id, status)
     except NonExistentTeam:
@@ -145,7 +154,8 @@ async def get_commeventcompleted(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         result = await GameStateManager.complete_comm_event(team_id)
         logging.info(f"CommEventCompleted result: {result}.")
@@ -159,7 +169,8 @@ async def get_codexstationpoweron(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.codex_power(team_id, PowerStatus.on)
     except NonExistentTeam:
@@ -171,7 +182,8 @@ async def get_codexstationpoweroff(
     team_id: TeamID,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
     try:
         return await GameStateManager.codex_power(team_id, PowerStatus.off)
     except NonExistentTeam:
