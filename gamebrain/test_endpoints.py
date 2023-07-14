@@ -23,7 +23,12 @@
 # DM23-0100
 
 import os
-from json import JSONDecodeError, load as json_load, loads as json_loads
+from json import (
+    JSONDecodeError,
+    load as json_load,
+    loads as json_loads,
+    dumps as json_dumps,
+)
 import logging
 import sys
 from typing import TextIO, BinaryIO
@@ -36,6 +41,7 @@ from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
+from .db import get_assigned_headless_urls, store_team
 from .gamedata.cache import (
     GameDataCacheSnapshot,
     GameStateManager,
@@ -242,3 +248,14 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
         )
 
     await GameStateManager.init(new_state, GameStateManager._settings)
+
+
+@test_router.get("/clear_headless_assignments")
+async def clear_headless_assignments():
+    current_assignments = await get_assigned_headless_urls()
+
+    print(
+        f"Clearing current headless assignments: {json_dumps(current_assignments)}")
+
+    for team_id in current_assignments:
+        await store_team(team_id, headless_url=None)
