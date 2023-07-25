@@ -256,6 +256,7 @@ class SessionDataTeamSpecific(BaseModel):
     jumpCutsceneURL: str
     useGalaxyDisplayMap: bool = False
     useCodices: bool = True
+    displayIncompleteMissionPogs: bool = False
     timerTitle: str = ""
     gameStartTime: datetime = datetime.fromordinal(1)
     gameEndTime: datetime = datetime.fromordinal(1)
