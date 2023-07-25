@@ -23,7 +23,7 @@
 # DM23-0100
 
 import asyncio
-from collections import Counter
+from datetime import datetime, timedelta
 import json
 import logging
 
@@ -32,15 +32,18 @@ from .clients import topomojo
 from .gamedata.cache import GameStateManager, TeamID
 
 
+CLEANUP_TIME = timedelta(minutes=10)
+
+
 class BackgroundCleanupTask:
     settings: "SettingsModel"
 
-    _revisit_dict: Counter
+    _revisit_dict: dict[TeamID, datetime]
 
     @classmethod
     async def init(cls, settings: "SettingsModel"):
         cls.settings = settings
-        cls._revisit_dict = Counter()
+        cls._revisit_dict = {}
 
         return await cls._cleanup_task()
 
@@ -103,16 +106,19 @@ class BackgroundCleanupTask:
                         )
                         await cls._cleanup_team(team_id)
 
+                current_time = datetime.utcnow()
                 for team_id in teams_without_gamespace:
-                    if cls._revisit_dict[team_id] >= 10:
+                    first_failure_time = cls._revisit_dict.get(team_id)
+                    if not first_failure_time:
+                        cls._revisit_dict[team_id] = current_time
+                    elif (current_time - first_failure_time) > CLEANUP_TIME:
                         logging.error(
                             f"Team {team_id} had a game server assigned to them, "
-                            "but had no gamespace assigned after many checks. "
+                            f"but had no gamespace assigned after {str(CLEANUP_TIME)}. "
                             "Unassigning the team's game server..."
                         )
                         await cls._cleanup_team(team_id)
                         del cls._revisit_dict[team_id]
-                        continue
-                    cls._revisit_dict[team_id] += 1
+
             except Exception as e:
                 logging.exception(f"Cleanup task exception: {str(e)}")
