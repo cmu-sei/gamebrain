@@ -226,12 +226,7 @@ class DeploymentResponse(BaseModel):
     __root__: dict[TeamID, HeadlessUrl]
 
 
-@admin_router.post("/deploy")
-async def deploy(deployment_data: Deployment) -> DeploymentResponse:
-    assignments = await HeadlessManager.assign_headless(
-        [team.id for team in deployment_data.teams]
-    )
-
+async def _internal_deploy(deployment_data: Deployment):
     gamespace_info = {}
 
     session_teams = []
@@ -270,6 +265,20 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
 
     await GameStateManager.init_challenges(gamespace_info)
     await GameStateManager.start_game_timers()
+
+
+@admin_router.post("/deploy")
+async def deploy(deployment_data: Deployment) -> DeploymentResponse:
+    assignments = await HeadlessManager.assign_headless(
+        [team.id for team in deployment_data.teams]
+    )
+
+    try:
+        await _internal_deploy()
+    except Exception as e:
+        for team in deployment_data.teams:
+            await expire_team_gamespace(team.id)
+        raise e
 
     return DeploymentResponse(__root__=assignments)
 
