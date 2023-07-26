@@ -1154,6 +1154,10 @@ class GameStateManager:
 
             cls._cache.team_map.__root__[team_id] = new_team_state
 
+            logging.info(
+                f"Team {team_id} created with missions {new_team_state.missions}"
+            )
+
     @classmethod
     async def check_team_exists(cls, team_id: TeamID) -> bool:
         async with cls._lock:
