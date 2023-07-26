@@ -274,7 +274,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     )
 
     try:
-        await _internal_deploy()
+        await _internal_deploy(deployment_data)
     except Exception as e:
         for team in deployment_data.teams:
             await expire_team_gamespace(team.id)
