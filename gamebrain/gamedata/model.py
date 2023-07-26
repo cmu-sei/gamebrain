@@ -159,8 +159,8 @@ class MissionData(BaseModel):
     # for all subsequent completions.
     firstNthCompletionUnlocks: list[list[MissionID]] = []
 
-    associatedChallenges: list[MissionID] | None
-    associatedChallengeCoordinates: list[str | None] | None
+    associatedChallenges: list[MissionID] = []
+    associatedChallengeCoordinates: list[str | None] = []
 
 
 class MissionDataTeamSpecific(BaseModel):
@@ -198,9 +198,6 @@ class MissionDataFull(MissionData, MissionDataTeamSpecific):
     totalTeams: int = 0
     # Teams who have completed the challenge.
     solveTeams: int = 0
-
-    associatedChallenges: list[MissionID] | None
-    associatedChallengeCoordinates: list[str | None] | None
 
 
 class LocationData(BaseModel):
