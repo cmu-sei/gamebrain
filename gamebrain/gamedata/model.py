@@ -160,7 +160,7 @@ class MissionData(BaseModel):
     firstNthCompletionUnlocks: list[list[MissionID]] = []
 
     associatedChallenges: list[MissionID] = []
-    associatedChallengeCoordinates: list[str | None] = []
+    associatedChallengesCoordinates: list[str | None] = []
 
 
 class MissionDataTeamSpecific(BaseModel):
