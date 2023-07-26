@@ -1290,11 +1290,11 @@ class GameStateManager:
                     position_data["galaxyMapXPos"] = gamespace_data.galaxyMapXPos
                     position_data["galaxyMapYPos"] = gamespace_data.galaxyMapYPos
                     position_data[
-                        "targetGalaxyMapXPos"
-                    ] = gamespace_data.targetGalaxyMapXPos
+                        "galaxyMapTargetXPos"
+                    ] = gamespace_data.galaxyMapTargetXPos
                     position_data[
-                        "targetGalaxyMapYPos"
-                    ] = gamespace_data.targetGalaxyMapYPos
+                        "galaxyMapTargetYPos"
+                    ] = gamespace_data.galaxyMapTargetYPos
 
                 score_data = {}
                 mission_score_data = mission_map.get(mission_global.missionID)

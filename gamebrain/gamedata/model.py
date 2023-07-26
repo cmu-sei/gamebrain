@@ -88,8 +88,8 @@ class GamespaceData(BaseModel):
     timerTitle: str | None
     galaxyMapXPos: float = 0.0
     galaxyMapYPos: float = 0.0
-    targetGalaxyMapYPos: float = 0.0
-    targetGalaxyMapXPos: float = 0.0
+    galaxyMapTargetXPos: float = 0.0
+    galaxyMapTargetYPos: float = 0.0
 
 
 class TeamGamespaceInfo(BaseModel):
@@ -185,8 +185,8 @@ class MissionDataFull(MissionData, MissionDataTeamSpecific):
     # The next four come from the workspace document.
     galaxyMapXPos: float = 0.0
     galaxyMapYPos: float = 0.0
-    targetGalaxyMapXPos: float = 0.0
-    targetGalaxyMapYPos: float = 0.0
+    galaxyMapTargetXPos: float = 0.0
+    galaxyMapTargetXPos: float = 0.0
 
     # Comes from a call to gameboard's team-score.
     currentScore: int = 0
