@@ -1121,6 +1121,10 @@ class GameStateManager:
                     cls._cache.challenges[team_id][mission_id] = gamespace_data
                     gamespace_id = gamespace_data.gamespaceID
                     cls._cache.gamespace_to_mission[gamespace_id] = mission_id
+                    logging.info(
+                        f"Team {team_id} had mission {mission_id} "
+                        f"assigned to gamespace {gamespace_id}."
+                    )
 
     @classmethod
     async def uninit_challenges(cls):
@@ -1185,7 +1189,14 @@ class GameStateManager:
         mission_map = {}
         for challenge_score_summary in team_score_data.challengeScoreSummaries:
             gamespace_id = challenge_score_summary.challenge.id
-            mission_id = cls._cache.gamespace_to_mission[gamespace_id]
+            mission_id = cls._cache.gamespace_to_mission.get(gamespace_id)
+            if not mission_id:
+                logging.info(
+                    f"Tried to look up gamespace {gamespace_id} to get "
+                    "a mission ID, but it was not there. This is normal "
+                    "if the gamespace is from a ship workspace."
+                )
+                continue
 
             mission_score_data = {
                 "current_score": challenge_score_summary.score.totalScore,
