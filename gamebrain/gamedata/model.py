@@ -159,6 +159,9 @@ class MissionData(BaseModel):
     # for all subsequent completions.
     firstNthCompletionUnlocks: list[list[MissionID]] = []
 
+    associatedChallenges: list[MissionID] | None
+    associatedChallengeCoordinates: list[str | None] | None
+
 
 class MissionDataTeamSpecific(BaseModel):
     missionID: MissionID
