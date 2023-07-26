@@ -19,7 +19,7 @@ class GameEngineChallengeView(BaseModel):
     text: str | None
     maxPoints: int
     maxAttempts: int
-    attempt: int
+    attempts: int
     score: float
     sectionCount: int
     sectionIndex: int
