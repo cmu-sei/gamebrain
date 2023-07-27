@@ -1321,7 +1321,7 @@ class GameStateManager:
                 )
                 full_mission_data.append(mission_full)
 
-            gamebrain_time = datetime.now(tz=timezone.utc)
+            gamebrain_time = datetime.datetime.now(tz=timezone.utc)
             team_data.session.gameCurrentTime = gamebrain_time
 
             full_team_data = GameDataResponse(
