@@ -1336,6 +1336,9 @@ class GameStateManager:
                 f"Ship Data response: {json.dumps(team_data.ship.dict(), indent=2)}"
             )
             logging.info(
+                f"Session Data response: {json.dumps(team_data.session.dict(), indent=2, default=str)}"
+            )
+            logging.info(
                 f"Mission data response: {json.dumps(full_mission_data, indent=2, default=str)}"
             )
 
