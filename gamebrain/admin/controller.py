@@ -231,6 +231,16 @@ async def _internal_deploy(deployment_data: Deployment):
 
     session_teams = []
 
+    gamebrain_time = datetime.now(tz=timezone.utc)
+    if abs(gamebrain_time - deployment_data.session.now).seconds > 2:
+        logging.warning(
+            f"Deployment at Gamebrain time {gamebrain_time} "
+            "differs more than 2 seconds from deployer time "
+            f"of {deployment_data.session.now}"
+        )
+
+    deployment_data.session.now = gamebrain_time
+
     for team in deployment_data.teams:
         team_gamespace_ids = list(map(lambda gs: gs.id, team.gamespaces))
         team_gamespace_info = await retrieve_gamespace_info(team_gamespace_ids)
@@ -250,14 +260,6 @@ async def _internal_deploy(deployment_data: Deployment):
             team.id,
             ship_gamespace_id=team_gamespace_info.ship_gamespace_id,
             team_name=team.name,
-        )
-
-    gamebrain_time = datetime.now(tz=timezone.utc)
-    if abs(gamebrain_time - deployment_data.session.now).seconds > 2:
-        logging.warning(
-            f"Deployment at Gamebrain time {gamebrain_time} "
-            "differs more than 2 seconds from deployer time "
-            f"of {deployment_data.session.now}"
         )
 
     await store_game_session(

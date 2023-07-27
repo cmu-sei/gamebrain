@@ -26,6 +26,7 @@ import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
 import datetime
+from datetime import timezone
 import json
 import logging
 from typing import Literal
@@ -1319,6 +1320,9 @@ class GameStateManager:
                     | score_data
                 )
                 full_mission_data.append(mission_full)
+
+            gamebrain_time = datetime.now(tz=timezone.utc)
+            team_data.session.gameCurrentTime = gamebrain_time
 
             full_team_data = GameDataResponse(
                 currentStatus=team_data.currentStatus,
