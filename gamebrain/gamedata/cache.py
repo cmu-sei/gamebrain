@@ -1226,104 +1226,140 @@ class GameStateManager:
         return mission_map
 
     @classmethod
+    def _get_team_unlocked_locations(
+        cls, team_data: InternalTeamGameData
+    ) -> list[LocationDataFull]:
+        full_loc_data = []
+
+        for location_id, location in team_data.locations.items():
+            loc_global = cls._cache.location_map.__root__[location_id]
+            loc_full = LocationDataFull(
+                **loc_global.dict() | location.dict())
+            full_loc_data.append(loc_full)
+
+        return full_loc_data
+
+    @classmethod
+    def _get_team_mission_unlocked_tasks(
+        cls,
+        team_id: str,
+        team_data: InternalTeamGameData,
+        mission: InternalTeamMissionData,
+    ) -> list[TaskDataFull]:
+        mission_task_data = []
+
+        for task_id in mission.tasks:
+            team_task = team_data.tasks.get(task_id)
+            if not team_task:
+                logging.error(
+                    f"Team {team_id} had a mission identify a task {task_id}"
+                    ", but the task was not in the team's task map."
+                )
+                continue
+            global_task = cls._cache.task_map.__root__.get(task_id)
+            if not global_task:
+                logging.error(
+                    f"Team {team_id} had a mission identify a task {task_id}"
+                    ", but the task was not in the global task map."
+                )
+                continue
+            mission_task_data.append(
+                TaskDataFull(**global_task.dict() | team_task.dict())
+            )
+
+        return mission_task_data
+
+    @classmethod
+    def _get_team_unlocked_missions(
+        cls,
+        team_id: str,
+        team_data: InternalTeamGameData,
+        mission_map: dict[MissionID, MissionScoreData]
+    ) -> list[MissionDataFull]:
+        full_mission_data = []
+
+        for mission in team_data.missions.values():
+            mission_global = cls._cache.mission_map.__root__[
+                mission.missionID]
+
+            mission_task_data = cls._get_team_mission_unlocked_tasks(
+                team_id,
+                team_data,
+                mission
+            )
+
+            try:
+                gamespace_data = cls._cache.challenges[team_id].get(mission.missionID)
+            except KeyError:
+                gamespace_data = None
+            position_data = {}
+            if team_id and not gamespace_data:
+                logging.error(
+                    f"Team {team_id}'s mission {mission.missionID} has "
+                    "not been populated with gamespace data."
+                )
+            else:
+                position_data["galaxyMapXPos"] = gamespace_data.galaxyMapXPos
+                position_data["galaxyMapYPos"] = gamespace_data.galaxyMapYPos
+                position_data["galaxyMapTargetXPos"] = gamespace_data.galaxyMapTargetXPos
+                position_data["galaxyMapTargetYPos"] = gamespace_data.galaxyMapTargetYPos
+
+            score_data = {}
+            mission_score_data = mission_map.get(mission_global.missionID)
+            if mission_score_data:
+                score_data["currentScore"] = mission_score_data.current_score
+                score_data["possibleMaximumScore"] = mission_score_data.possible_max_score
+                score_data["baseSolveValue"] = mission_score_data.base_solve_value
+                score_data["bonusRemaining"] = mission_score_data.bonus_remaining
+            else:
+                logging.warning(
+                    f"Team {team_id} had no score data for "
+                    f"mission {mission.missionID}"
+                )
+
+            mission_full = MissionDataFull(
+                **mission_global.dict()
+                | mission.dict()
+                | {"taskList": mission_task_data}
+                | position_data
+                | score_data
+            )
+            full_mission_data.append(mission_full)
+
+        return full_mission_data
+
+    @classmethod
     async def get_team_data(cls, team_id: TeamID | None) -> GameDataResponse | None:
         async with cls._lock:
+            mission_map = {}
+
             if team_id is None:
                 team_data = cls._cache.team_initial_state
             else:
                 team_data = cls._cache.team_map.__root__.get(team_id)
-                gamebrain_time = datetime.datetime.now(tz=timezone.utc)
+
+                gamebrain_time = datetime.datetime.now(timezone.utc)
                 team_data.session.gameCurrentTime = gamebrain_time
+
+                team_score_data = await gameboard.team_score(team_id)
+                mission_map = cls._map_team_score_data(team_score_data)
 
             if not team_data:
                 raise NonExistentTeam()
 
+            # Implemented for cancelled feature - leaving for possible future use.
             if cls._next_npc_ship_jump:
                 team_data.ship.nextJumpTime = cls._next_npc_ship_jump.isoformat()
             else:
                 team_data.ship.nextJumpTime = datetime.datetime.max.isoformat()
 
-            full_loc_data = []
-            for location_id, location in team_data.locations.items():
-                loc_global = cls._cache.location_map.__root__[location_id]
-                loc_full = LocationDataFull(
-                    **loc_global.dict() | location.dict())
-                full_loc_data.append(loc_full)
+            full_loc_data = cls._get_team_unlocked_locations(team_data)
 
-            if team_id:
-                team_score_data = await gameboard.team_score(team_id)
-                mission_map = cls._map_team_score_data(team_score_data)
-            else:
-                mission_map = {}
-
-            full_mission_data = []
-            for mission in team_data.missions.values():
-                mission_global = cls._cache.mission_map.__root__[
-                    mission.missionID]
-                task_list = []
-                for task_id in mission.tasks:
-                    team_task = team_data.tasks.get(task_id)
-                    if not team_task:
-                        logging.error(
-                            f"Team {team_id} had a mission identify a task {task_id}, but the task was not "
-                            "in the team's task map."
-                        )
-                        continue
-                    global_task = cls._cache.task_map.__root__.get(task_id)
-                    if not global_task:
-                        logging.error(
-                            f"Team {team_id} had a mission identify a task {task_id}, but the task was not "
-                            "in the global task map."
-                        )
-                        continue
-                    task_list.append(
-                        TaskDataFull(**global_task.dict() | team_task.dict())
-                    )
-                try:
-                    gamespace_data = cls._cache.challenges[team_id].get(
-                        mission.missionID
-                    )
-                except KeyError:
-                    gamespace_data = None
-                position_data = {}
-                if not gamespace_data:
-                    logging.error(
-                        f"Team {team_id}'s mission {mission.missionID} has "
-                        "not been populated with gamespace data."
-                    )
-                else:
-                    position_data["galaxyMapXPos"] = gamespace_data.galaxyMapXPos
-                    position_data["galaxyMapYPos"] = gamespace_data.galaxyMapYPos
-                    position_data[
-                        "galaxyMapTargetXPos"
-                    ] = gamespace_data.galaxyMapTargetXPos
-                    position_data[
-                        "galaxyMapTargetYPos"
-                    ] = gamespace_data.galaxyMapTargetYPos
-
-                score_data = {}
-                mission_score_data = mission_map.get(mission_global.missionID)
-                if mission_score_data:
-                    score_data["currentScore"] = mission_score_data.current_score
-                    score_data[
-                        "possibleMaximumScore"
-                    ] = mission_score_data.possible_max_score
-                    score_data["baseSolveValue"] = mission_score_data.base_solve_value
-                    score_data["bonusRemaining"] = mission_score_data.bonus_remaining
-                else:
-                    logging.warning(
-                        f"Team {team_id} had no score data for "
-                        f"mission {mission.missionID}"
-                    )
-
-                mission_full = MissionDataFull(
-                    **mission_global.dict()
-                    | mission.dict()
-                    | {"taskList": task_list}
-                    | position_data
-                    | score_data
-                )
-                full_mission_data.append(mission_full)
+            full_mission_data = cls._get_team_unlocked_missions(
+                team_id,
+                team_data,
+                mission_map
+            )
 
             full_team_data = GameDataResponse(
                 currentStatus=team_data.currentStatus,
