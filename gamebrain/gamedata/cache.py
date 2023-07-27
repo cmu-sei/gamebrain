@@ -1156,7 +1156,8 @@ class GameStateManager:
             cls._cache.team_map.__root__[team_id] = new_team_state
 
             logging.info(
-                f"Team {team_id} created with missions {new_team_state.missions}"
+                f"Team {team_id} created with missions {new_team_state.missions} "
+                f"and session {json.dumps(new_team_state.session, indent=2, default=str)}"
             )
 
     @classmethod
