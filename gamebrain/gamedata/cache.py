@@ -1298,6 +1298,9 @@ class GameStateManager:
                     f"Team {team_id}'s mission {mission.missionID} has "
                     "not been populated with gamespace data."
                 )
+            elif team_id is None:
+                # This is fine, but don't try to access gamespace_data.
+                pass
             else:
                 position_data["galaxyMapXPos"] = gamespace_data.galaxyMapXPos
                 position_data["galaxyMapYPos"] = gamespace_data.galaxyMapYPos
