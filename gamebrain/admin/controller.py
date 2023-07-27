@@ -231,6 +231,12 @@ async def _internal_deploy(deployment_data: Deployment):
 
     session_teams = []
 
+    logging.info(
+        f"Got start time {deployment_data.session.sessionBegin}, "
+        f"end time {deployment_data.session.sessionEnd}, and current "
+        f"time {deployment_data.session.now} from Gameboard."
+    )
+
     gamebrain_time = datetime.now(tz=timezone.utc)
     if abs(gamebrain_time - deployment_data.session.now).seconds > 2:
         logging.warning(
