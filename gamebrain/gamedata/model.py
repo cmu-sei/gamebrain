@@ -259,7 +259,7 @@ class SessionDataTeamSpecific(BaseModel):
     displayIncompleteMissionPogs: bool = False
     timerTitle: str = ""
     gameStartTime: datetime = datetime.fromordinal(1)
-    gameEndTime: datetime = datetime.fromordinal(1)
+    gameEndTime: datetime = datetime.fromordinal(36000)
     gameCurrentTime: datetime = datetime.fromordinal(1)
 
 

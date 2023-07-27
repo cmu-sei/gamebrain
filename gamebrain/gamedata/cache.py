@@ -1232,6 +1232,9 @@ class GameStateManager:
                 team_data = cls._cache.team_initial_state
             else:
                 team_data = cls._cache.team_map.__root__.get(team_id)
+                gamebrain_time = datetime.datetime.now(tz=timezone.utc)
+                team_data.session.gameCurrentTime = gamebrain_time
+
             if not team_data:
                 raise NonExistentTeam()
 
@@ -1321,9 +1324,6 @@ class GameStateManager:
                     | score_data
                 )
                 full_mission_data.append(mission_full)
-
-            gamebrain_time = datetime.datetime.now(tz=timezone.utc)
-            team_data.session.gameCurrentTime = gamebrain_time
 
             full_team_data = GameDataResponse(
                 currentStatus=team_data.currentStatus,
