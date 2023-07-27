@@ -1314,7 +1314,7 @@ class GameStateManager:
                 score_data["possibleMaximumScore"] = mission_score_data.possible_max_score
                 score_data["baseSolveValue"] = mission_score_data.base_solve_value
                 score_data["bonusRemaining"] = mission_score_data.bonus_remaining
-            else:
+            elif team_id:
                 logging.warning(
                     f"Team {team_id} had no score data for "
                     f"mission {mission.missionID}"
