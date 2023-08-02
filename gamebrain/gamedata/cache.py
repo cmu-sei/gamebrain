@@ -371,13 +371,12 @@ class GameStateManager:
 
     @staticmethod
     async def _get_vm_id_from_name_for_team(
-        team_id: TeamID, vm_name: str
+        team_id: TeamID, team_data: InternalTeamGameData, vm_name: str
     ) -> GenericResponse:
-        team_db_data = await get_team(team_id)
-        gamespace_id = team_db_data.get("gamespace_id")
+        gamespace_id = team_data.ship.gamespaceId
 
         if not gamespace_id:
-            message = f"No Gamespace for Team {team_id}"
+            message = f"No Ship Gamespace for Team {team_id}"
             logging.error(message)
             return GenericResponse(success=False, message=message)
 
@@ -1153,6 +1152,7 @@ class GameStateManager:
             new_team_state.session.useCodices = ship_gamespace_info.useCodices
             new_team_state.session.timerTitle = ship_gamespace_info.timerTitle
 
+            new_team_state.ship.gamespaceId = ship_gamespace_info.gamespaceID
             new_team_state.ship.antennaVmName = ship_gamespace_info.gatewayVmName
             new_team_state.ship.antennaNic = ship_gamespace_info.gatewayNic
 
@@ -1553,7 +1553,7 @@ class GameStateManager:
                 )
 
             vm_id_response = await cls._get_vm_id_from_name_for_team(
-                team_id, team_data.ship.antennaVmName
+                team_id, team_data, team_data.ship.antennaVmName
             )
             if not vm_id_response.success:
                 return vm_id_response

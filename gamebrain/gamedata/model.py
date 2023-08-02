@@ -246,6 +246,7 @@ class ShipDataTeamSpecific(BaseModel):
     navPower: PowerStatus = PowerStatus.off
     pilotPower: PowerStatus = PowerStatus.off
     nextJumpTime: str = ""
+    gamespaceId: GamespaceID = ""
     antennaVmName: str = ""
     # NICs are zero-indexed.
     antennaNic: int
