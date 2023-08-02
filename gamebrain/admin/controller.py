@@ -26,6 +26,7 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import logging
+from urllib import urlparse, parse_qs
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ValidationError
@@ -226,6 +227,26 @@ class DeploymentResponse(BaseModel):
     __root__: dict[TeamID, HeadlessUrl]
 
 
+def parse_vm_urls(vm_urls: list[str]) -> list[ConsoleUrl]:
+    console_urls = []
+
+    for url in vm_urls:
+        parsed_url = urlparse(url)
+        parsed_qs = parse_qs(parsed_url.query)
+
+        # Currently these keys should exist in the query string.
+        # Maybe improve in the future by raising a custom exception
+        # if they are not there.
+        vm_id = parsed_qs['s']
+        vm_name = parsed_qs['v']
+
+        console_url = ConsoleUrl(id=vm_id, name=vm_name, url=url)
+
+        console_urls.append(console_url)
+
+    return console_url
+
+
 async def _internal_deploy(deployment_data: Deployment):
     gamespace_info = {}
 
@@ -248,8 +269,10 @@ async def _internal_deploy(deployment_data: Deployment):
     deployment_data.session.now = gamebrain_time
 
     for team in deployment_data.teams:
-        team_gamespace_ids = list(map(lambda gs: gs.id, team.gamespaces))
-        team_gamespace_info = await retrieve_gamespace_info(team_gamespace_ids)
+        team_gamespace_vms = {gs.id: gs.vmUris for gs in team.gamespaces}
+        team_gamespace_info = await retrieve_gamespace_info(
+            team_gamespace_vms.keys()
+        )
 
         gamespace_info[team.id] = team_gamespace_info
         session_teams.append(team.id)
@@ -259,13 +282,28 @@ async def _internal_deploy(deployment_data: Deployment):
             f"{json.dumps(team_gamespace_info.gamespaces)}")
 
         await GameStateManager.new_team(
-            team.id, deployment_data.session, team_gamespace_info.ship_gamespace_data
+            team.id,
+            deployment_data.session,
+            team_gamespace_info.ship_gamespace_data
         )
 
         await store_team(
             team.id,
             ship_gamespace_id=team_gamespace_info.ship_gamespace_id,
             team_name=team.name,
+        )
+
+        ship_vm_urls = team_gamespace_vms[
+            team_gamespace_info.ship_gamespace_id
+        ]
+
+        console_urls = parse_vm_urls(ship_vm_urls)
+
+        await store_virtual_machines(
+            team.id, [console_url.dict() for console_url in console_urls]
+        )
+        await GameStateManager.update_team_urls(
+            team.id, {vm.name: vm.url for vm in console_urls}
         )
 
     await store_game_session(
@@ -353,7 +391,7 @@ class UpdateConsoleUrlsPostData(BaseModel):
     __root__: list[ConsoleUrl]
 
 
-@admin_router.post("/update_console_urls/{team_id}")
+# @admin_router.post("/update_console_urls/{team_id}")
 async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostData):
     async with TeamLocks(team_id):
         team_data = await get_team(team_id)
