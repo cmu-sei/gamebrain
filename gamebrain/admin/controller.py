@@ -244,7 +244,7 @@ def parse_vm_urls(vm_urls: list[str]) -> list[ConsoleUrl]:
 
         console_urls.append(console_url)
 
-    return console_url
+    return console_urls
 
 
 async def _internal_deploy(deployment_data: Deployment):
