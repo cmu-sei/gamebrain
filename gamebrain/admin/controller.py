@@ -26,7 +26,7 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import logging
-from urllib import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ValidationError
