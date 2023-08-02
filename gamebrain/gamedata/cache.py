@@ -1153,6 +1153,9 @@ class GameStateManager:
             new_team_state.session.useCodices = ship_gamespace_info.useCodices
             new_team_state.session.timerTitle = ship_gamespace_info.timerTitle
 
+            new_team_state.ship.antennaVmName = ship_gamespace_info.gatewayVmName
+            new_team_state.ship.antennaNic = ship_gamespace_info.gatewayNic
+
             cls._cache.team_map.__root__[team_id] = new_team_state
 
             logging.info(
@@ -1550,7 +1553,7 @@ class GameStateManager:
                 )
 
             vm_id_response = await cls._get_vm_id_from_name_for_team(
-                team_id, cls._settings.game.antenna_vm_name
+                team_id, team_data.ship.antennaVmName
             )
             if not vm_id_response.success:
                 return vm_id_response
