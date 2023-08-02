@@ -237,8 +237,8 @@ def parse_vm_urls(vm_urls: list[str]) -> list[ConsoleUrl]:
         # Currently these keys should exist in the query string.
         # Maybe improve in the future by raising a custom exception
         # if they are not there.
-        vm_id = parsed_qs['s']
-        vm_name = parsed_qs['v']
+        vm_id = parsed_qs['s'][0]
+        vm_name = parsed_qs['v'][0]
 
         console_url = ConsoleUrl(id=vm_id, name=vm_name, url=url)
 
