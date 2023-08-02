@@ -1586,7 +1586,7 @@ class GameStateManager:
                 raise NonExistentTeam()
 
             vm_id_response = await cls._get_vm_id_from_name_for_team(
-                team_id, team_data.ship.antennaVmName
+                team_id, team_data, team_data.ship.antennaVmName
             )
             if not vm_id_response.success:
                 return vm_id_response
