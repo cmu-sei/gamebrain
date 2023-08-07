@@ -882,7 +882,6 @@ class GameStateManager:
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
-        task_id: TaskID,
         challenge_questions: [GameEngineQuestionView],
     ) -> bool:
         """
@@ -890,43 +889,45 @@ class GameStateManager:
         task is named the same as one of the special tasks from PC4, False
         otherwise.
         """
-        if task_id in ("redradr6", "exoarch6", "cllctn6"):
-            for question in challenge_questions:
-                if question.text != task_id:
-                    continue
+        pc4_game = False
+        for question in challenge_questions:
+            task_id = question.text.lower().strip()
+            if task_id not in ("redradr6", "exoarch6", "cllctn6"):
+                continue
 
-                if task_id == "cllctn6":
-                    try:
-                        last_failed_audit = datetime.datetime.fromisoformat(
-                            question.answer
-                        )
-                    except TypeError:
-                        logging.warning(
-                            f"Question {task_id} in PC4 game had a null answer."
-                        )
-                        return True
-                    except ValueError:
-                        # This means the answer was a non-ISO-format string.
-                        # Which is expected to be a hex value.
-                        ...
-                    else:
-                        if team_data.pc4_handling_cllctn6 < last_failed_audit:
-                            await cls._dispatch_challenge_task_failed(team_id, task_id)
-                        team_data.pc4_handling_cllctn6 = datetime.datetime.now()
+            pc4_game = True
 
-                if not question.isCorrect:
-                    return True
-
-                global_task = cls._cache.task_map.__root__.get(task_id)
-                if not global_task:
-                    logging.error(
-                        f"Gamespace had task ID {task_id}, "
-                        "but it does not exist in the game data."
+            if task_id == "cllctn6":
+                try:
+                    last_failed_audit = datetime.datetime.fromisoformat(
+                        question.answer
                     )
-                cls._complete_task_and_unlock_next(
-                    team_id, team_data, global_task)
-            return True
-        return False
+                except TypeError:
+                    logging.warning(
+                        f"Question {task_id} in PC4 game had a null answer."
+                    )
+                    return True
+                except ValueError:
+                    # This means the answer was a non-ISO-format string.
+                    # Which is expected to be a hex value.
+                    ...
+                else:
+                    if team_data.pc4_handling_cllctn6 < last_failed_audit:
+                        await cls._dispatch_challenge_task_failed(team_id, task_id)
+                    team_data.pc4_handling_cllctn6 = datetime.datetime.now()
+
+            if not question.isCorrect:
+                return True
+
+            global_task = cls._cache.task_map.__root__.get(task_id)
+            if not global_task:
+                logging.error(
+                    f"Gamespace had task ID {task_id}, "
+                    "but it does not exist in the game data."
+                )
+            cls._complete_task_and_unlock_next(
+                team_id, team_data, global_task)
+        return pc4_game
 
     @classmethod
     async def _mission_timer_task(cls):
@@ -966,7 +967,6 @@ class GameStateManager:
                         if await cls._handle_first_year_tasks(
                             team_id,
                             team_data,
-                            gs_data.taskID,
                             challenge.challenge.questions,
                         ):
                             continue
