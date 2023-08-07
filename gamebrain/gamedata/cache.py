@@ -892,43 +892,46 @@ class GameStateManager:
         pc4_game = False
         for question in challenge_questions:
             task_id = question.text.lower().strip()
-            if task_id not in ("redradr6", "exoarch6", "cllctn6"):
+            if task_id not in (
+                "antruins8",
+                "cllctn6",
+                "cllctn11",
+                "exoarch6",
+                "exoarch9",
+                "fllwrs12",
+                "redradr6",
+                "redradr10",
+            ):
                 continue
 
             logging.info(f"Doing special handling for team {team_id} and task {task_id}")
 
             pc4_game = True
 
-            if task_id == "cllctn6":
-                try:
-                    last_failed_audit = datetime.datetime.fromisoformat(
-                        question.answer
-                    )
-                except TypeError:
-                    logging.warning(
-                        f"Question {task_id} in PC4 game had a null answer."
-                    )
-                    return True
-                except ValueError:
-                    # This means the answer was a non-ISO-format string.
-                    # Which is expected to be a hex value.
-                    ...
-                else:
-                    if team_data.pc4_handling_cllctn6 < last_failed_audit:
-                        await cls._dispatch_challenge_task_failed(team_id, task_id)
-                    team_data.pc4_handling_cllctn6 = datetime.datetime.now()
-
             if not question.isCorrect:
+                # For this task, failure triggers a new task with a failure video.
+                if task_id == "cllctn6":
+                    try:
+                        last_failed_audit = datetime.datetime.fromisoformat(
+                            question.answer
+                        )
+                    except TypeError:
+                        logging.error(f"Question {task_id} in PC4 game had a null answer.")
+                    except ValueError:
+                        # This means the answer was a non-ISO-format string.
+                        # It's no problem if the question is marked correct.
+                        logging.error(f"Question {task_id} in PC4 game had an answer not in ISO format.")
+                    else:
+                        if team_data.pc4_handling_cllctn6 < last_failed_audit:
+                            await cls._dispatch_challenge_task_failed(team_id, task_id)
+                        team_data.pc4_handling_cllctn6 = datetime.datetime.now()
                 return True
 
             global_task = cls._cache.task_map.__root__.get(task_id)
             if not global_task:
-                logging.error(
-                    f"Gamespace had task ID {task_id}, "
-                    "but it does not exist in the game data."
-                )
-            cls._complete_task_and_unlock_next(
-                team_id, team_data, global_task)
+                logging.error(f"Gamespace had task ID {task_id}, but it does not exist in the game data.")
+                return True
+            cls._complete_task_and_unlock_next(team_id, team_data, global_task)
 
         return pc4_game
 
