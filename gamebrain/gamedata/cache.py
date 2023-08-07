@@ -895,6 +895,8 @@ class GameStateManager:
             if task_id not in ("redradr6", "exoarch6", "cllctn6"):
                 continue
 
+            logging.info(f"Doing special handling for team {team_id} and task {task_id}")
+
             pc4_game = True
 
             if task_id == "cllctn6":
@@ -927,6 +929,7 @@ class GameStateManager:
                 )
             cls._complete_task_and_unlock_next(
                 team_id, team_data, global_task)
+
         return pc4_game
 
     @classmethod
