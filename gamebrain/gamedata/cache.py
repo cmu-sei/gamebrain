@@ -945,7 +945,21 @@ class GameStateManager:
                     "but not the team map."
                 )
                 continue
-            team_challenges = await gameboard.mission_update(team_id)
+
+            try:
+                team_challenges = await gameboard.mission_update(team_id)
+            except TypeError:
+                logging.error(
+                    "Attempted to get a mission update for team "
+                    f"{team_id}, but Gameboard could not find that team."
+                )
+                continue
+            else:
+                logging.info(
+                    "Got mission update for team "
+                    f"{team_id}."
+                )
+
             if not team_challenges:
                 # It's already being logged.
                 continue
