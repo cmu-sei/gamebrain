@@ -936,83 +936,91 @@ class GameStateManager:
         return pc4_game
 
     @classmethod
+    async def _mission_timer_body(cls):
+        for team_id, _ in cls._cache.challenges.items():
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if team_data is None:
+                logging.error(
+                    f"Team {team_id} is in the challenge map, "
+                    "but not the team map."
+                )
+                continue
+            team_challenges = await gameboard.mission_update(team_id)
+            if not team_challenges:
+                # It's already being logged.
+                continue
+
+            for challenge in team_challenges:
+                markdown = challenge.markdown
+                gamespace_id = challenge.id
+                gs_data_yaml = yaml.safe_load(markdown)
+                try:
+                    gs_data = GamespaceData(
+                        **gs_data_yaml, gamespaceID=gamespace_id
+                    )
+                except ValidationError:
+                    logging.error(
+                        f"Gamespace {gamespace_id} had a document that "
+                        "could not be parsed as YAML."
+                    )
+                    continue
+
+                if await cls._handle_first_year_tasks(
+                    team_id,
+                    team_data,
+                    challenge.challenge.questions,
+                ):
+                    continue
+
+                if challenge.isActive or not challenge.endTime:
+                    # We're looking for completed challenges here.
+                    continue
+
+                global_task = cls._cache.task_map.__root__.get(
+                    gs_data.taskID)
+                if global_task is None:
+                    logging.error(
+                        f"Team challenge {gamespace_id} listed task "
+                        f"{gs_data.taskID} but it does not exist."
+                    )
+                    continue
+
+                global_mission = cls._cache.mission_map.__root__.get(
+                    global_task.missionID
+                )
+                if global_mission is None:
+                    logging.error(
+                        f"Task {global_task.taskID} listed mission "
+                        f"{global_task.missionID} but it does not exist."
+                    )
+
+                team_mission = team_data.missions.get(
+                    global_mission.missionID)
+                if team_mission is None:
+                    logging.error(
+                        f"Team {team_id} apparently completed "
+                        f"challenge {challenge.Id}, but had not "
+                        "unlocked its corresponding mission yet."
+                    )
+                    continue
+
+                if not team_mission.complete:
+                    cls._complete_mission_and_unlock_next(
+                        team_id, team_data, team_mission, global_mission
+                    )
+
+    @classmethod
     async def _mission_timer_task(cls):
         while True:
             # Sleep before the operation so the task will sleep after continue.
             await asyncio.sleep(2)
 
-            async with cls._lock:
-                for team_id, _ in cls._cache.challenges.items():
-                    team_data = cls._cache.team_map.__root__.get(team_id)
-                    if team_data is None:
-                        logging.error(
-                            f"Team {team_id} is in the challenge map, "
-                            "but not the team map."
-                        )
-                        continue
-                    team_challenges = await gameboard.mission_update(team_id)
-                    if not team_challenges:
-                        # It's already being logged.
-                        continue
+            try:
+                async with cls._lock:
+                    await cls._mission_timer_body()
+            except Exception as e:
+                logging.error(f"Mission timer task exception: {e}")
 
-                    for challenge in team_challenges:
-                        markdown = challenge.markdown
-                        gamespace_id = challenge.id
-                        gs_data_yaml = yaml.safe_load(markdown)
-                        try:
-                            gs_data = GamespaceData(
-                                **gs_data_yaml, gamespaceID=gamespace_id
-                            )
-                        except ValidationError:
-                            logging.error(
-                                f"Gamespace {gamespace_id} had a document that "
-                                "could not be parsed as YAML."
-                            )
-                            continue
-
-                        if await cls._handle_first_year_tasks(
-                            team_id,
-                            team_data,
-                            challenge.challenge.questions,
-                        ):
-                            continue
-
-                        if challenge.isActive or not challenge.endTime:
-                            # We're looking for completed challenges here.
-                            continue
-
-                        global_task = cls._cache.task_map.__root__.get(
-                            gs_data.taskID)
-                        if global_task is None:
-                            logging.error(
-                                f"Team challenge {gamespace_id} listed task "
-                                f"{gs_data.taskID} but it does not exist."
-                            )
-                            continue
-
-                        global_mission = cls._cache.mission_map.__root__.get(
-                            global_task.missionID
-                        )
-                        if global_mission is None:
-                            logging.error(
-                                f"Task {global_task.taskID} listed mission "
-                                f"{global_task.missionID} but it does not exist."
-                            )
-
-                        team_mission = team_data.missions.get(
-                            global_mission.missionID)
-                        if team_mission is None:
-                            logging.error(
-                                f"Team {team_id} apparently completed "
-                                f"challenge {challenge.Id}, but had not "
-                                "unlocked its corresponding mission yet."
-                            )
-                            continue
-
-                        if not team_mission.complete:
-                            cls._complete_mission_and_unlock_next(
-                                team_id, team_data, team_mission, global_mission
-                            )
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
