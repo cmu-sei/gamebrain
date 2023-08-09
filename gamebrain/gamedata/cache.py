@@ -889,8 +889,14 @@ class GameStateManager:
         task is named the same as one of the special tasks from PC4, False
         otherwise.
         """
-        question_summary = [(question.text, question.isCorrect) for question in challenge_questions]
-        logging.info(f"_handle_first_year_tasks: Question summary: {json.dumps(question_summary)}")
+        question_summary = [
+            (question.text, question.isCorrect)
+            for question in challenge_questions
+        ]
+        logging.info(
+            "_handle_first_year_tasks: Question summary: "
+            f"{json.dumps(question_summary)}"
+        )
 
         pc4_game = False
         for question in challenge_questions:
@@ -907,7 +913,10 @@ class GameStateManager:
             ):
                 continue
 
-            logging.info(f"Doing special handling for team {team_id} and task {task_id}")
+            logging.info(
+                "_handle_first_year_tasks: Doing special handling "
+                f"for team {team_id} and task {task_id}"
+            )
 
             pc4_game = True
 
@@ -919,21 +928,31 @@ class GameStateManager:
                             question.answer
                         )
                     except TypeError:
-                        logging.error(f"Question {task_id} in PC4 game had a null answer.")
+                        logging.error(
+                            "_handle_first_year_tasks: Question "
+                            f"{task_id} in PC4 game had a null answer."
+                        )
                     except ValueError:
                         # This means the answer was a non-ISO-format string.
                         # It's no problem if the question is marked correct.
-                        logging.error(f"Question {task_id} in PC4 game had an answer not in ISO format.")
+                        logging.error(
+                            "_handle_first_year_tasks: Question "
+                            f"{task_id} in PC4 game had an answer "
+                            "not in ISO format."
+                        )
                     else:
                         if team_data.pc4_handling_cllctn6 < last_failed_audit:
                             await cls._dispatch_challenge_task_failed(team_id, task_id)
                         team_data.pc4_handling_cllctn6 = datetime.datetime.now()
-                return True
+                continue
 
             global_task = cls._cache.task_map.__root__.get(task_id)
             if not global_task:
-                logging.error(f"Gamespace had task ID {task_id}, but it does not exist in the game data.")
-                return True
+                logging.error(
+                    "_handle_first_year_tasks: Gamespace had task ID "
+                    f"{task_id}, but it does not exist in the game data."
+                )
+                continue
             cls._complete_task_and_unlock_next(team_id, team_data, global_task)
 
         return pc4_game
