@@ -902,6 +902,7 @@ class GameStateManager:
                 "redradr6",
                 "redradr10",
             ):
+                logging.info(f"Got question text that was skipped in pc4 handler: {task_id}")
                 continue
 
             logging.info(f"Doing special handling for team {team_id} and task {task_id}")
