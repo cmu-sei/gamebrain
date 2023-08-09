@@ -1160,6 +1160,17 @@ class GameStateManager:
             cls._cache.challenges = {}
 
     @classmethod
+    async def uninit_team(cls, team_id):
+        async with cls._lock:
+            try:
+                del cls._cache.challenges[team_id]
+            except KeyError:
+                logging.warning(
+                    f"Tried to uninit team {team_id} but it "
+                    "was not being tracked in the challenge map."
+                )
+
+    @classmethod
     async def new_team(
         cls,
         team_id: TeamID,

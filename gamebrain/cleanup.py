@@ -67,6 +67,7 @@ class BackgroundCleanupTask:
     async def _cleanup_team(cls, team_id: TeamID):
         await db.expire_team_gamespace(team_id)
         await GameStateManager.update_team_urls(team_id, {})
+        await GameStateManager.uninit_team(team_id)
 
     @classmethod
     async def _cleanup_task(cls):
