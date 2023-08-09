@@ -889,6 +889,9 @@ class GameStateManager:
         task is named the same as one of the special tasks from PC4, False
         otherwise.
         """
+        question_summary = [(question.text, question.isCorrect) for question in challenge_questions]
+        logging.info(f"_handle_first_year_tasks: Question summary: {json.dumps(question_summary)}")
+
         pc4_game = False
         for question in challenge_questions:
             task_id = question.text.lower().strip()
@@ -902,7 +905,6 @@ class GameStateManager:
                 "redradr6",
                 "redradr10",
             ):
-                logging.info(f"Got question text that was skipped in pc4 handler: {task_id}")
                 continue
 
             logging.info(f"Doing special handling for team {team_id} and task {task_id}")
