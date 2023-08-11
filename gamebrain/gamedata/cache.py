@@ -898,19 +898,29 @@ class GameStateManager:
             f"{json.dumps(question_summary)}"
         )
 
+        cllctn6_completions = {
+            "cllctn6_term1": False,
+            "cllctn6_term2": False,
+            "cllctn6_term3": False,
+            "cllctn6_term4": False,
+            "cllctn6_term5": False,
+            "cllctn6_critical": False,
+            "cllctn6_firewall": False,
+        }
+        send_cllctn6_failure = False
+
         pc4_game = False
         for question in challenge_questions:
             task_id = question.text.lower().strip()
             if task_id not in (
                 "antruins8",
-                "cllctn6",
                 "cllctn11",
                 "exoarch6",
                 "exoarch9",
                 "fllwrs12",
                 "redradr6",
                 "redradr10",
-            ):
+            ) and task_id not in cllctn6_completions:
                 continue
 
             logging.info(
@@ -922,7 +932,7 @@ class GameStateManager:
 
             if not question.isCorrect:
                 # For this task, failure triggers a new task with a failure video.
-                if task_id == "cllctn6":
+                if task_id in cllctn6_completions:
                     try:
                         last_failed_audit = datetime.datetime.fromisoformat(
                             question.answer
@@ -942,8 +952,13 @@ class GameStateManager:
                         )
                     else:
                         if team_data.pc4_handling_cllctn6 < last_failed_audit:
-                            await cls._dispatch_challenge_task_failed(team_id, task_id)
+                            send_cllctn6_failure = True
                         team_data.pc4_handling_cllctn6 = datetime.datetime.now()
+                continue
+            elif task_id in cllctn6_completions:
+                cllctn6_completions[task_id] = True
+                # We're not marking cllctn6 done yet - we need all
+                # of the terminals to pass the audit.
                 continue
 
             global_task = cls._cache.task_map.__root__.get(task_id)
@@ -954,6 +969,18 @@ class GameStateManager:
                 )
                 continue
             cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+
+        if send_cllctn6_failure:
+            await cls._dispatch_challenge_task_failed(team_id, "cllctn6")
+        elif all(cllctn6_completions.values()):
+            global_task = cls._cache.task_map.__root__.get("cllctn6")
+            if global_task:
+                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+            else:
+                logging.error(
+                    "_handle_first_year_tasks: Could not find "
+                    "'cllctn6' in the global task cache."
+                )
 
         return pc4_game
 
