@@ -651,7 +651,7 @@ class GameStateManager:
                 )
             else:
                 cls._complete_mission_and_unlock_next(
-                    team_id, team_data, mission)
+                    team_id, team_data, mission, global_mission)
 
             team_data.session.teamCodexCount = sum(
                 (
