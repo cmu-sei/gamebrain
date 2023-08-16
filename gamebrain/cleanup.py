@@ -24,6 +24,7 @@
 
 import asyncio
 from collections import Counter
+from datetime import datetime, timezone
 import json
 import logging
 
@@ -87,6 +88,8 @@ class BackgroundCleanupTask:
                 if teams_without_gamespace:
                     cls.log_teams_without_gamespace(list(teams_without_gamespace))
 
+                current_time = datetime.now(tz=timezone.utc)
+
                 for team_id, gamespace_id in teams_with_gamespace_ids.items():
                     gamespace_info = await topomojo.get_gamespace(gamespace_id)
                     if not gamespace_info:
@@ -102,6 +105,16 @@ class BackgroundCleanupTask:
                             "Removing internal tracking and unassigning their game server..."
                         )
                         await cls._cleanup_team(team_id)
+
+                    # Send a gamespace cleanup request after its expiration time.
+                    expire_str = gamespace_info.get("expirationTime")
+                    try:
+                        expiration = datetime.fromisoformat(expire_str)
+                    except Exception as e:
+                        logging.error(f"_cleanup_task: Tried to parse gamespace expiration time for team {team_id} but got exception {e} instead.")
+                    else:
+                        if expiration < current_time:
+                            topomojo.complete_gamespace(gamespace_id)
 
                 for team_id in teams_without_gamespace:
                     if cls._revisit_dict[team_id] >= 10:
