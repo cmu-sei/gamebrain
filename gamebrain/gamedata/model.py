@@ -166,7 +166,7 @@ class MissionData(BaseModel):
 class MissionDataTeamSpecific(BaseModel):
     missionID: MissionID
     unlocked: bool = True
-    visible: bool = False
+    visible: bool = True
     complete: bool = False
     taskList: list[TaskDataTeamSpecific]
     gamespaceID: str = None
