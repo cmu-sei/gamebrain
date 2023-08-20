@@ -1370,6 +1370,9 @@ class GameStateManager:
         full_mission_data = []
 
         for mission in team_data.missions.values():
+            if not mission.unlocked:
+                continue
+
             mission_global = cls._cache.mission_map.__root__[
                 mission.missionID]
 
