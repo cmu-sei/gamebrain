@@ -8,7 +8,6 @@ on:
     branches:
       - dev
       - test
-      - archive_temp
 
 jobs:
   build-and-push-image:
