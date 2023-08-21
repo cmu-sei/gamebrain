@@ -397,6 +397,7 @@ class GameStateManager:
         while True:
             now = datetime.datetime.now(tz=timezone.utc)
             if next_refresh <= now:
+                logging.info("Starting Video URL refresh...")
                 async with AsyncClient() as client:
                     for url in video_urls:
                         response = await client.get(url)
@@ -409,6 +410,8 @@ class GameStateManager:
                                 f"Response content was: {response.content}\n"
                             )
                 next_refresh = now + datetime.timedelta(days=21)
+            else:
+                logging.info("Skipping Video URL refresh...")
             asyncio.sleep(3600)
 
     @classmethod
