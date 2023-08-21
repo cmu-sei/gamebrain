@@ -399,16 +399,22 @@ class GameStateManager:
             if next_refresh <= now:
                 logging.info("video_freshness_task: Starting Video URL refresh...")
                 async with AsyncClient() as client:
+                    # Technically should be a task group or something, but
+                    # it's not important.
                     for url in video_urls:
-                        response = await client.get(url)
-                        if response.is_success:
-                            logging.info(f"video_freshness_task: Refreshed URL {url} successfully.")
-                        else:
-                            logging.error(
-                                f"video_freshness_task: "
-                                f"HTTP Request to {response.url} returned {response.status_code}\n"
-                                f"Response content was: {response.content}\n"
-                            )
+                        async with client.stream("GET", url) as response:
+                            async for chunk in response.aiter_raw():
+                                # I don't care what is actually being sent,
+                                # just as long as the video downloads.
+                                ...
+                            if response.is_success:
+                                logging.info(f"video_freshness_task: Refreshed URL {url} successfully.")
+                            else:
+                                logging.error(
+                                    f"video_freshness_task: "
+                                    f"HTTP Request to {response.url} returned {response.status_code}\n"
+                                    f"Response content was: {response.content}\n"
+                                )
                 next_refresh = now + datetime.timedelta(days=21)
                 logging.info(f"video_freshness_task: Next refresh set to {next_refresh}")
             else:
