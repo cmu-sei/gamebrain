@@ -48,6 +48,8 @@ class GamespaceStatusTask:
         cls.settings = settings
         cls.challenge_tasks_config = cls.settings.game.challenge_tasks
 
+        logging.info("GamespaceStatusTask.init called.")
+
         return await cls._grader_task()
 
     @dataclass
