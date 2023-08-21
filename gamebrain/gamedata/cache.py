@@ -396,7 +396,7 @@ class GameStateManager:
 
         while True:
             now = datetime.datetime.now(tz=timezone.utc)
-            if next_refresh < now:
+            if next_refresh <= now:
                 async with AsyncClient() as client:
                     for url in video_urls:
                         response = await client.get(url)
