@@ -218,6 +218,7 @@ class Global:
         cls._init_db_sync_task()
         # cls._init_grader_task()
         cls._init_cleanup_task()
+        cls._init_video_freshness_task()
 
     @classmethod
     def _init_jwks(cls):
@@ -255,6 +256,13 @@ class Global:
             BackgroundCleanupTask.init(get_settings())
         )
         cls.cleanup_task.add_done_callback(cls._handle_task_result)
+
+    # To prevent the videos from being knocked out of caching.
+    @classmethod
+    def _init_video_freshness_task(cls):
+        cls.freshness_task = asyncio.create_task(
+            GameStateManager.video_freshness_task())
+        cls.freshness_task.add_done_callback(cls._handle_task_result)
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:

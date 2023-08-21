@@ -31,6 +31,7 @@ import json
 import logging
 from typing import Literal
 
+from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 import yaml
 
@@ -383,6 +384,32 @@ class GameStateManager:
         return await GameStateManager._get_vm_id_from_name_for_gamespace(
             gamespace_id, vm_name
         )
+
+    @classmethod
+    async def video_freshness_task(cls):
+        next_refresh = datetime.now(tz=timezone.utc)
+
+        video_urls = []
+        async with cls._lock:
+            for comm_event in cls._cache.comm_map.__root__.values():
+                video_urls.append(comm_event.videoURL)
+
+        while True:
+            now = datetime.now(tz=timezone.utc)
+            if next_refresh < now:
+                async with AsyncClient() as client:
+                    for url in video_urls:
+                        response = await client.get(url)
+                        if response.is_success:
+                            logging.info(f"video_freshness_task: Refreshed URL {url} successfully.")
+                        else:
+                            logging.error(
+                                f"video_freshness_task: "
+                                f"HTTP Request to {response.url} returned {response.status_code}\n"
+                                f"Response content was: {response.content}\n"
+                            )
+                next_refresh = now + datetime.timedelta(days=21)
+            asyncio.sleep(3600)
 
     @classmethod
     def _set_task_comm_event_active(
