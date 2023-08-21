@@ -387,7 +387,7 @@ class GameStateManager:
 
     @classmethod
     async def video_freshness_task(cls):
-        next_refresh = datetime.now(tz=timezone.utc)
+        next_refresh = datetime.datetime.now(tz=timezone.utc)
 
         video_urls = []
         async with cls._lock:
@@ -395,7 +395,7 @@ class GameStateManager:
                 video_urls.append(comm_event.videoURL)
 
         while True:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.datetime.now(tz=timezone.utc)
             if next_refresh < now:
                 async with AsyncClient() as client:
                     for url in video_urls:
