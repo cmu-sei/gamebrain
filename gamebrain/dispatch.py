@@ -86,7 +86,7 @@ class GamespaceStatusTask:
             # Dispatch hasn't finished yet.
             return
         if error:
-            logging.error(f"Dispatch had an error: {error}")
+            # logging.error(f"Dispatch had an error: {error}")
             return
         logging.info(f"Dispatch completed successfully: {result}")
         return result
