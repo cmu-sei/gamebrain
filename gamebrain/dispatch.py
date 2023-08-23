@@ -25,6 +25,7 @@
 import asyncio
 import json
 import logging
+import traceback
 
 from dataclasses import dataclass
 from pydantic import ValidationError
@@ -86,6 +87,7 @@ class GamespaceStatusTask:
             return
         if error:
             logging.error(f"Dispatch had an error: {error}")
+            raise Exception("Nuclear option!")
             return
         logging.info(f"Dispatch completed successfully: {result}")
         return result
