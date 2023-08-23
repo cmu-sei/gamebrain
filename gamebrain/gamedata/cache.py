@@ -1503,13 +1503,13 @@ class GameStateManager:
                 missions=full_mission_data,
             )
 
-            logging.info(
+            logging.debug(
                 f"Ship Data response: {json.dumps(team_data.ship.dict(), indent=2)}"
             )
-            logging.info(
+            logging.debug(
                 f"Session Data response: {json.dumps(team_data.session.dict(), indent=2, default=str)}"
             )
-            logging.info(
+            logging.debug(
                 f"Mission data response: {json.dumps(full_mission_data, indent=2, default=str)}"
             )
 
