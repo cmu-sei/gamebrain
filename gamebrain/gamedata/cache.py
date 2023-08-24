@@ -413,7 +413,6 @@ class GameStateManager:
                                 logging.error(
                                     f"video_freshness_task: "
                                     f"HTTP Request to {response.url} returned {response.status_code}\n"
-                                    f"Response content was: {response.content}\n"
                                 )
                 next_refresh = now + datetime.timedelta(days=21)
                 logging.info(f"video_freshness_task: Next refresh set to {next_refresh}")
