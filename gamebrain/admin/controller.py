@@ -317,8 +317,23 @@ async def _internal_deploy(deployment_data: Deployment):
     await GameStateManager.start_game_timers()
 
 
+class VideoRefreshManager:
+    _task_lock = asyncio.Lock()
+    _active_task: asyncio.Task = None
+
+    @classmethod
+    async def start_video_refresh_task(cls):
+        async with cls._task_lock:
+            if cls._active_task and not cls._active_task.done():
+                return
+            cls._active_task = asyncio.create_task(
+                GameStateManager.video_freshness_task())
+
+
 @admin_router.post("/deploy")
 async def deploy(deployment_data: Deployment) -> DeploymentResponse:
+    await VideoRefreshManager.start_video_refresh_task()
+
     assignments = await HeadlessManager.assign_headless(
         [team.id for team in deployment_data.teams]
     )

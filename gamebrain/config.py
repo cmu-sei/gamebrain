@@ -218,7 +218,7 @@ class Global:
         cls._init_db_sync_task()
         # cls._init_grader_task()
         cls._init_cleanup_task()
-        cls._init_video_freshness_task()
+        # cls._init_video_freshness_task()
 
     @classmethod
     def _init_jwks(cls):

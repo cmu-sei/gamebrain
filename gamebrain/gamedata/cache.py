@@ -318,6 +318,7 @@ class GameStateManager:
     _active_mission_timer_task: asyncio.Task = None
 
     _next_npc_ship_jump: datetime.datetime = None
+    _next_video_refresh: datetime.datetime = None
 
     @staticmethod
     def _log_completion(
@@ -387,38 +388,38 @@ class GameStateManager:
 
     @classmethod
     async def video_freshness_task(cls):
-        next_refresh = datetime.datetime.now(tz=timezone.utc)
-
         video_urls = []
         async with cls._lock:
             for comm_event in cls._cache.comm_map.__root__.values():
                 video_urls.append(comm_event.videoURL)
 
-        while True:
-            now = datetime.datetime.now(tz=timezone.utc)
-            if next_refresh <= now:
-                logging.info("video_freshness_task: Starting Video URL refresh...")
-                async with AsyncClient() as client:
-                    # Technically should be a task group or something, but
-                    # it's not important.
-                    for url in video_urls:
-                        async with client.stream("GET", url) as response:
-                            async for chunk in response.aiter_raw():
-                                # I don't care what is actually being sent,
-                                # just as long as the video downloads.
-                                ...
-                            if response.is_success:
-                                logging.info(f"video_freshness_task: Refreshed URL {url} successfully.")
-                            else:
-                                logging.error(
-                                    f"video_freshness_task: "
-                                    f"HTTP Request to {response.url} returned {response.status_code}\n"
-                                )
-                next_refresh = now + datetime.timedelta(days=21)
-                logging.info(f"video_freshness_task: Next refresh set to {next_refresh}")
-            else:
-                logging.info("video_freshness_task: Skipping Video URL refresh...")
-            await asyncio.sleep(3600)
+            next_refresh = cls._next_video_refresh
+
+        now = datetime.datetime.now(timezone.utc)
+        if next_refresh <= now:
+            logging.info("video_freshness_task: Starting Video URL refresh...")
+
+            async with cls._lock:
+                cls._next_video_refresh = now + datetime.timedelta(days=7)
+                logging.info(f"video_freshness_task: Next refresh set to {cls._next_video_refresh}")
+
+            async with AsyncClient() as client:
+                # Technically should be a task group or something, but
+                # it's not important.
+                for url in video_urls:
+                    async with client.stream("GET", url) as response:
+                        async for chunk in response.aiter_raw():
+                            # I don't care what is actually being sent,
+                            # just as long as the video downloads.
+                            ...
+                        if response.is_success:
+                            logging.info(f"video_freshness_task: Refreshed URL {url} successfully.")
+                        else:
+                            logging.error(
+                                f"video_freshness_task: "
+                                f"HTTP Request to {response.url} returned {response.status_code}\n")
+        else:
+            logging.info("video_freshness_task: Skipping Video URL refresh...")
 
     @classmethod
     def _set_task_comm_event_active(
@@ -1187,6 +1188,7 @@ class GameStateManager:
             cls._basic_validation(initial_state)
             cls._cache = initial_state.to_internal()
             cls._settings = settings
+            cls._next_video_refresh = datetime.datetime.now(timezone.utc)
 
     @classmethod
     async def init_challenges(
