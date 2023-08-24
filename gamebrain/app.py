@@ -49,6 +49,7 @@ import yappi
 from .auth import check_jwt
 from .admin.controller import admin_router
 import gamebrain.db as db
+from gamebrain.gamedata.model import GenericResponse
 from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
 from .gamedata.controller import router as gd_router
@@ -286,15 +287,30 @@ async def add_media_urls(
     await db.store_media_assets(media_map)
 
 
+@admin_router.get("/team_active/{team_id}")
+async def admin_get_is_team_active(
+    team_id: str
+) -> GenericResponse:
+    return await get_is_team_active(team_id)
+
+
 @gamestate_router.get("/team_active/{team_id}")
-async def get_is_team_active(
+async def gamestate_get_is_team_active(
     team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())
-) -> bool:
+) -> GenericResponse:
     check_jwt(auth.credentials, get_settings(
     ).identity.jwt_audiences.gamestate_api)
 
+    return await get_is_team_active(team_id)
+
+
+async def get_is_team_active(
+    team_id: str
+) -> GenericResponse:
     team = await db.get_team(team_id)
-    return bool(team.get("ship_gamespace_id"))
+    response = GenericResponse(
+        success=bool(team.get("ship_gamespace_id")), message=team_id)
+    return response
 
 
 @gamestate_router.websocket("/websocket/events")
