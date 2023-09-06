@@ -186,7 +186,7 @@ class MissionDataFull(MissionData, MissionDataTeamSpecific):
     galaxyMapXPos: float = 0.0
     galaxyMapYPos: float = 0.0
     galaxyMapTargetXPos: float = 0.0
-    galaxyMapTargetXPos: float = 0.0
+    galaxyMapTargetYPos: float = 0.0
 
     # Comes from a call to gameboard's team-score.
     currentScore: int = 0
