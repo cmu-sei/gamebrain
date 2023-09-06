@@ -1510,15 +1510,9 @@ class GameStateManager:
             logging.debug(
                 f"Session Data response: {json.dumps(team_data.session.dict(), indent=2, default=str)}"
             )
-            logging.debug(
+            logging.info(
                 f"Mission data response: {json.dumps(full_mission_data, indent=2, default=str)}"
             )
-
-            # Temporary
-            for mission in full_mission_data:
-                logging.info(
-                    f"get_team_data: Mission {mission.title} coordinates: {mission.galaxyMapXPos}, {mission.galaxyMapYPos}"
-                )
 
             return full_team_data
 
