@@ -162,6 +162,13 @@ class MissionData(BaseModel):
     associatedChallenges: list[MissionID] = []
     associatedChallengesCoordinates: list[str | None] = []
 
+    # Mostly for testing purposes. Enables adding coordinates through
+    # the game data document without creating a workspace.
+    galaxyMapXPos: float = 0.0
+    galaxyMapYPos: float = 0.0
+    galaxyMapTargetXPos: float = 0.0
+    galaxyMapTargetYPos: float = 0.0
+
 
 class MissionDataTeamSpecific(BaseModel):
     missionID: MissionID
