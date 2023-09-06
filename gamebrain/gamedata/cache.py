@@ -1517,7 +1517,7 @@ class GameStateManager:
             # Temporary
             for mission in full_mission_data:
                 logging.info(
-                    f"get_team_data: Mission {mission['title']} coordinates: {mission['galaxyMapXPos']}, {mission['galaxyMapYPos']}"
+                    f"get_team_data: Mission {mission.title} coordinates: {mission.galaxyMapXPos}, {mission.galaxyMapYPos}"
                 )
 
             return full_team_data
