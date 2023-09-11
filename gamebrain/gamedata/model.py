@@ -26,7 +26,7 @@ from datetime import datetime
 import enum
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 
 TaskBranchType = Literal[
@@ -75,9 +75,12 @@ class Dispatch(BaseModel):
 
 class GamespaceData(BaseModel):
     # A workspace without a task ID denotes a ship gamespace.
+    # Mutually exclusive with gatewayVmName and gatewayNic.
     taskID: TaskID | None
-    gatewayVmName: str
-    gatewayNic: int
+    # The next two are mutually exclusive with taskID.
+    # Both or neither must be specified.
+    gatewayVmName: str | None
+    gatewayNic: int | None
     dispatches: list[Dispatch] = []
     initial_dispatches: list[DispatchID] = []
     # Filled in by Gamebrain, not Topomojo.
@@ -90,6 +93,45 @@ class GamespaceData(BaseModel):
     galaxyMapYPos: float = 0.0
     galaxyMapTargetXPos: float = 0.0
     galaxyMapTargetYPos: float = 0.0
+
+    @root_validator
+    def validate_taskID_gatewayVmName_and_gatewayNic(cls, values):
+        def raise_xor_error(specified, unspecified):
+            raise ValueError(
+                f"If {specified} is specified, {unspecified} "
+                "must not be specified. (or vice-versa)"
+            )
+
+        def raise_and_error(specified, unspecified):
+            raise ValueError(
+                f"If {specified} is specified, {unspecified} "
+                "must also be specified."
+            )
+
+        # Specifically check if these were unspecified or null.
+        (taskID,
+         gatewayVmName,
+         gatewayNic) = (values.get("taskID") is not None,
+                        values.get("gatewayVmName") is not None,
+                        values.get("gatewayNic") is not None)
+        if taskID:
+            if gatewayVmName and gatewayNic:
+                raise_xor_error("taskID", "gatewayVmName and gatewayNic")
+            elif gatewayVmName:
+                raise_xor_error("taskID", "gatewayVmName")
+            elif gatewayNic:
+                raise_xor_error("taskID", "gatewayNic")
+        elif gatewayVmName and not gatewayNic:
+            raise_and_error("gatewayVmName", "gatewayNic")
+        elif gatewayNic and not gatewayVmName:
+            raise_and_error("gatewayNic", "gatewayVmName")
+        elif not taskID and not gatewayVmName and not gatewayNic:
+            raise ValueError(
+                "None of taskID, gatewayVmName, or gatewayNic are specified. "
+                "Specify taskID or both of gatewayVmName and gatewayNic."
+            )
+
+        return values
 
 
 class TeamGamespaceInfo(BaseModel):
