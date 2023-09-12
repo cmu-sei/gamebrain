@@ -284,7 +284,7 @@ async def get_teams() -> List[Dict]:
     return await DBManager.get_rows(DBManager.TeamData)
 
 
-async def get_active_teams() -> list[dict[str, str]]:
+async def get_active_teams() -> dict:
     active_teams = {}
     for team in await get_teams():
         ship_gamespace_id = team.get("ship_gamespace_id")

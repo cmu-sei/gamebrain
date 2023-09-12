@@ -383,7 +383,7 @@ class ActiveTeamsResponse(BaseModel):
 
 @admin_router.get("/teams_active")
 async def get_teams_active() -> ActiveTeamsResponse:
-    active_teams = get_active_teams()
+    active_teams = await get_active_teams()
 
     response = ActiveTeamsResponse(__root__=active_teams)
     logging.info(f"Active teams: {json.dumps(response.dict(), indent=2)}")
