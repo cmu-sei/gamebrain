@@ -348,7 +348,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     )
 
     try:
-        with DEPLOY_LOCK:
+        async with DEPLOY_LOCK:
             await _internal_deploy(deployment_data)
     except Exception as e:
         for team in deployment_data.teams:
