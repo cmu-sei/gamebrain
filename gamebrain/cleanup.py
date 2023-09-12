@@ -133,5 +133,9 @@ class BackgroundCleanupTask:
                         await cls._cleanup_team(team_id)
                         del cls._revisit_dict[team_id]
 
+                # If none of the teams are still active, end the session.
+                if not await db.get_active_teams():
+                    await db.deactivate_game_session()
+
             except Exception as e:
                 logging.exception(f"Cleanup task exception: {str(e)}")

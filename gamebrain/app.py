@@ -136,6 +136,11 @@ async def get_team_from_user(
     post_data: GetTeamPostData,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ):
+    game_id = db.get_active_game_session().get("game_id")
+    if not game_id:
+        logging.warning("get_team_from_user: There is no active game session.")
+        return
+
     try:
         payload = check_jwt(
             post_data.user_token,
@@ -151,7 +156,7 @@ async def get_team_from_user(
     check_jwt(auth.credentials, get_settings(
     ).identity.jwt_audiences.gamestate_api)
 
-    player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
+    player = await gameboard.get_player_by_user_id(user_id, game_id)
 
     team_id = player["teamId"]
 

@@ -70,6 +70,8 @@ class DBManager:
         session_start = Column(DateTime(timezone=True), nullable=False)
         session_end = Column(DateTime(timezone=True), nullable=False)
         deployer_initial_time = Column(DateTime(timezone=True), nullable=False)
+        game_id = Column(String(36), nullable=False)
+        active = Column(Boolean(), nullable=False)
 
         teams = relationship("TeamData", lazy="joined")
 
@@ -225,16 +227,36 @@ async def store_game_session(
     session_start: datetime,
     session_end: datetime,
     deployer_initial_time: datetime,
+    game_id: str
 ):
     session_data = DBManager.GameSession(
         session_start=session_start,
         session_end=session_end,
         deployer_initial_time=deployer_initial_time,
+        game_id=game_id,
+        active=True,
     )
     for team_id in team_ids:
         await store_team(team_id, game_session_id=session_data.id)
 
     await DBManager.merge_rows([session_data])
+
+
+async def get_active_game_session():
+    try:
+        return (await DBManager.get_rows(
+            DBManager.GameSession,
+            DBManager.GameSession.active == True
+        )).pop()
+    except IndexError:
+        return None
+
+
+async def deactivate_game_session():
+    active_game = await get_active_game_session()
+    if active_game:
+        session = DBManager.GameSession(id=active_game["id"], active=False)
+        await DBManager.merge_rows([session])
 
 
 async def expire_team_gamespace(team_id: str):
@@ -260,6 +282,20 @@ async def get_team(team_id: str) -> Dict:
 
 async def get_teams() -> List[Dict]:
     return await DBManager.get_rows(DBManager.TeamData)
+
+
+async def get_active_teams() -> list[dict[str, str]]:
+    active_teams = {}
+    for team in await get_teams():
+        ship_gamespace_id = team.get("ship_gamespace_id")
+        headless_url = team.get("headless_url")
+        vm_data = team.get("vm_data")
+        if not (ship_gamespace_id and headless_url and vm_data):
+            # Team is inactive.
+            continue
+        active_teams[team.get("id")] = headless_url
+
+    return active_teams
 
 
 async def get_vm(vm_id: str) -> Dict:

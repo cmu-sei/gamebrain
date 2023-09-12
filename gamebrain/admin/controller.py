@@ -41,11 +41,12 @@ from ..config import get_settings
 from ..db import (
     expire_team_gamespace,
     get_team,
-    get_teams,
+    get_active_teams,
     store_virtual_machines,
     store_team,
     get_assigned_headless_urls,
     store_game_session,
+    get_active_game_session,
 )
 from ..gamedata.cache import (
     GameStateManager,
@@ -248,6 +249,10 @@ def parse_vm_urls(vm_urls: list[str]) -> list[ConsoleUrl]:
 
 
 async def _internal_deploy(deployment_data: Deployment):
+    if get_active_game_session():
+        logging.error("Deployment failed because there is already an active game session.")
+        return
+
     gamespace_info = {}
 
     session_teams = []
@@ -311,6 +316,7 @@ async def _internal_deploy(deployment_data: Deployment):
         deployment_data.session.sessionBegin,
         deployment_data.session.sessionEnd,
         deployment_data.session.now,
+        deployment_data.game.id,
     )
 
     await GameStateManager.init_challenges(gamespace_info)
@@ -330,6 +336,9 @@ class VideoRefreshManager:
                 GameStateManager.video_freshness_task())
 
 
+DEPLOY_LOCK = asyncio.Lock()
+
+
 @admin_router.post("/deploy")
 async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     await VideoRefreshManager.start_video_refresh_task()
@@ -339,7 +348,8 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     )
 
     try:
-        await _internal_deploy(deployment_data)
+        with DEPLOY_LOCK:
+            await _internal_deploy(deployment_data)
     except Exception as e:
         for team in deployment_data.teams:
             await expire_team_gamespace(team.id)
@@ -373,16 +383,7 @@ class ActiveTeamsResponse(BaseModel):
 
 @admin_router.get("/teams_active")
 async def get_teams_active() -> ActiveTeamsResponse:
-    teams = await get_teams()
-    active_teams = {}
-    for team in teams:
-        ship_gamespace_id = team.get("ship_gamespace_id")
-        headless_url = team.get("headless_url")
-        vm_data = team.get("vm_data")
-        if not (ship_gamespace_id and headless_url and vm_data):
-            # Team is inactive.
-            continue
-        active_teams[team.get("id")] = headless_url
+    active_teams = get_active_teams()
 
     response = ActiveTeamsResponse(__root__=active_teams)
     logging.info(f"Active teams: {json.dumps(response.dict(), indent=2)}")
