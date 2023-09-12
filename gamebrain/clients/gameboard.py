@@ -24,7 +24,7 @@
 
 import asyncio
 import json as jsonlib
-from logging import error
+from logging import error, warning
 import time
 import ssl
 from typing import Any, Optional
@@ -178,9 +178,10 @@ async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
         try:
             game_state = GameEngineGameState(**challenge_status)
         except ValidationError:
-            error(
+            warning(
                 "Gameboard gameEngine/state returned an item that could not "
-                f"be validated as a GameEngineGameState: {challenge_status}"
+                f"be validated as a GameEngineGameState: {challenge_status}. "
+                "This is expected for the team's ship workspace."
             )
         else:
             challenge_states.append(game_state)
