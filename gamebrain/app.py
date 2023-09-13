@@ -136,9 +136,13 @@ async def get_team_from_user(
     post_data: GetTeamPostData,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ):
-    game_id = db.get_active_game_session().get("game_id")
-    if not game_id:
+    session = await db.get_active_game_session()
+    if not session:
         logging.warning("get_team_from_user: There is no active game session.")
+        return
+    game_id = session.get("game_id")
+    if not game_id:
+        logging.error("get_team_from_user: Active game session has no game ID.")
         return
 
     try:
