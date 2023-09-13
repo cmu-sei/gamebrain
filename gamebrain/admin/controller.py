@@ -341,6 +341,10 @@ DEPLOY_LOCK = asyncio.Lock()
 
 @admin_router.post("/deploy")
 async def deploy(deployment_data: Deployment) -> DeploymentResponse:
+    logging.info(
+        "deploy: deployment_data contents - "
+        f"{json.dumps(deployment_data.dict())}"
+    )
     await VideoRefreshManager.start_video_refresh_task()
 
     assignments = await HeadlessManager.assign_headless(
