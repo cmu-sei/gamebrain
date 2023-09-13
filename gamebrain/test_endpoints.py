@@ -41,7 +41,7 @@ from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
-from .db import get_assigned_headless_urls, store_team
+from .db import get_assigned_headless_urls, store_team, deactivate_game_session
 from .gamedata.cache import (
     GameDataCacheSnapshot,
     GameStateManager,
@@ -259,3 +259,5 @@ async def clear_headless_assignments():
 
     for team_id in current_assignments:
         await store_team(team_id, headless_url=None)
+
+    await deactivate_game_session()
