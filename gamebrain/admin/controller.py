@@ -249,7 +249,7 @@ def parse_vm_urls(vm_urls: list[str]) -> list[ConsoleUrl]:
 
 
 async def _internal_deploy(deployment_data: Deployment):
-    if get_active_game_session():
+    if await get_active_game_session():
         logging.error("Deployment failed because there is already an active game session.")
         return
 
