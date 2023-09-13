@@ -343,7 +343,7 @@ DEPLOY_LOCK = asyncio.Lock()
 async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     logging.info(
         "deploy: deployment_data contents - "
-        f"{json.dumps(deployment_data.dict())}"
+        f"{json.dumps(deployment_data.dict(), default=str, indent=2)}"
     )
     await VideoRefreshManager.start_video_refresh_task()
 
