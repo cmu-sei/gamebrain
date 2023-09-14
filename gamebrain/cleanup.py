@@ -92,7 +92,8 @@ class BackgroundCleanupTask:
     async def _cleanup_body(cls):
         current_time = datetime.now(tz=timezone.utc)
 
-        for team in await db.get_active_teams():
+        active_teams = await db.get_active_teams()
+        for team in active_teams:
             team_id = team["id"]
             gamespace_id = team.get("ship_gamespace_id")
             if not gamespace_id:
@@ -136,9 +137,8 @@ class BackgroundCleanupTask:
             else:
                 if expiration < current_time:
                     await topomojo.complete_gamespace(gamespace_id)
-        # For-else is a thing.
-        else:
-            # If no teams are active, end any active session.
+        
+        if not active_teams:
             await cls._cleanup_session()
 
     @classmethod
