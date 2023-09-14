@@ -23,9 +23,7 @@
 # DM23-0100
 
 import asyncio
-from collections import Counter
 from datetime import datetime, timezone, timedelta
-import json
 import logging
 
 from . import db
