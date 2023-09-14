@@ -316,9 +316,14 @@ async def gamestate_get_is_team_active(
 async def get_is_team_active(
     team_id: str
 ) -> GenericResponse:
-    team = await db.get_team(team_id)
+    active_teams = {
+        team["id"]
+        for team in await db.get_active_teams()
+    }
     response = GenericResponse(
-        success=bool(team.get("ship_gamespace_id")), message=team_id)
+        success=(team_id in active_teams),
+        message=team_id
+    )
     return response
 
 
