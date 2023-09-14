@@ -39,7 +39,8 @@ from ..clients.gameboard import GameID
 from ..clients.topomojo import GamespaceID
 from ..config import get_settings
 from ..db import (
-    expire_team_gamespace,
+    deactivate_team,
+    deactivate_game_session,
     get_team,
     get_active_teams,
     store_virtual_machines,
@@ -356,7 +357,7 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
             await _internal_deploy(deployment_data)
     except Exception as e:
         for team in deployment_data.teams:
-            await expire_team_gamespace(team.id)
+            await deactivate_team(team.id)
         raise e
 
     return DeploymentResponse(__root__=assignments)
@@ -376,7 +377,8 @@ async def undeploy():
                 )
                 continue
 
-            await expire_team_gamespace(team_id)
+            await deactivate_team(team_id)
+    await deactivate_game_session()
     await GameStateManager.uninit_challenges()
     await GameStateManager.stop_game_timers()
 
@@ -387,7 +389,7 @@ class ActiveTeamsResponse(BaseModel):
 
 @admin_router.get("/teams_active")
 async def get_teams_active() -> ActiveTeamsResponse:
-    active_teams = await get_active_teams()
+    active_teams = await get_assigned_headless_urls()
 
     response = ActiveTeamsResponse(__root__=active_teams)
     logging.info(f"Active teams: {json.dumps(response.dict(), indent=2)}")

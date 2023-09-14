@@ -41,7 +41,7 @@ from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
-from .db import get_assigned_headless_urls, store_team, deactivate_game_session
+from .db import store_team, deactivate_game_session, deactivate_team, get_active_teams
 from .gamedata.cache import (
     GameDataCacheSnapshot,
     GameStateManager,
@@ -250,14 +250,14 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
     await GameStateManager.init(new_state, GameStateManager._settings)
 
 
-@test_router.get("/clear_headless_assignments")
-async def clear_headless_assignments():
-    current_assignments = await get_assigned_headless_urls()
-
+@test_router.get("/end_game_session")
+async def end_game_session():
+    active_teams = await get_active_teams()
     print(
-        f"Clearing current headless assignments: {json_dumps(current_assignments)}")
-
-    for team_id in current_assignments:
-        await store_team(team_id, headless_url=None)
-
+        "Clearing currently-active teams: "
+        f"{json_dumps(active_teams, indent=2)}"
+    )
+    for team in active_teams:
+        team_id = active_teams["id"]
+        await deactivate_team(team_id)
     await deactivate_game_session()

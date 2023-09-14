@@ -83,6 +83,7 @@ class DBManager:
         ship_gamespace_id = Column(String(36))
         headless_url = Column(String)
         team_name = Column(String)
+        active = Column(Boolean(), nullable=False, default=True)
 
         # lazy="joined" to prevent session errors.
         vm_data = relationship("VirtualMachine", lazy="joined")
@@ -252,21 +253,26 @@ async def get_active_game_session():
         return None
 
 
+async def get_active_teams() -> list[dict]:
+    return await DBManager.get_rows(
+        DBManager.TeamData,
+        DBManager.TeamData.active == True
+    )
+
+
+async def deactivate_team(team_id: str):
+    team_data = DBManager.TeamData(
+        id=team_id,
+        active=False,
+    )
+    await DBManager.merge_rows([team_data])
+
+
 async def deactivate_game_session():
     active_game = await get_active_game_session()
     if active_game:
         session = DBManager.GameSession(id=active_game["id"], active=False)
         await DBManager.merge_rows([session])
-
-
-async def expire_team_gamespace(team_id: str):
-    team_data = DBManager.TeamData(
-        id=team_id, ship_gamespace_id=None, headless_url=None
-    )
-    await DBManager.merge_rows([team_data])
-    await DBManager.delete_where(
-        DBManager.VirtualMachine, DBManager.VirtualMachine.team_id == team_id
-    )
 
 
 async def get_team(team_id: str) -> Dict:
@@ -282,20 +288,6 @@ async def get_team(team_id: str) -> Dict:
 
 async def get_teams() -> List[Dict]:
     return await DBManager.get_rows(DBManager.TeamData)
-
-
-async def get_active_teams() -> dict:
-    active_teams = {}
-    for team in await get_teams():
-        ship_gamespace_id = team.get("ship_gamespace_id")
-        headless_url = team.get("headless_url")
-        vm_data = team.get("vm_data")
-        if not (ship_gamespace_id and headless_url and vm_data):
-            # Team is inactive.
-            continue
-        active_teams[team.get("id")] = headless_url
-
-    return active_teams
 
 
 async def get_vm(vm_id: str) -> Dict:
@@ -348,14 +340,11 @@ async def get_cache_snapshot() -> str | None:
 
 
 async def get_assigned_headless_urls() -> dict[str, str]:
-    # `is not` should be correct, but using it returns all teams in the DB instead of just the ones with headless URLs.
-    teams_with_ips = await DBManager.get_rows(
-        DBManager.TeamData, DBManager.TeamData.headless_url != None
-    )
+    active_teams = await get_active_teams()
 
-    result = {team["id"]: team["headless_url"] for team in teams_with_ips}
+    result = {team["id"]: team["headless_url"] for team in active_teams}
     formatted_result = json.dumps(result, indent=2)
-    logging.debug(f"get_assigned_headless_urls result: {formatted_result}")
+    logging.debug(f"get_assigned_headless_urls: {formatted_result}")
     return result
 
 
