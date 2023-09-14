@@ -59,6 +59,7 @@ class BackgroundCleanupTask:
         session = await db.get_active_game_session()
         if session is None:
             return
+        logging.info("No teams were active, but there is an active session. Cleaning up...")
         await db.deactivate_game_session()
         await GameStateManager.uninit_challenges()
         await GameStateManager.stop_game_timers()
