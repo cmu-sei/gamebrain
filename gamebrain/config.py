@@ -58,8 +58,6 @@ class IdentitySettingsModel(BaseModel):
     client_id: str
     client_secret: str
     jwt_issuer: str
-    token_user: str
-    token_password: str
     jwt_audiences: JwtAudiencesModel
 
 
@@ -67,6 +65,8 @@ class GameboardSettingsModel(BaseModel):
     # base_url is used to construct VM console URLs
     base_url: str
     base_api_url: str
+    x_api_key: str
+    x_api_client: str
 
 
 class TopomojoSettingsModel(BaseModel):

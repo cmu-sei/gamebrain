@@ -22,19 +22,15 @@
 
 # DM23-0100
 
-import asyncio
 import json as jsonlib
 from logging import error, warning
-import time
 import ssl
 from typing import Any, Optional
 
-from authlib.integrations.httpx_client.oauth2_client import AsyncOAuth2Client
 from httpx import AsyncClient
 from pydantic import ValidationError
 
 from .common import _service_request_and_log, HttpMethod
-from ..util import url_path_join
 from .gameboardmodels import GameEngineGameState, TeamGameScoreSummary
 
 
@@ -51,54 +47,18 @@ def get_settings():
     return ModuleSettings.settings
 
 
-class AuthTokenCache:
-    """
-    It's stupid, but the authlib httpx integration doesn't seem to insert the authorization header when using
-    client.send, so I just construct an OAuth2AsyncClient to fetch a token, and then hand it off to an AsyncClient.
-    """
-
-    token = None
-    token_lock = asyncio.Lock()
-
-    @classmethod
-    def _get_token_client(cls):
-        settings = get_settings()
-        ssl_context = ssl.create_default_context()
-        if settings.ca_cert_path:
-            ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
-
-        return AsyncOAuth2Client(
-            settings.identity.client_id,
-            settings.identity.client_secret,
-            verify=ssl_context,
-        )
-
-    @classmethod
-    async def get_access_token(cls, settings: "SettingsModel") -> str:
-        async with cls.token_lock:
-            if not cls.token or ((cls.token["expires_at"] - time.time()) < 30.0):
-                client = cls._get_token_client()
-                await client.fetch_token(
-                    url_path_join(
-                        settings.identity.base_url, settings.identity.token_endpoint
-                    ),
-                    username=settings.identity.token_user,
-                    password=settings.identity.token_password,
-                )
-                cls.token = client.token
-            return cls.token["access_token"]
-
-
-def _get_gameboard_client(access_token: str) -> AsyncClient:
+def _get_gameboard_client() -> AsyncClient:
     settings = get_settings()
     ssl_context = ssl.create_default_context()
     if settings.ca_cert_path:
         ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
+    api_key = settings.gameboard.x_api_key
+    api_client = settings.gameboard.x_api_client
 
     return AsyncClient(
         base_url=settings.gameboard.base_api_url,
         verify=ssl_context,
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers={"x-api-key": api_key, "x-api-client": api_client},
         timeout=60.0,
     )
 
@@ -106,10 +66,8 @@ def _get_gameboard_client(access_token: str) -> AsyncClient:
 async def _gameboard_request(
     method: HttpMethod, endpoint: str, data: Optional[Any]
 ) -> Optional[Any] | None:
-    settings = get_settings()
-    access_token = await AuthTokenCache.get_access_token(settings)
     response = await _service_request_and_log(
-        _get_gameboard_client(access_token), method, endpoint, data
+        _get_gameboard_client(), method, endpoint, data
     )
     try:
         return response.json()
