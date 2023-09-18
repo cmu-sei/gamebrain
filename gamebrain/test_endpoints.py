@@ -258,6 +258,6 @@ async def end_game_session():
         f"{json_dumps(active_teams, indent=2)}"
     )
     for team in active_teams:
-        team_id = active_teams["id"]
+        team_id = team["id"]
         await deactivate_team(team_id)
     await deactivate_game_session()
