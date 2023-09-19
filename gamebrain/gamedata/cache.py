@@ -649,24 +649,25 @@ class GameStateManager:
         completion_criteria = global_task.markCompleteWhen
 
         team_task.complete = True
-        if completion_criteria.alsoComplete:
-            for also_complete_task_id in global_task.markCompleteWhen.alsoComplete:
-                also_complete_global_task = cls._cache.task_map.__root__.get(
-                    also_complete_task_id
-                )
-                if not also_complete_global_task:
-                    logging.error(
-                        f"Task {global_task.taskID} had dependent task {also_complete_task_id} specified, "
-                        "but it was not in the global task map."
+        if completion_criteria:
+            if completion_criteria.alsoComplete:
+                for also_complete_task_id in global_task.markCompleteWhen.alsoComplete:
+                    also_complete_global_task = cls._cache.task_map.__root__.get(
+                        also_complete_task_id
                     )
-                    continue
-                cls._complete_indirect_task(
-                    team_id, team_data, also_complete_global_task
+                    if not also_complete_global_task:
+                        logging.error(
+                            f"Task {global_task.taskID} had dependent task {also_complete_task_id} specified, "
+                            "but it was not in the global task map."
+                        )
+                        continue
+                    cls._complete_indirect_task(
+                        team_id, team_data, also_complete_global_task
+                    )
+            if completion_criteria.unlockLocation:
+                cls._unlock_location_for_team(
+                    team_id, team_data, completion_criteria.unlockLocation
                 )
-        if completion_criteria.unlockLocation:
-            cls._unlock_location_for_team(
-                team_id, team_data, completion_criteria.unlockLocation
-            )
         if global_task.next:
             next_global_task = cls._cache.task_map.__root__.get(
                 global_task.next)
