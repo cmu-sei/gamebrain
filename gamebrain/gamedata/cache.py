@@ -94,6 +94,7 @@ NPCShipMap = dict[NPCShipID, NPCShipData]
 ChallengeMap = dict[MissionID, GamespaceData]
 
 JUMP_TIME_DELTA = datetime.timedelta(minutes=10)
+SPAM_REDUCTION_FACTOR = 20
 
 
 class NonExistentTeam(Exception):
@@ -323,6 +324,8 @@ class GameStateManager:
 
     _next_npc_ship_jump: datetime.datetime = None
     _next_video_refresh: datetime.datetime = None
+
+    _spam_reduction_tracker: int = 0
 
     @staticmethod
     def _log_completion(
@@ -1502,15 +1505,14 @@ class GameStateManager:
                 missions=full_mission_data,
             )
 
-            logging.debug(
-                f"Ship Data response: {json.dumps(team_data.ship.dict(), indent=2)}"
-            )
-            logging.debug(
-                f"Session Data response: {json.dumps(team_data.session.dict(), indent=2, default=str)}"
-            )
-            logging.debug(
-                f"Mission data response: {json.dumps(full_mission_data, indent=2, default=str)}"
-            )
+            if cls._spam_reduction_tracker >= 20:
+                logging.info(
+                    "get_team_data: Full team data response:"
+                    f"{json.dumps(full_team_data.dict(), default=str)}"
+                )
+                cls._spam_reduction_tracker = 0
+            else:
+                cls._spam_reduction_tracker += 1
 
             return full_team_data
 
