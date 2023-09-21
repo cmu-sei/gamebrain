@@ -216,7 +216,7 @@ async def retrieve_gamespace_info(
             logging.info(
                 "retrieve_gamespace_in: Found ship gamespace "
                 f"{ship_gamespace_id} for team "
-                f"{team_id}. Gamespace data: {gs_data.dict()}"
+                f"{team_id}. Gamespace data: {gs_data.dict()} "
                 f"Workspace YAML: {gs_data_yaml}"
             )
         else:
