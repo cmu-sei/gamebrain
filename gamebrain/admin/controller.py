@@ -179,6 +179,7 @@ class TooManyShipGamespacesFound(Exception):
 
 
 async def retrieve_gamespace_info(
+    team_id: str,
     gamespaces: list[GamespaceID],
 ) -> TeamGamespaceInfo:
     ship_gamespace_id = None
@@ -190,6 +191,7 @@ async def retrieve_gamespace_info(
         markdown = preview_data.get("markdown")
         if not markdown:
             logging.error(
+                "retrieve_gamespace_info:"
                 f"Gamespace {gamespace_id} preview did not "
                 "contain a 'markdown' field. "
                 f"This is the data returned: {preview_data}"
@@ -200,6 +202,7 @@ async def retrieve_gamespace_info(
             gs_data = GamespaceData(**gs_data_yaml, gamespaceID=gamespace_id)
         except (ValidationError, TypeError):
             logging.error(
+                "retrieve_gamespace_info:"
                 f"Gamespace {gamespace_id} had a document that could "
                 f"not be parsed as YAML. Contents: {markdown}"
             )
@@ -210,6 +213,12 @@ async def retrieve_gamespace_info(
                 raise TooManyShipGamespacesFound
             ship_gamespace_id = gamespace_id
             ship_gamespace_data = gs_data
+            logging.info(
+                "retrieve_gamespace_in: Found ship gamespace "
+                f"{ship_gamespace_id} for team "
+                f"{team_id}. Gamespace data: {gs_data.dict()}"
+                f"Workspace YAML: {gs_data_yaml}"
+            )
         else:
             gamespace_data[gs_data.taskID] = gs_data
 
@@ -277,7 +286,8 @@ async def _internal_deploy(deployment_data: Deployment):
     for team in deployment_data.teams:
         team_gamespace_vms = {gs.id: gs.vmUris for gs in team.gamespaces}
         team_gamespace_info = await retrieve_gamespace_info(
-            team_gamespace_vms.keys()
+            team.id,
+            team_gamespace_vms.keys(),
         )
 
         gamespace_info[team.id] = team_gamespace_info
