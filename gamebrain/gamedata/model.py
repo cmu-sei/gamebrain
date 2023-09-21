@@ -77,6 +77,9 @@ class GamespaceData(BaseModel):
     # A workspace without a task ID denotes a ship gamespace.
     # Mutually exclusive with gatewayVmName and gatewayNic.
     taskID: TaskID | None
+    # A location ID is used to determine which gamespace ID
+    # to use when extending the ship antenna.
+    locationID: str | None
     # The next two are mutually exclusive with taskID.
     # Both or neither must be specified.
     gatewayVmName: str | None

@@ -1691,8 +1691,25 @@ class GameStateManager:
             location_data = cls._cache.location_map.__root__[
                 team_data.currentStatus.currentLocation
             ]
+
+            team_challenges = cls._cache.challenges.get(team_id)
+            if not team_challenges:
+                logging.error(
+                    f"Team {team_id} has no challenge data."
+                )
+                return GenericResponse(
+                    success=False, message="Team has no challenge data"
+                )
+            gamespace_id = None
+            for _, challenge_data in team_challenges.items():
+                if challenge_data.locationID == location_data.locationID:
+                    gamespace_id = challenge_data.gamespaceID
+                    break
+
             location_net = location_data.networkName
             new_net = f"{location_net}:{team_data.ship.antennaNic}"
+            if gamespace_id:
+                new_net = f"{new_net}#{gamespace_id}"
 
             await topomojo.change_vm_net(vm_id, new_net)
 
