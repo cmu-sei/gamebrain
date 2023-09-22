@@ -36,7 +36,7 @@ from pydantic import BaseModel, ValidationError
 import yaml
 
 from ..admin.controllermodels import DeploymentSession
-from ..db import get_team
+from ..db import get_team, get_active_teams
 from ..clients.gameboardmodels import (
     GameEngineQuestionView,
     TeamGameScoreSummary,
@@ -313,6 +313,54 @@ class GamespaceStateOutput(BaseModel):
     pilot: UpOrDown = "down"
 
 
+class TeamLabelManager:
+    available_labels: set[str]
+    used_labels: set[str]
+
+    _lock: asyncio.Lock
+    _default_labels = {f"team{i}" for i in range(1, 6)}
+
+    class NoMoreLabels(Exception):
+        ...
+
+    class AllLabelsAvailable(Exception):
+        ...
+
+    def __init__(self, active_teams: list[dict]):
+        self.used_labels = set()
+        for team in active_teams:
+            team_id = team["id"]
+            vlan_label = team["vlan_label"]
+            if not vlan_label:
+                logging.error(
+                    f"Team {team.id} is marked active but "
+                    "does not have a VLAN label specified."
+                )
+                continue
+            self.used_labels.add(vlan_label)
+        self.available_labels = self._default_labels - self.used_labels
+        self._lock = asyncio.Lock()
+
+    async def assign_label(self) -> str:
+        async with self._lock:
+            try:
+                assigned_label = self.available_labels.pop()
+            except KeyError:
+                raise self.NoMoreLabels
+
+            self.used_labels.add(assigned_label)
+            return assigned_label
+
+    async def unassign_label(self, label: str):
+        async with self._lock:
+            try:
+                unassigned_label = self.used_labels.remove(label)
+            except KeyError:
+                raise self.AllLabelsAvailable
+
+            self.available_labels.add(unassigned_label)
+
+
 class GameStateManager:
     _lock = asyncio.Lock()
     _cache: InternalCache
@@ -321,6 +369,9 @@ class GameStateManager:
     _active_game_timer_task: asyncio.Task = None
     _active_dispatch_timer_task: asyncio.Task = None
     _active_mission_timer_task: asyncio.Task = None
+
+    _team_label_manager: TeamLabelManager = None
+    _vm_net_change_tasks: set[asyncio.Task] = None
 
     _next_npc_ship_jump: datetime.datetime = None
     _next_video_refresh: datetime.datetime = None
@@ -1190,6 +1241,56 @@ class GameStateManager:
             cls._cache = initial_state.to_internal()
             cls._settings = settings
             cls._next_video_refresh = datetime.datetime.now(timezone.utc)
+            active_teams = await get_active_teams()
+            cls._team_label_manager = TeamLabelManager(active_teams)
+            cls._vm_net_change_tasks = set()
+
+    @classmethod
+    async def _change_challenge_gateway_network(
+        cls,
+        team_id: TeamID,
+        team_label: str,
+        gamespace_data: GamespaceData,
+    ):
+        gamespace_id = gamespace_data.gamespaceID
+        gateway_vm_name = gamespace_data.gatewayVmName
+        gateway_nic = gamespace_data.gatewayNic
+        location_id = gamespace_data.locationID
+
+        if not location_id:
+            logging.warning(
+                "_change_challenge_gateway_network: "
+                f"Gamespace {gamespace_id} does not have "
+                "a location ID referenced. This is fine if the ship does not "
+                "need to connect to the gamespace's network."
+            )
+            return
+
+        location = cls._cache.location_map.get(location_id)
+        if not location:
+            logging.error(
+                "_change_challenge_gateway_network: "
+                f"Gamespace {gamespace_id} refers to "
+                f"location {location_id}, but no such location exists."
+            )
+            return
+        network_name = location.networkName
+
+        vm_id = await cls._get_vm_id_from_name_for_gamespace(
+            gamespace_id,
+            gateway_vm_name
+        )
+        if not vm_id:
+            logging.error(
+                "_change_challenge_gateway_network: "
+                "Could not get a VM ID for a VM named "
+                f"{gateway_vm_name} in "
+                f"Gamespace {gamespace_id}"
+            )
+            return
+
+        new_net = f"{team_label}-{network_name}:{gateway_nic}"
+        await topomojo.change_vm_net(vm_id, new_net)
 
     @classmethod
     async def init_challenges(
@@ -1214,6 +1315,7 @@ class GameStateManager:
             global_task_data = cls._cache.task_map.__root__.get(task_id)
             if not global_task_data:
                 logging.error(
+                    "init_challenges: "
                     f"Gamespace {gamespace_data.gamespaceID} had an "
                     f"invalid task ID {task_id}."
                 )
@@ -1223,6 +1325,15 @@ class GameStateManager:
 
         async with cls._lock:
             for team_id, gamespace_info in team_gamespaces.items():
+                team_data = await get_team(team_id)
+                if not team_data:
+                    logging.error(
+                        "init_challenges: "
+                        f"Tried to look up team {team_id} "
+                        "but it was not found in the database!"
+                    )
+                    continue
+
                 cls._cache.challenges[team_id] = {}
 
                 for (
@@ -1237,10 +1348,22 @@ class GameStateManager:
                     cls._cache.challenges[team_id][mission_id] = gamespace_data
                     gamespace_id = gamespace_data.gamespaceID
                     cls._cache.gamespace_to_mission[gamespace_id] = mission_id
+
                     logging.info(
+                        "init_challenges: "
                         f"Team {team_id} had mission {mission_id} "
                         f"assigned to gamespace {gamespace_id}."
                     )
+
+                    task = asyncio.create_task(
+                        cls._change_challenge_gateway_network(
+                            team_id,
+                            team_data["vlan_label"],
+                            gamespace_data
+                        )
+                    )
+                    task.add_done_callback(cls._handle_task_result)
+                    cls._vm_net_change_tasks.add(task)
 
     @classmethod
     async def uninit_challenges(cls):
@@ -1264,8 +1387,10 @@ class GameStateManager:
         team_id: TeamID,
         deployment_session: DeploymentSession,
         ship_gamespace_info: GamespaceData,
-    ):
+    ) -> str:
         async with cls._lock:
+            team_label = await cls._team_label_manager.assign_label()
+
             new_team_state = InternalTeamGameData(
                 **cls._cache.team_initial_state.dict()
             )
@@ -1289,6 +1414,8 @@ class GameStateManager:
                 f"Team {team_id} created with missions {new_team_state.missions} "
                 f"and session {json.dumps(new_team_state.session, indent=2, default=str)}"
             )
+
+            return team_label
 
     @classmethod
     async def check_team_exists(cls, team_id: TeamID) -> bool:
@@ -1692,24 +1819,17 @@ class GameStateManager:
                 team_data.currentStatus.currentLocation
             ]
 
-            team_challenges = cls._cache.challenges.get(team_id)
-            if not team_challenges:
+            team_db_data = await get_team(team_id)
+            if not team_db_data:
                 logging.error(
-                    f"Team {team_id} has no challenge data."
+                    "extend_antenna: "
+                    f"Team {team_id} does not exist in the database."
                 )
-                return GenericResponse(
-                    success=False, message="Team has no challenge data"
-                )
-            gamespace_id = None
-            for _, challenge_data in team_challenges.items():
-                if challenge_data.locationID == location_data.locationID:
-                    gamespace_id = challenge_data.gamespaceID
-                    break
+                return
 
+            team_label = team_db_data["vlan_label"]
             location_net = location_data.networkName
-            new_net = f"{location_net}:{team_data.ship.antennaNic}"
-            if gamespace_id:
-                new_net = f"{new_net}#{gamespace_id}"
+            new_net = f"{team_label}-{location_net}:{team_data.ship.antennaNic}"
 
             await topomojo.change_vm_net(vm_id, new_net)
 

@@ -83,6 +83,7 @@ class DBManager:
         ship_gamespace_id = Column(String(36))
         headless_url = Column(String)
         team_name = Column(String)
+        vlan_label = Column(String)
         active = Column(Boolean(), nullable=False, default=True)
 
         # lazy="joined" to prevent session errors.
@@ -205,6 +206,7 @@ async def store_team(
     headless_url: Optional[str] | None = "",
     team_name: Optional[str] = None,
     game_session_id: Optional[int] = None,
+    vlan_label: Optional[str] = None,
 ):
     """
     ship_gamespace_id: Maximum 36 character string.
@@ -219,6 +221,8 @@ async def store_team(
         kwargs["team_name"] = team_name
     if game_session_id:
         kwargs["game_session_id"] = game_session_id
+    if vlan_label:
+        kwargs["vlan_label"] = vlan_label
     team_data = DBManager.TeamData(id=team_id, **kwargs)
     await DBManager.merge_rows([team_data])
 

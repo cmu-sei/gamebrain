@@ -80,8 +80,8 @@ class GamespaceData(BaseModel):
     # A location ID is used to determine which gamespace ID
     # to use when extending the ship antenna.
     locationID: str | None
-    # The next two are mutually exclusive with taskID.
-    # Both or neither must be specified.
+    # If location ID is defined in a challenge workspace,
+    # the following two will also need to be defined.
     gatewayVmName: str | None
     gatewayNic: int | None
     dispatches: list[Dispatch] = []
@@ -99,12 +99,6 @@ class GamespaceData(BaseModel):
 
     @root_validator
     def validate_taskID_gatewayVmName_and_gatewayNic(cls, values):
-        def raise_xor_error(specified, unspecified):
-            raise ValueError(
-                f"If {specified} is specified, {unspecified} "
-                "must not be specified. (or vice-versa)"
-            )
-
         def raise_and_error(specified, unspecified):
             raise ValueError(
                 f"If {specified} is specified, {unspecified} "
@@ -112,27 +106,18 @@ class GamespaceData(BaseModel):
             )
 
         # Specifically check if these were unspecified or null.
-        (taskID,
+        (locationID,
          gatewayVmName,
-         gatewayNic) = (values.get("taskID") is not None,
+         gatewayNic) = (values.get("locationID") is not None,
                         values.get("gatewayVmName") is not None,
                         values.get("gatewayNic") is not None)
-        if taskID:
-            if gatewayVmName and gatewayNic:
-                raise_xor_error("taskID", "gatewayVmName and gatewayNic")
-            elif gatewayVmName:
-                raise_xor_error("taskID", "gatewayVmName")
-            elif gatewayNic:
-                raise_xor_error("taskID", "gatewayNic")
-        elif gatewayVmName and not gatewayNic:
-            raise_and_error("gatewayVmName", "gatewayNic")
-        elif gatewayNic and not gatewayVmName:
-            raise_and_error("gatewayNic", "gatewayVmName")
-        elif not taskID and not gatewayVmName and not gatewayNic:
-            raise ValueError(
-                "None of taskID, gatewayVmName, or gatewayNic are specified. "
-                "Specify taskID or both of gatewayVmName and gatewayNic."
-            )
+        if locationID:
+            if not gatewayVmName and not gatewayNic:
+                raise_and_error("locationID", "gatewayVmName and gatewayNic")
+            elif not gatewayVmName:
+                raise_and_error("locationID", "gatewayVmName")
+            elif not gatewayNic:
+                raise_and_error("locationID", "gatewayNic")
 
         return values
 

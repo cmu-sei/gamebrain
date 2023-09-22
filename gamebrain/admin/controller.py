@@ -297,7 +297,7 @@ async def _internal_deploy(deployment_data: Deployment):
             f"Team {team} had gamespace mappings "
             f"{json.dumps(team_gamespace_info.gamespaces, indent=2, default=str)}")
 
-        await GameStateManager.new_team(
+        vlan_label = await GameStateManager.new_team(
             team.id,
             deployment_data.session,
             team_gamespace_info.ship_gamespace_data
@@ -307,6 +307,7 @@ async def _internal_deploy(deployment_data: Deployment):
             team.id,
             ship_gamespace_id=team_gamespace_info.ship_gamespace_id,
             team_name=team.name,
+            vlan_label=vlan_label,
         )
 
         ship_vm_urls = team_gamespace_vms[
