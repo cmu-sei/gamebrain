@@ -1266,7 +1266,7 @@ class GameStateManager:
             )
             return
 
-        location = cls._cache.location_map.get(location_id)
+        location = cls._cache.location_map.__root__.get(location_id)
         if not location:
             logging.error(
                 "_change_challenge_gateway_network: "
