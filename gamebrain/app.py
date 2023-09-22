@@ -25,7 +25,7 @@
 import asyncio
 from datetime import datetime, timezone
 import logging
-import os
+import sys
 from typing import Dict, List, Optional
 
 from fastapi import (
@@ -118,6 +118,7 @@ async def publish_event(team_id: str, event_message: str):
 
 @APP.on_event("startup")
 async def startup():
+    logging.info(f"Python version: {sys.version}")
     await Global.init()
 
 
