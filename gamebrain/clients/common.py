@@ -54,6 +54,9 @@ async def _service_request_and_log(
 
         response = await client.send(request)
         if not response.is_success:
+            api_key = request.headers.get('x-api-key')
+            if api_key:
+                request.headers['x-api-key'] = '<secret>'
             error(
                 f"HTTP Request to {response.url} returned {response.status_code}\n"
                 f"HTTP Method was: {request.method}\n"
