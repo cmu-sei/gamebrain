@@ -1337,7 +1337,7 @@ class GameStateManager:
             gamespace_data: GamespaceData,
     ):
         try:
-            global_mission = cls._cache.mission_map[mission_id]
+            global_mission = cls._cache.mission_map.__root__[mission_id]
         except KeyError as e:
             logging.error(
                 "_update_galaxy_map_positions: "
