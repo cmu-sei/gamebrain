@@ -287,6 +287,7 @@ class ShipDataTeamSpecific(BaseModel):
     antennaVmName: str = ""
     # NICs are zero-indexed.
     antennaNic: int
+    gamespaceData: GamespaceData = None
 
 
 class SessionDataTeamSpecific(BaseModel):

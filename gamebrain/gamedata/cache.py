@@ -409,7 +409,6 @@ class GameStateManager:
     _active_mission_timer_task: asyncio.Task = None
 
     _team_label_manager: TeamLabelManager = None
-    _vm_net_change_tasks: set[asyncio.Task] = None
 
     _next_npc_ship_jump: datetime.datetime = None
     _next_video_refresh: datetime.datetime = None
@@ -1281,54 +1280,54 @@ class GameStateManager:
             cls._next_video_refresh = datetime.datetime.now(timezone.utc)
             active_teams = await get_active_teams()
             cls._team_label_manager = TeamLabelManager(active_teams)
-            cls._vm_net_change_tasks = set()
+
+    class VmIdResponseFailure(Exception):
+        ...
 
     @classmethod
-    async def _change_challenge_gateway_network(
+    async def _change_gamespace_gateway_network(
         cls,
-        team_id: TeamID,
-        team_label: str,
+        current_location: LocationID,
+        target_network: str,
         gamespace_data: GamespaceData,
+        force_target_network: bool = False,
     ):
         gamespace_id = gamespace_data.gamespaceID
         gateway_vm_name = gamespace_data.gatewayVmName
         gateway_nic = gamespace_data.gatewayNic
         location_id = gamespace_data.locationID
 
-        if not location_id:
+        if not location_id and not force_target_network:
             logging.warning(
-                "_change_challenge_gateway_network: "
+                "_change_gamespace_gateway_network: "
                 f"Gamespace {gamespace_id} does not have "
                 "a location ID referenced. This is fine if the ship does not "
                 "need to connect to the gamespace's network."
             )
-            return
 
-        location = cls._cache.location_map.__root__.get(location_id)
-        if not location:
-            logging.error(
-                "_change_challenge_gateway_network: "
-                f"Gamespace {gamespace_id} refers to "
-                f"location {location_id}, but no such location exists."
+        if location_id == current_location or force_target_network:
+            new_net = f"{target_network}:{gateway_nic}"
+        else:
+            new_net = (
+                f"{cls._settings.game.antenna_retracted_network}:"
+                f"{gateway_nic}#{gamespace_id}"
             )
-            return
-        network_name = location.networkName
 
-        vm_id = await cls._get_vm_id_from_name_for_gamespace(
+        vm_id_response = await cls._get_vm_id_from_name_for_gamespace(
             gamespace_id,
             gateway_vm_name
         )
-        if not vm_id:
+        if not vm_id_response.success:
             logging.error(
-                "_change_challenge_gateway_network: "
+                "_change_gamespace_gateway_network: "
                 "Could not get a VM ID for a VM named "
                 f"{gateway_vm_name} in "
                 f"Gamespace {gamespace_id}"
+                f"VM ID response: {vm_id_response.message}"
             )
-            return
+            raise cls.VmIdResponseFailure
 
-        new_net = f"{team_label}-{network_name}:{gateway_nic}"
-        await topomojo.change_vm_net(vm_id, new_net)
+        await topomojo.change_vm_net(vm_id_response.message, new_net)
 
     @classmethod
     def _check_galaxy_map_positions(
@@ -1425,16 +1424,6 @@ class GameStateManager:
                         f"assigned to gamespace {gamespace_id}."
                     )
 
-                    task = asyncio.create_task(
-                        cls._change_challenge_gateway_network(
-                            team_id,
-                            team_data["vlan_label"],
-                            gamespace_data
-                        )
-                    )
-                    task.add_done_callback(cls._handle_task_result)
-                    cls._vm_net_change_tasks.add(task)
-
     @classmethod
     async def uninit_challenges(cls):
         async with cls._lock:
@@ -1477,6 +1466,7 @@ class GameStateManager:
             new_team_state.ship.gamespaceId = ship_gamespace_info.gamespaceID
             new_team_state.ship.antennaVmName = ship_gamespace_info.gatewayVmName
             new_team_state.ship.antennaNic = ship_gamespace_info.gatewayNic
+            new_team_state.ship.gamespaceData = ship_gamespace_info
 
             cls._cache.team_map.__root__[team_id] = new_team_state
 
@@ -1878,17 +1868,6 @@ class GameStateManager:
                     success=False, message="First Contact Event Incomplete"
                 )
 
-            vm_id_response = await cls._get_vm_id_from_name_for_team(
-                team_id, team_data, team_data.ship.antennaVmName
-            )
-            if not vm_id_response.success:
-                return vm_id_response
-            vm_id = vm_id_response.message
-
-            location_data = cls._cache.location_map.__root__[
-                team_data.currentStatus.currentLocation
-            ]
-
             team_db_data = await get_team(team_id)
             if not team_db_data:
                 logging.error(
@@ -1898,17 +1877,49 @@ class GameStateManager:
                 return
 
             team_label = team_db_data["vlan_label"]
-            location_net = location_data.networkName
-            new_net = f"{team_label}-{location_net}:{team_data.ship.antennaNic}"
 
-            await topomojo.change_vm_net(vm_id, new_net)
+            network_name = f"{team_label}-ship"
+
+            # Make sure the ship gateway is on the right VLAN.
+            tasks = [
+                cls._change_gamespace_gateway_network(
+                    team_data.currentStatus.currentLocation,
+                    network_name,
+                    team_data.ship.gamespaceData,
+                    force_target_network=True
+                )
+            ]
+            # Then make sure all the challenges are either on the same VLAN,
+            # or set to their own "deepspace" network, unreachable from
+            # the ship.
+            for _, gamespace_data in cls._cache.challenges[team_id]:
+                tasks.append(cls._change_gamespace_gateway_network(
+                    team_data.currentStatus.currentLocation,
+                    network_name,
+                    gamespace_data,
+                ))
+
+            for task in tasks:
+                task.add_done_callback(cls._handle_task_result)
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for result in results:
+                if isinstance(result, cls.VmIdResponseFailure):
+                    logging.error(
+                        "extend_antenna: "
+                        f"Team {team_id} got a VM ID Response failure when "
+                        "extending the antenna."
+                    )
 
             team_data.currentStatus.antennaExtended = True
             team_data.currentStatus.networkConnected = True
-            team_data.currentStatus.networkName = location_net
+            team_data.currentStatus.networkName = network_name
 
             cls._mark_task_complete_if_unlocked(
-                team_id, team_data, "antennaExtended")
+                team_id,
+                team_data,
+                "antennaExtended"
+            )
 
             return GenericResponse(
                 success=True, message=f"Team {team_id} extended their antenna."
@@ -1921,17 +1932,48 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            vm_id_response = await cls._get_vm_id_from_name_for_team(
-                team_id, team_data, team_data.ship.antennaVmName
-            )
-            if not vm_id_response.success:
-                return vm_id_response
-            vm_id = vm_id_response.message
+            team_db_data = await get_team(team_id)
+            if not team_db_data:
+                logging.error(
+                    "retract_antenna: "
+                    f"Team {team_id} does not exist in the database."
+                )
+                return
 
-            empty_net = cls._settings.game.antenna_retracted_network
-            new_net = f"{empty_net}:{team_data.ship.antennaNic}"
+            team_label = team_db_data["vlan_label"]
 
-            await topomojo.change_vm_net(vm_id, new_net)
+            network_name = f"{team_label}-ship"
+
+            # Make sure the ship gateway is on the right VLAN.
+            tasks = [
+                cls._change_gamespace_gateway_network(
+                    team_data.currentStatus.currentLocation,
+                    network_name,
+                    team_data.ship.gamespaceData,
+                    force_target_network=True
+                )
+            ]
+            # Then make sure all the challenges are either on the same VLAN,
+            # or set to their own "deepspace" network, unreachable from
+            # the ship.
+            for _, gamespace_data in cls._cache.challenges[team_id]:
+                tasks.append(cls._change_gamespace_gateway_network(
+                    "",
+                    "",
+                    gamespace_data,
+                ))
+
+            for task in tasks:
+                task.add_done_callback(cls._handle_task_result)
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for result in results:
+                if isinstance(result, cls.VmIdResponseFailure):
+                    logging.error(
+                        "retract_antenna: "
+                        f"Team {team_id} got a VM ID Response failure when "
+                        "retracting the antenna."
+                    )
 
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False
@@ -1940,10 +1982,14 @@ class GameStateManager:
             )
 
             cls._mark_task_complete_if_unlocked(
-                team_id, team_data, "antennaRetracted")
+                team_id,
+                team_data,
+                "antennaRetracted"
+            )
 
             return GenericResponse(
-                success=True, message=f"Team {team_id} retracted their antenna."
+                success=True,
+                message=f"Team {team_id} retracted their antenna."
             )
 
     @classmethod
