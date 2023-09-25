@@ -578,9 +578,11 @@ class GameStateManager:
             return
         next_global_task = cls._cache.task_map.__root__.get(global_task.next)
         if not next_global_task:
-            logging.error(
-                f"Task {global_task.taskID} indicated its next task was {global_task.next}, but that task "
-                "doesn't exist in the global data."
+            logging.warning(
+                f"Task {global_task.taskID} indicated its next task was "
+                f"{global_task.next}, but that task "
+                "doesn't exist in the global data. This is no problem "
+                "if this task is intended to be the last task in a chain."
             )
             return
         cls._unlock_tasks_until_completion_criteria(
