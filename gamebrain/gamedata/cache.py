@@ -1859,6 +1859,55 @@ class GameStateManager:
                 f"Team Data for team {team_id} updated: {json.dumps(team_data.ship.dict(), indent=2)}"
             )
 
+    class ExtendOrRetract(Enum):
+        extend = 0
+        retract = 1
+
+    @classmethod
+    async def _bulk_network_change_team_gamespaces(
+        cls,
+        team_id: TeamID,
+        team_data: InternalTeamGameData,
+        target_network_name: str,
+        extend_or_retract: ExtendOrRetract,
+    ):
+        if extend_or_retract == cls.ExtendOrRetract.extend:
+            location = team_data.currentStatus.currentLocation
+            network = target_network_name
+        else:
+            location = ""
+            network = ""
+
+        # Make sure the ship gateway is on the right VLAN.
+        tasks = [
+            cls._change_gamespace_gateway_network(
+                team_data.currentStatus.currentLocation,
+                target_network_name,
+                team_data.ship.gamespaceData,
+                force_target_network=True
+            )
+        ]
+        # Then make sure all the challenges are either on the same VLAN,
+        # or set to their own "deepspace" network, unreachable from
+        # the ship.
+        for _, gamespace_data in cls._cache.challenges[team_id].items():
+            tasks.append(cls._change_gamespace_gateway_network(
+                location,
+                network,
+                gamespace_data,
+            ))
+
+        for task in tasks:
+            task.add_done_callback(cls._handle_task_result)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, cls.VmIdResponseFailure):
+                logging.error(
+                    "_bulk_network_change_team_gamespaces: "
+                    f"Team {team_id} got a VM ID Response failure."
+                )
+
     @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
@@ -1880,39 +1929,14 @@ class GameStateManager:
                 return
 
             team_label = team_db_data["vlan_label"]
-
             network_name = f"{team_label}-ship"
 
-            # Make sure the ship gateway is on the right VLAN.
-            tasks = [
-                cls._change_gamespace_gateway_network(
-                    team_data.currentStatus.currentLocation,
+            await cls._bulk_network_change_team_gamespaces(
+                    team_id,
+                    team_data,
                     network_name,
-                    team_data.ship.gamespaceData,
-                    force_target_network=True
-                )
-            ]
-            # Then make sure all the challenges are either on the same VLAN,
-            # or set to their own "deepspace" network, unreachable from
-            # the ship.
-            for _, gamespace_data in cls._cache.challenges[team_id]:
-                tasks.append(cls._change_gamespace_gateway_network(
-                    team_data.currentStatus.currentLocation,
-                    network_name,
-                    gamespace_data,
-                ))
-
-            for task in tasks:
-                task.add_done_callback(cls._handle_task_result)
-
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for result in results:
-                if isinstance(result, cls.VmIdResponseFailure):
-                    logging.error(
-                        "extend_antenna: "
-                        f"Team {team_id} got a VM ID Response failure when "
-                        "extending the antenna."
-                    )
+                    cls.ExtendOrRetract.extend,
+            )
 
             team_data.currentStatus.antennaExtended = True
             team_data.currentStatus.networkConnected = True
@@ -1947,36 +1971,12 @@ class GameStateManager:
 
             network_name = f"{team_label}-ship"
 
-            # Make sure the ship gateway is on the right VLAN.
-            tasks = [
-                cls._change_gamespace_gateway_network(
-                    team_data.currentStatus.currentLocation,
+            await cls._bulk_network_change_team_gamespaces(
+                    team_id,
+                    team_data,
                     network_name,
-                    team_data.ship.gamespaceData,
-                    force_target_network=True
-                )
-            ]
-            # Then make sure all the challenges are either on the same VLAN,
-            # or set to their own "deepspace" network, unreachable from
-            # the ship.
-            for _, gamespace_data in cls._cache.challenges[team_id]:
-                tasks.append(cls._change_gamespace_gateway_network(
-                    "",
-                    "",
-                    gamespace_data,
-                ))
-
-            for task in tasks:
-                task.add_done_callback(cls._handle_task_result)
-
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for result in results:
-                if isinstance(result, cls.VmIdResponseFailure):
-                    logging.error(
-                        "retract_antenna: "
-                        f"Team {team_id} got a VM ID Response failure when "
-                        "retracting the antenna."
-                    )
+                    cls.ExtendOrRetract.retract,
+            )
 
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False
