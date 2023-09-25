@@ -1331,6 +1331,33 @@ class GameStateManager:
         await topomojo.change_vm_net(vm_id, new_net)
 
     @classmethod
+    def _check_galaxy_map_positions(
+            cls,
+            mission_id: MissionID,
+            gamespace_data: GamespaceData,
+    ):
+        try:
+            global_mission = cls._cache.mission_map[mission_id]
+        except KeyError as e:
+            logging.error(
+                "_update_galaxy_map_positions: "
+                f"Could not find mission {mission_id}."
+            )
+            raise e
+
+        # The values may be specified in the initial game data, but the
+        # workspace values should be prioritized.
+
+        if not gamespace_data.galaxyMapXPos:
+            gamespace_data.galaxyMapXPos = global_mission.galaxyMapXPos
+        if not gamespace_data.galaxyMapYPos:
+            gamespace_data.galaxyMapYPos = global_mission.galaxyMapYPos
+        if not gamespace_data.galaxyMapTargetXPos:
+            gamespace_data.galaxyMapTargetXPos = global_mission.galaxyMapTargetXPos
+        if not gamespace_data.galaxyMapTargetYPos:
+            gamespace_data.galaxyMapTargetYPos = global_mission.galaxyMapTargetYPos
+
+    @classmethod
     async def init_challenges(
         cls,
         team_gamespaces: dict[TeamID, TeamGamespaceInfo],
@@ -1382,6 +1409,11 @@ class GameStateManager:
                     # if not npc_ship_id:
                     #     continue
                     mission_id = get_mission_id(task_id)
+
+                    cls._check_galaxy_map_positions(
+                        mission_id,
+                        gamespace_data
+                    )
 
                     cls._cache.challenges[team_id][mission_id] = gamespace_data
                     gamespace_id = gamespace_data.gamespaceID
