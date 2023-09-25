@@ -23,6 +23,7 @@
 # DM23-0100
 
 import asyncio
+from enum import Enum
 from collections import defaultdict
 from dataclasses import dataclass
 import datetime
@@ -95,6 +96,7 @@ ChallengeMap = dict[MissionID, GamespaceData]
 
 JUMP_TIME_DELTA = datetime.timedelta(minutes=10)
 SPAM_REDUCTION_FACTOR = 20
+EXPECTED_TEAM_COUNT = 5
 
 
 class NonExistentTeam(Exception):
@@ -314,51 +316,87 @@ class GamespaceStateOutput(BaseModel):
 
 
 class TeamLabelManager:
-    available_labels: set[str]
-    used_labels: set[str]
+    class UsedOrNot(Enum):
+        available = 0
+        used = 1
+
+    labels: list[UsedOrNot]
 
     _lock: asyncio.Lock
-    _default_labels = {f"team{i}" for i in range(1, 6)}
 
     class NoMoreLabels(Exception):
         ...
 
-    class AllLabelsAvailable(Exception):
-        ...
-
     def __init__(self, active_teams: list[dict]):
-        self.used_labels = set()
+        self.labels = [
+            self.UsedOrNot.available
+            for _ in range(1, EXPECTED_TEAM_COUNT + 1)
+        ]
+
         for team in active_teams:
-            team_id = team["id"]
             vlan_label = team["vlan_label"]
             if not vlan_label:
                 logging.error(
+                    "TeamLabelManager.__init__: "
                     f"Team {team.id} is marked active but "
                     "does not have a VLAN label specified."
                 )
                 continue
-            self.used_labels.add(vlan_label)
-        self.available_labels = self._default_labels - self.used_labels
+
+            try:
+                team_number = self._get_label_number_from_label(
+                    team.id,
+                    vlan_label
+                )
+            except (IndexError, ValueError):
+                continue
+
+            try:
+                self.labels[team_number - 1] = self.UsedOrNot.used
+            except IndexError:
+                logging.error(
+                    "TeamLabelManager.__init__: "
+                    f"Tried to mark team {team.id} used, but "
+                    f"had an IndexError. Label: {vlan_label}."
+                )
+                continue
+
         self._lock = asyncio.Lock()
+
+    def _get_label_number_from_label(
+        self,
+        label: str
+    ) -> int:
+        try:
+            return int(label[4:])
+        except (IndexError, ValueError) as e:
+            logging.error(
+                "_get_label_number_from_label: "
+                f"Invalid label {label}."
+            )
+            raise e
 
     async def assign_label(self) -> str:
         async with self._lock:
-            try:
-                assigned_label = self.available_labels.pop()
-            except KeyError:
-                raise self.NoMoreLabels
-
-            self.used_labels.add(assigned_label)
-            return assigned_label
+            for i, label in enumerate(self.labels):
+                if label == self.UsedOrNot.available:
+                    self.labels[i] = self.UsedOrNot.used
+                    return f"team{i + 1}"
+            raise self.NoMoreLabels
 
     async def unassign_label(self, label: str):
         async with self._lock:
             try:
-                unassigned_label = self.used_labels.remove(label)
-            except KeyError:
-                raise self.AllLabelsAvailable
-
-            self.available_labels.add(unassigned_label)
+                label_number = self._get_label_number_from_label(label)
+            except (IndexError, ValueError):
+                return
+            try:
+                self.labels[label_number - 1] = self.UsedOrNot.available
+            except IndexError:
+                logging.error(
+                    "unassign_label: "
+                    f"Got an invalid label {label}."
+                )
 
 
 class GameStateManager:
