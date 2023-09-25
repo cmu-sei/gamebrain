@@ -1897,9 +1897,6 @@ class GameStateManager:
                 gamespace_data,
             ))
 
-        for task in tasks:
-            task.add_done_callback(cls._handle_task_result)
-
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in results:
             if isinstance(result, cls.VmIdResponseFailure):
