@@ -452,7 +452,8 @@ class GameStateManager:
             except Exception as e:
                 logging.info(f"{vms}")
                 logging.exception(
-                    f"Exception when attempting to split a VM named {vm} in extend_antenna: {e}"
+                    "_get_vm_id_from_name_for_gamespace: "
+                    f"Exception when attempting to split a VM named {vm}: {e}"
                 )
                 continue
             if name == vm_name:
