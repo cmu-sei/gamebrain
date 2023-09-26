@@ -28,8 +28,7 @@ import logging
 
 from . import db
 from .clients import topomojo
-from .gamedata.cache import GameStateManager, TeamID
-
+from .util import cleanup_team, cleanup_session
 
 CLEANUP_TIME = timedelta(minutes=1)
 
@@ -37,7 +36,7 @@ CLEANUP_TIME = timedelta(minutes=1)
 class BackgroundCleanupTask:
     settings: "SettingsModel"
 
-    _revisit_dict: dict[TeamID, datetime]
+    _revisit_dict: dict[str, datetime]
 
     @classmethod
     async def init(cls, settings: "SettingsModel"):
@@ -45,22 +44,6 @@ class BackgroundCleanupTask:
         cls._revisit_dict = {}
 
         return await cls._cleanup_task()
-
-    @classmethod
-    async def _cleanup_team(cls, team_id: TeamID):
-        await db.deactivate_team(team_id)
-        await GameStateManager.update_team_urls(team_id, {})
-        await GameStateManager.uninit_team(team_id)
-
-    @classmethod
-    async def _cleanup_session(cls):
-        session = await db.get_active_game_session()
-        if session is None:
-            return
-        logging.info("No teams were active, but there is an active session. Cleaning up...")
-        await db.deactivate_game_session()
-        await GameStateManager.uninit_challenges()
-        await GameStateManager.stop_game_timers()
 
     @classmethod
     async def handle_active_team_without_gamespace(
@@ -85,7 +68,7 @@ class BackgroundCleanupTask:
                 f"but had no gamespace assigned after {str(CLEANUP_TIME)}. "
                 "Deactivating the team..."
             )
-            await cls._cleanup_team(team_id)
+            await cleanup_team(team_id)
             del cls._revisit_dict[team_id]
 
     @classmethod
@@ -139,7 +122,7 @@ class BackgroundCleanupTask:
                     await topomojo.complete_gamespace(gamespace_id)
         
         if not active_teams:
-            await cls._cleanup_session()
+            await cleanup_session()
 
     @classmethod
     async def _cleanup_task(cls):

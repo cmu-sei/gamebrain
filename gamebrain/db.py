@@ -265,6 +265,13 @@ async def get_active_teams() -> list[dict]:
 
 
 async def deactivate_team(team_id: str):
+    team = await get_team(team_id)
+    if not team:
+        logging.warning(
+            "deactivate_team: "
+            f"Called with a nonexistent team {team_id}."
+        )
+        return
     team_data = DBManager.TeamData(
         id=team_id,
         active=False,

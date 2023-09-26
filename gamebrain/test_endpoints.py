@@ -41,7 +41,6 @@ from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
-from .db import store_team, deactivate_game_session, deactivate_team, get_active_teams
 from .gamedata.cache import (
     GameDataCacheSnapshot,
     GameStateManager,
@@ -56,6 +55,7 @@ from .gamedata.cache import (
     LocationID,
     PowerMode,
 )
+from .util import cleanup_team, cleanup_session
 
 # This whole module was written without thinking about pytest.
 if os.path.basename(sys.argv[0]) in ("pytest", "py.test"):
@@ -250,14 +250,11 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
     await GameStateManager.init(new_state, GameStateManager._settings)
 
 
+@test_router.get("/end_team_game/{team_id}")
+async def end_team_game(team_id: str):
+    await cleanup_team(team_id)
+
+
 @test_router.get("/end_game_session")
 async def end_game_session():
-    active_teams = await get_active_teams()
-    print(
-        "Clearing currently-active teams: "
-        f"{json_dumps(active_teams, indent=2)}"
-    )
-    for team in active_teams:
-        team_id = team["id"]
-        await deactivate_team(team_id)
-    await deactivate_game_session()
+    await cleanup_session()

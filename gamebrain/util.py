@@ -27,7 +27,13 @@ import logging
 
 from urllib.parse import urlsplit, urlunsplit
 
-from .gamedata.cache import TeamID
+from .gamedata.cache import GameStateManager
+from .db import (
+    get_active_teams,
+    deactivate_team,
+    get_active_game_session,
+    deactivate_game_session,
+)
 
 """
 The following two functions yoinked from here:
@@ -55,13 +61,14 @@ def first_of_each(*sequences):
 
 class TeamLocks:
     """
-    The point of this is to have a per-team lock, but the structure holding the per-team lock also needs a lock.
+    The point of this is to have a per-team lock, but the structure holding
+    the per-team lock also needs a lock.
     """
 
     global_lock = asyncio.Lock()
-    team_locks: dict[TeamID, asyncio.Lock] = {}
+    team_locks: dict[str, asyncio.Lock] = {}
 
-    def __init__(self, team_id: TeamID):
+    def __init__(self, team_id: str):
         self.team_id = team_id
 
     async def __aenter__(self):
@@ -75,3 +82,23 @@ class TeamLocks:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.team_lock.release()
         logging.debug(f"Released team lock for {self.team_id}.")
+
+
+async def cleanup_team(team_id: str):
+    await GameStateManager.update_team_urls(team_id, {})
+    await GameStateManager.uninit_team(team_id)
+    await deactivate_team(team_id)
+
+
+async def cleanup_session():
+    active_teams = await get_active_teams()
+    for team in active_teams:
+        team_id = team["id"]
+        await cleanup_team(team_id)
+
+    session = await get_active_game_session()
+    if session is None:
+        return
+    await GameStateManager.uninit_challenges()
+    await GameStateManager.stop_game_timers()
+    await deactivate_game_session()
