@@ -46,6 +46,10 @@ gameboard:
   base_url: https://foundry.local/gameboard/
   # Gameboard's API URL. This will usually, but not necessarily, start with `base_url` and then end with `/api` or `/api/`.
   base_api_url: https://foundry.local/gameboard/api/
+  # Generate a secret for the created bot account and insert it here.
+  x_api_key: hjQC_zO2tijlbjPnjIy258fW3J8E3Gc5
+  # Gamebrain will need a configured bot account in Topomojo with Observer permission enabled in order to do its work. The name of that bot account should be inserted here.
+  x_api_client: Administrator
 # This section contains database-related configuration.
 db:
   # This option is directly passed to create_async_engine (https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#sqlalchemy.ext.asyncio.create_async_engine). By default, `requirements.txt` only includes the `asyncpg` package, and that is the only one that has been tested. It should be possible to swap the async engine to use another database by installing another async package, but it has never been tested.
