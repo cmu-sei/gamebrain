@@ -1411,6 +1411,16 @@ class GameStateManager:
                     # if not npc_ship_id:
                     #     continue
                     mission_id = get_mission_id(task_id)
+                    if not mission_id:
+                        logging.warning(
+                            "init_challenges: "
+                            f"Team {team_id} gamespace "
+                            f"{gamespace_data.gamespaceID} "
+                            f"has a task ID {task_id} without a corresponding "
+                            "mission. Unable to associate a mission to this "
+                            "gamespace."
+                        )
+                        continue
 
                     cls._check_galaxy_map_positions(
                         mission_id,
