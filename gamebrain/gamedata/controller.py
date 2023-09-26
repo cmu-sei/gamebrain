@@ -47,6 +47,7 @@ router = APIRouter()
 
 
 @router.get("/GameData")
+@router.get("/GameData/")
 @router.get("/GameData/{team_id}")
 async def get_gamedata(
     team_id: TeamID | None = None,
