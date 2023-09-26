@@ -1340,12 +1340,12 @@ class GameStateManager:
     ):
         try:
             global_mission = cls._cache.mission_map.__root__[mission_id]
-        except KeyError as e:
+        except KeyError:
             logging.error(
-                "_update_galaxy_map_positions: "
+                "_check_galaxy_map_positions: "
                 f"Could not find mission {mission_id}."
             )
-            raise e
+            return
 
         # The values may be specified in the initial game data, but the
         # workspace values should be prioritized.
