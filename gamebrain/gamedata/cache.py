@@ -1680,7 +1680,7 @@ class GameStateManager:
             full_mission_data.append(mission_full)
 
         for mission_data in full_mission_data:
-            for associated_mission_id in associated_challenges[mission.missionID]:
+            for associated_mission_id in associated_challenges[mission_data.missionID]:
                 # Only put unlock codes in the output if the associated
                 # mission is actually unlocked. The mission ID will only
                 # be in associated_challenges and mission_unlock_codes
