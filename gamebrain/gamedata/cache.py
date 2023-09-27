@@ -44,6 +44,7 @@ from ..clients.gameboardmodels import (
     GameEngineGameState
 )
 from .model import (
+    AssociatedChallengeData,
     DispatchID,
     Dispatch,
     NPCShipData,
@@ -1609,6 +1610,8 @@ class GameStateManager:
         mission_map: dict[MissionID, MissionScoreData]
     ) -> list[MissionDataFull]:
         full_mission_data = []
+        associated_challenges = {}
+        mission_unlock_codes = {}
 
         for mission in team_data.missions.values():
             if not mission.unlocked:
@@ -1623,7 +1626,6 @@ class GameStateManager:
                 mission
             )
 
-            associated_challenges = []
             try:
                 gamespace_data = cls._cache.challenges[team_id].get(mission.missionID)
             except KeyError:
@@ -1643,20 +1645,17 @@ class GameStateManager:
                 position_data["galaxyMapTargetXPos"] = gamespace_data.galaxyMapTargetXPos
                 position_data["galaxyMapTargetYPos"] = gamespace_data.galaxyMapTargetYPos
 
+                associated_challenges[mission.missionID] = gamespace_data.associatedChallenges
                 location = cls._cache.location_map.__root__.get(gamespace_data.locationID)
                 if location:
-                    associated_challenges.append({
-                            "missionID": mission.missionID,
-                            "unlockCode": location.unlockCode
-                        })
+                    mission_unlock_codes[mission.missionID] = location.unlockCode
                 else:
+                    mission_unlock_codes[mission.missionID] = ""
                     logging.warning(
                         f"Gamespace {gamespace_data.gamespaceID} had location "
                         f"{gamespace_data.locationID} in its workspace "
                         "document, but that location does not exist!"
                     )
-
-
 
             score_data = {}
             mission_score_data = mission_map.get(mission_global.missionID)
@@ -1677,9 +1676,23 @@ class GameStateManager:
                 | {"taskList": mission_task_data}
                 | position_data
                 | score_data
-                | {"associatedChallenges": associated_challenges}
             )
             full_mission_data.append(mission_full)
+
+        for mission_data in full_mission_data:
+            for associated_mission_id in associated_challenges[mission.missionID]:
+                # Only put unlock codes in the output if the associated
+                # mission is actually unlocked. The mission ID will only
+                # be in associated_challenges and mission_unlock_codes
+                # if it's unlocked.
+                unlock_code = ""
+                if associated_mission_id in associated_challenges:
+                    unlock_code = mission_unlock_codes[associated_mission_id]
+                associated_data = AssociatedChallengeData(
+                    missionID=associated_mission_id,
+                    unlockCode=unlock_code,
+                )
+                mission_data.associatedChallenges.append(associated_data)
 
         return full_mission_data
 
