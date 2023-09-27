@@ -92,6 +92,10 @@ class GamespaceData(BaseModel):
     useGalaxyDisplayMap: bool | None
     useCodices: bool | None
     timerTitle: str | None
+    # The next five may be specified in the workspace document
+    # OR the game data JSON. Values specified in the workspace
+    # document will take priority.
+    associatedChallenges: list[MissionID] = []
     galaxyMapXPos: float = 0.0
     galaxyMapYPos: float = 0.0
     galaxyMapTargetXPos: float = 0.0
@@ -190,7 +194,6 @@ class MissionData(BaseModel):
     firstNthCompletionUnlocks: list[list[MissionID]] = []
 
     associatedChallenges: list[MissionID] = []
-    associatedChallengesCoordinates: list[str | None] = []
 
     # Mostly for testing purposes. Enables adding coordinates through
     # the game data document without creating a workspace.
@@ -216,8 +219,15 @@ class MissionScoreData(BaseModel):
     bonus_remaining: int
 
 
+class AssociatedChallengeData(BaseModel):
+    missionID: MissionID
+    unlockCode: str
+
+
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
     taskList: list[TaskDataFull]
+
+    associatedChallenges: list[AssociatedChallengeData]
 
     # The next four come from the workspace document.
     galaxyMapXPos: float = 0.0

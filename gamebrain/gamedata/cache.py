@@ -1333,7 +1333,7 @@ class GameStateManager:
         await topomojo.change_vm_net(vm_id_response.message, new_net)
 
     @classmethod
-    def _check_galaxy_map_positions(
+    def _prioritize_gamespace_document_data(
             cls,
             mission_id: MissionID,
             gamespace_data: GamespaceData,
@@ -1350,6 +1350,8 @@ class GameStateManager:
         # The values may be specified in the initial game data, but the
         # workspace values should be prioritized.
 
+        if not gamespace_data.associatedChallenges:
+            gamespace_data.associatedChallenges = global_mission.associatedChallenges
         if not gamespace_data.galaxyMapXPos:
             gamespace_data.galaxyMapXPos = global_mission.galaxyMapXPos
         if not gamespace_data.galaxyMapYPos:
@@ -1422,7 +1424,7 @@ class GameStateManager:
                         )
                         continue
 
-                    cls._check_galaxy_map_positions(
+                    cls._prioritize_gamespace_document_data(
                         mission_id,
                         gamespace_data
                     )
@@ -1621,6 +1623,7 @@ class GameStateManager:
                 mission
             )
 
+            associated_challenges = []
             try:
                 gamespace_data = cls._cache.challenges[team_id].get(mission.missionID)
             except KeyError:
@@ -1639,6 +1642,21 @@ class GameStateManager:
                 position_data["galaxyMapYPos"] = gamespace_data.galaxyMapYPos
                 position_data["galaxyMapTargetXPos"] = gamespace_data.galaxyMapTargetXPos
                 position_data["galaxyMapTargetYPos"] = gamespace_data.galaxyMapTargetYPos
+
+                location = cls._cache.location_map.__root__.get(gamespace_data.locationID)
+                if location:
+                    associated_challenges.append({
+                            "missionID": mission.missionID,
+                            "unlockCode": location.unlockCode
+                        })
+                else:
+                    logging.warning(
+                        f"Gamespace {gamespace_data.gamespaceID} had location "
+                        f"{gamespace_data.locationID} in its workspace "
+                        "document, but that location does not exist!"
+                    )
+
+
 
             score_data = {}
             mission_score_data = mission_map.get(mission_global.missionID)
@@ -1659,6 +1677,7 @@ class GameStateManager:
                 | {"taskList": mission_task_data}
                 | position_data
                 | score_data
+                | {"associatedChallenges": associated_challenges}
             )
             full_mission_data.append(mission_full)
 
