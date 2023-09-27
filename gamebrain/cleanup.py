@@ -106,7 +106,7 @@ class BackgroundCleanupTask:
                     f"_cleanup_body: Team {team_id} had an inactive gamespace. "
                     "Removing internal tracking and unassigning their game server..."
                 )
-                await cls._cleanup_team(team_id)
+                await cleanup_team(team_id)
 
             # Send a gamespace cleanup request after its expiration time.
             expire_str = gamespace_info.get("expirationTime")
