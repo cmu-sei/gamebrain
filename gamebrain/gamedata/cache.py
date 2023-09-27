@@ -1680,13 +1680,17 @@ class GameStateManager:
             full_mission_data.append(mission_full)
 
         for mission_data in full_mission_data:
+            if mission_data.missionID not in associated_challenges:
+                # Likely means there is no associated gamespace,
+                # which was logged earlier.
+                continue
             for associated_mission_id in associated_challenges[mission_data.missionID]:
                 # Only put unlock codes in the output if the associated
                 # mission is actually unlocked. The mission ID will only
                 # be in associated_challenges and mission_unlock_codes
                 # if it's unlocked.
                 unlock_code = ""
-                if associated_mission_id in associated_challenges:
+                if associated_mission_id in mission_unlock_codes:
                     unlock_code = mission_unlock_codes[associated_mission_id]
                 associated_data = AssociatedChallengeData(
                     missionID=associated_mission_id,
