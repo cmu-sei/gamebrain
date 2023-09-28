@@ -1295,6 +1295,7 @@ class GameStateManager:
         target_network: str,
         gamespace_data: GamespaceData,
         force_target_network: bool = False,
+        target_gamespace_id: GamespaceID = None,
     ):
         gamespace_id = gamespace_data.gamespaceID
         gateway_vm_name = gamespace_data.gatewayVmName
@@ -1311,6 +1312,8 @@ class GameStateManager:
 
         if location_id == current_location or force_target_network:
             new_net = f"{target_network}:{gateway_nic}"
+            if target_gamespace_id:
+                new_net = f"{new_net}#{target_gamespace_id}"
         else:
             new_net = (
                 f"{cls._settings.game.antenna_retracted_network}:"
@@ -1926,6 +1929,7 @@ class GameStateManager:
         team_data: InternalTeamGameData,
         target_network_name: str,
         extend_or_retract: ExtendOrRetract,
+        target_gamespace_id: GamespaceID = None,
     ):
         if extend_or_retract == cls.ExtendOrRetract.extend:
             location = team_data.currentStatus.currentLocation
@@ -1940,7 +1944,8 @@ class GameStateManager:
                 team_data.currentStatus.currentLocation,
                 target_network_name,
                 team_data.ship.gamespaceData,
-                force_target_network=True
+                force_target_network=True,
+                target_gamespace_id=target_gamespace_id,
             )
         ]
         # Then make sure all the challenges are either on the same VLAN,
@@ -1951,6 +1956,7 @@ class GameStateManager:
                 location,
                 network,
                 gamespace_data,
+                target_gamespace_id=target_gamespace_id,
             ))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -1983,12 +1989,14 @@ class GameStateManager:
 
             team_label = team_db_data["vlan_label"]
             network_name = f"{team_label}-ship"
+            ship_gamespace_id = team_db_data["ship_gamespace_id"]
 
             await cls._bulk_network_change_team_gamespaces(
                     team_id,
                     team_data,
                     network_name,
                     cls.ExtendOrRetract.extend,
+                    target_gamespace_id=ship_gamespace_id
             )
 
             team_data.currentStatus.antennaExtended = True
@@ -2021,14 +2029,15 @@ class GameStateManager:
                 return
 
             team_label = team_db_data["vlan_label"]
-
             network_name = f"{team_label}-ship"
+            ship_gamespace_id = team_db_data["ship_gamespace_id"]
 
             await cls._bulk_network_change_team_gamespaces(
                     team_id,
                     team_data,
                     network_name,
                     cls.ExtendOrRetract.retract,
+                    target_gamespace_id=ship_gamespace_id,
             )
 
             team_data.currentStatus.antennaExtended = False
