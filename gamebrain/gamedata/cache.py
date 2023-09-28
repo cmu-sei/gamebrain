@@ -1448,6 +1448,16 @@ class GameStateManager:
     @classmethod
     async def uninit_team(cls, team_id):
         async with cls._lock:
+            team_data = get_team(team_id)
+            if team_data and "vlan_label" in team_data:
+                await cls._team_label_manager.unassign_label(
+                    team_data["vlan_label"]
+                )
+            else:
+                logging.warning(
+                    f"Tried to unassign a label from team {team_id} "
+                    "but was unable to retrieve it from the database."
+                )
             try:
                 del cls._cache.challenges[team_id]
             except KeyError:
