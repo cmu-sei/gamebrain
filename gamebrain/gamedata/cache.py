@@ -1452,16 +1452,16 @@ class GameStateManager:
     @classmethod
     async def uninit_team(cls, team_id):
         async with cls._lock:
-            team_data = await get_team(team_id)
-            if team_data and "vlan_label" in team_data:
-                await cls._team_label_manager.unassign_label(
-                    team_data["vlan_label"]
-                )
-            else:
-                logging.warning(
-                    f"Tried to unassign a label from team {team_id} "
-                    "but was unable to retrieve it from the database."
-                )
+            # team_data = await get_team(team_id)
+            # if team_data and "vlan_label" in team_data:
+            #     await cls._team_label_manager.unassign_label(
+            #         team_data["vlan_label"]
+            #     )
+            # else:
+            #     logging.warning(
+            #         f"Tried to unassign a label from team {team_id} "
+            #         "but was unable to retrieve it from the database."
+            #     )
             try:
                 del cls._cache.challenges[team_id]
             except KeyError:
@@ -1478,7 +1478,8 @@ class GameStateManager:
         ship_gamespace_info: GamespaceData,
     ) -> str:
         async with cls._lock:
-            team_label = await cls._team_label_manager.assign_label()
+            # team_label = await cls._team_label_manager.assign_label()
+            team_label = "ignore"
 
             new_team_state = InternalTeamGameData(
                 **cls._cache.team_initial_state.dict()
@@ -1988,8 +1989,9 @@ class GameStateManager:
                 )
                 return
 
-            team_label = team_db_data["vlan_label"]
-            network_name = f"{team_label}-ship"
+            # team_label = team_db_data["vlan_label"]
+            # network_name = f"{team_label}-ship"
+            network_name = "ship"
             ship_gamespace_id = team_db_data["ship_gamespace_id"]
 
             await cls._bulk_network_change_team_gamespaces(
@@ -2029,8 +2031,9 @@ class GameStateManager:
                 )
                 return
 
-            team_label = team_db_data["vlan_label"]
-            network_name = f"{team_label}-ship"
+            # team_label = team_db_data["vlan_label"]
+            # network_name = f"{team_label}-ship"
+            network_name = "ship"
             ship_gamespace_id = team_db_data["ship_gamespace_id"]
 
             await cls._bulk_network_change_team_gamespaces(
