@@ -1311,13 +1311,14 @@ class GameStateManager:
             )
 
         if location_id == current_location or force_target_network:
-            new_net = f"{target_network}:{gateway_nic}"
             if target_gamespace_id:
-                new_net = f"{new_net}#{target_gamespace_id}"
+                net_name, *_ = target_network.split("#")
+                target_network = f"{net_name}#{target_gamespace_id}"
+            new_net = f"{target_network}:{gateway_nic}"
         else:
             new_net = (
                 f"{cls._settings.game.antenna_retracted_network}:"
-                f"{gateway_nic}#{gamespace_id}"
+                f"{gateway_nic}"
             )
 
         vm_id_response = await cls._get_vm_id_from_name_for_gamespace(
