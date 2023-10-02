@@ -1451,7 +1451,7 @@ class GameStateManager:
     @classmethod
     async def uninit_team(cls, team_id):
         async with cls._lock:
-            team_data = get_team(team_id)
+            team_data = await get_team(team_id)
             if team_data and "vlan_label" in team_data:
                 await cls._team_label_manager.unassign_label(
                     team_data["vlan_label"]
