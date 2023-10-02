@@ -175,16 +175,22 @@ async def change_vm_net(vm_id: str, new_net: str):
 
     possible_nets = possible_nets["net"]
     network_name, *interface = new_net.split(":")
-    for network in possible_nets:
-        if network.startswith(network_name):
-            target_network = network
-            break
-    else:
-        logging.warning(
-            f"Could not change VM {vm_id} to network {network_name} because the network was not found in "
-            f"its list of possible networks: \n{json.dumps(possible_nets, indent=2)}"
-        )
-        return
+    target_network = ""
+
+    if "#" not in network_name:
+        for network in possible_nets:
+            if network.startswith(network_name):
+                target_network = network
+                break
+        else:
+            logging.warning(
+                f"Unable to change VM {vm_id} to network {network_name}. "
+                "The network needs to be suffixed with a gamespace ID, "
+                f"example {network_name}#abcdef1234567890 for cross-gamespace "
+                "networking to work."
+            )
+    if not target_network:
+        target_network = network_name
 
     if interface:
         target_network = f"{target_network}:{interface[0]}"
