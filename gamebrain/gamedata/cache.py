@@ -1317,7 +1317,8 @@ class GameStateManager:
             new_net = f"{target_network}:{gateway_nic}"
         else:
             new_net = (
-                f"{cls._settings.game.antenna_retracted_network}:"
+                f"{cls._settings.game.antenna_retracted_network}#"
+                f"{gamespace_id}:"
                 f"{gateway_nic}"
             )
 
