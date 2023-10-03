@@ -33,6 +33,8 @@ from httpx import AsyncClient
 from .common import _service_request_and_log, HttpMethod
 
 
+TOPOMOJO_CLIENT = None
+
 GamespaceID = str
 GamespaceExpiration = str
 
@@ -48,19 +50,24 @@ def get_settings():
 
 
 def _get_topomojo_client() -> AsyncClient:
-    settings = get_settings()
-    ssl_context = ssl.create_default_context()
-    if settings.ca_cert_path:
-        ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
-    api_key = settings.topomojo.x_api_key
-    api_client = settings.topomojo.x_api_client
+    global TOPOMOJO_CLIENT
 
-    return AsyncClient(
-        base_url=settings.topomojo.base_api_url,
-        verify=ssl_context,
-        headers={"x-api-key": api_key, "x-api-client": api_client},
-        timeout=300.0,
-    )
+    if not TOPOMOJO_CLIENT:
+        settings = get_settings()
+        ssl_context = ssl.create_default_context()
+        if settings.ca_cert_path:
+            ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
+        api_key = settings.topomojo.x_api_key
+        api_client = settings.topomojo.x_api_client
+
+        TOPOMOJO_CLIENT = AsyncClient(
+            base_url=settings.topomojo.base_api_url,
+            verify=ssl_context,
+            headers={"x-api-key": api_key, "x-api-client": api_client},
+            timeout=60.0,
+        )
+
+    return TOPOMOJO_CLIENT
 
 
 async def _topomojo_request(

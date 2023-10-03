@@ -34,6 +34,8 @@ from .common import _service_request_and_log, HttpMethod
 from .gameboardmodels import GameEngineGameState, TeamGameScoreSummary
 
 
+GAMEBOARD_CLIENT = None
+
 GameID = str
 
 
@@ -48,19 +50,24 @@ def get_settings():
 
 
 def _get_gameboard_client() -> AsyncClient:
-    settings = get_settings()
-    ssl_context = ssl.create_default_context()
-    if settings.ca_cert_path:
-        ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
-    api_key = settings.gameboard.x_api_key
-    api_client = settings.gameboard.x_api_client
+    global GAMEBOARD_CLIENT
 
-    return AsyncClient(
-        base_url=settings.gameboard.base_api_url,
-        verify=ssl_context,
-        headers={"x-api-key": api_key, "x-api-client": api_client},
-        timeout=60.0,
-    )
+    if not GAMEBOARD_CLIENT:
+        settings = get_settings()
+        ssl_context = ssl.create_default_context()
+        if settings.ca_cert_path:
+            ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
+        api_key = settings.gameboard.x_api_key
+        api_client = settings.gameboard.x_api_client
+
+        GAMEBOARD_CLIENT = AsyncClient(
+            base_url=settings.gameboard.base_api_url,
+            verify=ssl_context,
+            headers={"x-api-key": api_key, "x-api-client": api_client},
+            timeout=60.0,
+        )
+
+    return GAMEBOARD_CLIENT
 
 
 async def _gameboard_request(
