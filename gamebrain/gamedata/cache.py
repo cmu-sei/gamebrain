@@ -663,15 +663,24 @@ class GameStateManager:
             )
         )
         task_list = [
-            InternalTeamTaskData(taskID=task_id) for task_id in mission_task_ids
+            InternalTeamTaskData(taskID=task_id)
+            for task_id in mission_task_ids
         ]
-        unlocked_mission = InternalTeamMissionData(
-            missionID=global_mission.missionID,
-            taskList=task_list,
-            tasks=mission_task_ids,
-        )
 
-        team_data.missions[global_mission.missionID] = unlocked_mission
+        if team_mission := team_data.missions.get(global_mission.missionID):
+            team_mission.unlocked = True
+            if len(team_mission.taskList) < task_list:
+                # If the team mission data came from team_initial_state, it
+                # may not have all the task it should have. Otherwise leave
+                # it alone.
+                team_mission.taskList = task_list
+        else:
+            unlocked_mission = InternalTeamMissionData(
+                missionID=global_mission.missionID,
+                taskList=task_list,
+                tasks=mission_task_ids,
+            )
+            team_data.missions[global_mission.missionID] = unlocked_mission
 
     @classmethod
     def _complete_mission_and_unlock_next(
