@@ -316,90 +316,6 @@ class GamespaceStateOutput(BaseModel):
     pilot: UpOrDown = "down"
 
 
-class TeamLabelManager:
-    class UsedOrNot(Enum):
-        available = 0
-        used = 1
-
-    labels: list[UsedOrNot]
-
-    _lock: asyncio.Lock
-
-    class NoMoreLabels(Exception):
-        ...
-
-    def __init__(self, active_teams: list[dict]):
-        self.labels = [
-            self.UsedOrNot.available
-            for _ in range(1, EXPECTED_TEAM_COUNT + 1)
-        ]
-
-        for team in active_teams:
-            vlan_label = team["vlan_label"]
-            if not vlan_label:
-                logging.error(
-                    "TeamLabelManager.__init__: "
-                    f"Team {team.id} is marked active but "
-                    "does not have a VLAN label specified."
-                )
-                continue
-
-            try:
-                team_number = self._get_label_number_from_label(
-                    team.id,
-                    vlan_label
-                )
-            except (IndexError, ValueError):
-                continue
-
-            try:
-                self.labels[team_number - 1] = self.UsedOrNot.used
-            except IndexError:
-                logging.error(
-                    "TeamLabelManager.__init__: "
-                    f"Tried to mark team {team.id} used, but "
-                    f"had an IndexError. Label: {vlan_label}."
-                )
-                continue
-
-        self._lock = asyncio.Lock()
-
-    def _get_label_number_from_label(
-        self,
-        label: str
-    ) -> int:
-        try:
-            return int(label[4:])
-        except (IndexError, ValueError) as e:
-            logging.error(
-                "_get_label_number_from_label: "
-                f"Invalid label {label}."
-            )
-            raise e
-
-    async def assign_label(self) -> str:
-        async with self._lock:
-            for i, label in enumerate(self.labels):
-                if label == self.UsedOrNot.available:
-                    self.labels[i] = self.UsedOrNot.used
-                    return f"team{i + 1}"
-            raise self.NoMoreLabels
-
-    async def unassign_label(self, label: str):
-        async with self._lock:
-            try:
-                label_number = self._get_label_number_from_label(label)
-            except (IndexError, ValueError):
-                return
-            try:
-                self.labels[label_number - 1] = self.UsedOrNot.available
-            except IndexError:
-                logging.error(
-                    "unassign_label: "
-                    f"Got an invalid label {label}."
-                )
-
-
 class GameStateManager:
     _lock = asyncio.Lock()
     _cache: InternalCache
@@ -408,8 +324,6 @@ class GameStateManager:
     _active_game_timer_task: asyncio.Task = None
     _active_dispatch_timer_task: asyncio.Task = None
     _active_mission_timer_task: asyncio.Task = None
-
-    _team_label_manager: TeamLabelManager = None
 
     _next_npc_ship_jump: datetime.datetime = None
     _next_video_refresh: datetime.datetime = None
@@ -1292,7 +1206,6 @@ class GameStateManager:
             cls._settings = settings
             cls._next_video_refresh = datetime.datetime.now(timezone.utc)
             active_teams = await get_active_teams()
-            cls._team_label_manager = TeamLabelManager(active_teams)
 
     class VmIdResponseFailure(Exception):
         ...
@@ -1462,16 +1375,6 @@ class GameStateManager:
     @classmethod
     async def uninit_team(cls, team_id):
         async with cls._lock:
-            # team_data = await get_team(team_id)
-            # if team_data and "vlan_label" in team_data:
-            #     await cls._team_label_manager.unassign_label(
-            #         team_data["vlan_label"]
-            #     )
-            # else:
-            #     logging.warning(
-            #         f"Tried to unassign a label from team {team_id} "
-            #         "but was unable to retrieve it from the database."
-            #     )
             try:
                 del cls._cache.challenges[team_id]
             except KeyError:
@@ -1486,11 +1389,8 @@ class GameStateManager:
         team_id: TeamID,
         deployment_session: DeploymentSession,
         ship_gamespace_info: GamespaceData,
-    ) -> str:
+    ):
         async with cls._lock:
-            # team_label = await cls._team_label_manager.assign_label()
-            team_label = "ignore"
-
             new_team_state = InternalTeamGameData(
                 **cls._cache.team_initial_state.dict()
             )
@@ -1515,8 +1415,6 @@ class GameStateManager:
                 f"Team {team_id} created with missions {new_team_state.missions} "
                 f"and session {json.dumps(new_team_state.session, indent=2, default=str)}"
             )
-
-            return team_label
 
     @classmethod
     async def check_team_exists(cls, team_id: TeamID) -> bool:
@@ -1999,8 +1897,6 @@ class GameStateManager:
                 )
                 return
 
-            # team_label = team_db_data["vlan_label"]
-            # network_name = f"{team_label}-ship"
             network_name = "ship"
             ship_gamespace_id = team_db_data["ship_gamespace_id"]
 
@@ -2041,8 +1937,6 @@ class GameStateManager:
                 )
                 return
 
-            # team_label = team_db_data["vlan_label"]
-            # network_name = f"{team_label}-ship"
             network_name = "ship"
             ship_gamespace_id = team_db_data["ship_gamespace_id"]
 
