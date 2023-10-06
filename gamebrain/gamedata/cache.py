@@ -1205,7 +1205,6 @@ class GameStateManager:
             cls._cache = initial_state.to_internal()
             cls._settings = settings
             cls._next_video_refresh = datetime.datetime.now(timezone.utc)
-            active_teams = await get_active_teams()
 
     class VmIdResponseFailure(Exception):
         ...
