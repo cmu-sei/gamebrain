@@ -1518,6 +1518,9 @@ class GameStateManager:
                     ", but the task was not in the global task map."
                 )
                 continue
+            if not team_task.visible:
+                continue
+
             mission_task_data.append(
                 TaskDataFull(**global_task.dict() | team_task.dict())
             )
