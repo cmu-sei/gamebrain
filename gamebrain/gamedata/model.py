@@ -91,7 +91,7 @@ class GamespaceData(BaseModel):
     # Only the ship workspace should have the following values.
     useGalaxyDisplayMap: bool | None
     useCodices: bool | None
-    timerTitle: str | None
+    timerTitle: str = ""
     # The next five may be specified in the workspace document
     # OR the game data JSON. Values specified in the workspace
     # document will take priority.
