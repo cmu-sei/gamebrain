@@ -84,6 +84,7 @@ class GamespaceData(BaseModel):
     # the following two will also need to be defined.
     gatewayVmName: str | None
     gatewayNic: int | None
+    # Next two are currently unused.
     dispatches: list[Dispatch] = []
     initial_dispatches: list[DispatchID] = []
     # Filled in by Gamebrain, not Topomojo.
@@ -92,6 +93,8 @@ class GamespaceData(BaseModel):
     useGalaxyDisplayMap: bool | None
     useCodices: bool | None
     timerTitle: str = ""
+    gatewayWanNetworkName: str | None
+    isPC4Workspace: bool = False
     # The next five may be specified in the workspace document
     # OR the game data JSON. Values specified in the workspace
     # document will take priority.

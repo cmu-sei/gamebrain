@@ -1838,6 +1838,27 @@ class GameStateManager:
         retract = 1
 
     @classmethod
+    async def _pc4_network_change_team_gamespace(
+        cls,
+        team_data: InternalTeamGameData,
+        extend_or_retract: ExtendOrRetract,
+    ):
+        if extend_or_retract == cls.ExtendOrRetract.extend:
+            location_id = team_data.currentStatus.currentLocation
+            location_data = cls._cache.location_map.__root__[location_id]
+            network_name = location_data.networkName
+        else:
+            network_name = cls._settings.game.antenna_retracted_network
+
+        await cls._change_gamespace_gateway_network(
+            location_id,
+            network_name,
+            team_data.ship.gamespaceData,
+            force_target_network=True,
+            target_gamespace_id=team_data.ship.gamespaceData.gamespaceID,
+        )
+
+    @classmethod
     async def _bulk_network_change_team_gamespaces(
         cls,
         team_id: TeamID,
@@ -1894,24 +1915,28 @@ class GameStateManager:
                     success=False, message="First Contact Event Incomplete"
                 )
 
-            team_db_data = await get_team(team_id)
-            if not team_db_data:
-                logging.error(
-                    "extend_antenna: "
-                    f"Team {team_id} does not exist in the database."
-                )
-                return
-
-            network_name = "ship"
-            ship_gamespace_id = team_db_data["ship_gamespace_id"]
-
-            await cls._bulk_network_change_team_gamespaces(
-                    team_id,
+            if team_data.ship.gamespaceData.isPC4Workspace:
+                await cls._pc4_network_change_team_gamespace(
                     team_data,
-                    network_name,
                     cls.ExtendOrRetract.extend,
-                    target_gamespace_id=ship_gamespace_id
-            )
+                )
+            else:
+                network_name = team_data.ship.gamespaceData.gatewayWanNetworkName
+                ship_gamespace_id = team_data.ship.gamespaceData.gamespaceID
+                if not network_name:
+                    logging.warning(
+                        f"Gamespace {ship_gamespace_id} does not have "
+                        "'gatewayWanNetworkName' specified. Defaulting to 'ship'"
+                    )
+                    network_name = "ship"
+
+                await cls._bulk_network_change_team_gamespaces(
+                        team_id,
+                        team_data,
+                        network_name,
+                        cls.ExtendOrRetract.extend,
+                        target_gamespace_id=ship_gamespace_id
+                )
 
             team_data.currentStatus.antennaExtended = True
             team_data.currentStatus.networkConnected = True
@@ -1934,24 +1959,28 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            team_db_data = await get_team(team_id)
-            if not team_db_data:
-                logging.error(
-                    "retract_antenna: "
-                    f"Team {team_id} does not exist in the database."
-                )
-                return
-
-            network_name = "ship"
-            ship_gamespace_id = team_db_data["ship_gamespace_id"]
-
-            await cls._bulk_network_change_team_gamespaces(
-                    team_id,
+            if team_data.session.pc4Game:
+                await cls._pc4_network_change_team_gamespace(
                     team_data,
-                    network_name,
                     cls.ExtendOrRetract.retract,
-                    target_gamespace_id=ship_gamespace_id,
-            )
+                )
+            else:
+                network_name = team_data.ship.gamespaceData.gatewayWanNetworkName
+                ship_gamespace_id = team_data.ship.gamespaceData.gamespaceID
+                if not network_name:
+                    logging.warning(
+                        f"Gamespace {ship_gamespace_id} does not have "
+                        "'gatewayWanNetworkName' specified. Defaulting to 'ship'"
+                    )
+                    network_name = "ship"
+
+                await cls._bulk_network_change_team_gamespaces(
+                        team_id,
+                        team_data,
+                        network_name,
+                        cls.ExtendOrRetract.retract,
+                        target_gamespace_id=ship_gamespace_id,
+                )
 
             team_data.currentStatus.antennaExtended = False
             team_data.currentStatus.networkConnected = False
