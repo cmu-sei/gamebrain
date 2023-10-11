@@ -1842,7 +1842,7 @@ class GameStateManager:
         cls,
         team_data: InternalTeamGameData,
         extend_or_retract: ExtendOrRetract,
-    ):
+    ) -> str:
         if extend_or_retract == cls.ExtendOrRetract.extend:
             location_id = team_data.currentStatus.currentLocation
             location_data = cls._cache.location_map.__root__[location_id]
@@ -1857,6 +1857,8 @@ class GameStateManager:
             force_target_network=True,
             target_gamespace_id=team_data.ship.gamespaceData.gamespaceID,
         )
+
+        return network_name
 
     @classmethod
     async def _bulk_network_change_team_gamespaces(
@@ -1916,7 +1918,7 @@ class GameStateManager:
                 )
 
             if team_data.ship.gamespaceData.isPC4Workspace:
-                await cls._pc4_network_change_team_gamespace(
+                network_name = await cls._pc4_network_change_team_gamespace(
                     team_data,
                     cls.ExtendOrRetract.extend,
                 )
