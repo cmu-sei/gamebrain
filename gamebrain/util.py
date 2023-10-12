@@ -23,7 +23,9 @@
 # DM23-0100
 
 import asyncio
+from datetime import datetime
 import logging
+import re
 
 from urllib.parse import urlsplit, urlunsplit
 
@@ -34,6 +36,10 @@ from .db import (
     get_active_game_session,
     deactivate_game_session,
 )
+
+
+ISO_FORMAT_FIX_RE = re.compile(r'\.(\d\d\d)\d*\+')
+ISO_FORMAT_FIX_REPLACE = r'.\1+'
 
 """
 The following two functions yoinked from here:
@@ -57,6 +63,34 @@ def url_path_join(*parts):
 
 def first_of_each(*sequences):
     return (next((x for x in sequence if x), "") for sequence in sequences)
+
+
+def parse_datetime(date_time: str) -> datetime:
+    """
+    In Python 3.11 the datetime strings we get in our environment are
+    able to be parsed with datetime.fromisoformat.
+    This does not work in 3.10.
+    """
+    try:
+        # Should work in 3.11+.
+        return datetime.fromisoformat(date_time)
+    except ValueError:
+        ...
+
+    date_time = ISO_FORMAT_FIX_RE.sub(
+        ISO_FORMAT_FIX_REPLACE,
+        date_time
+    )
+
+    try:
+        return datetime.fromisoformat(date_time)
+    except ValueError:
+        message = (
+            "parse_datetime: "
+            f"Tried to parse {date_time} with datetime.fromisoformat "
+            "as a last resort, and failed."
+        )
+        raise ValueError(message)
 
 
 class TeamLocks:

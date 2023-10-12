@@ -28,7 +28,11 @@ import logging
 
 from . import db
 from .clients import topomojo
-from .util import cleanup_team, cleanup_session
+from .util import (
+    cleanup_team,
+    cleanup_session,
+    parse_datetime,
+)
 
 CLEANUP_TIME = timedelta(minutes=1)
 
@@ -111,7 +115,7 @@ class BackgroundCleanupTask:
             # Send a gamespace cleanup request after its expiration time.
             expire_str = gamespace_info.get("expirationTime")
             try:
-                expiration = datetime.fromisoformat(expire_str)
+                expiration = parse_datetime(expire_str)
             except Exception as e:
                 logging.error(
                     "_cleanup_body: Tried to parse gamespace expiration time "
