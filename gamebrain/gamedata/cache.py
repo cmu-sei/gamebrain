@@ -586,7 +586,7 @@ class GameStateManager:
 
         if team_mission := team_data.missions.get(global_mission.missionID):
             team_mission.unlocked = True
-            if len(team_mission.taskList) < task_list:
+            if len(team_mission.taskList) < len(task_list):
                 # If the team mission data came from team_initial_state, it
                 # may not have all the task it should have. Otherwise leave
                 # it alone.
