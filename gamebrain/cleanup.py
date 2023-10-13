@@ -104,8 +104,7 @@ class BackgroundCleanupTask:
                     "but received no data from TopoMojo."
                 )
                 continue
-            # Explicitly test against False in case "isActive" is missing for whatever reason.
-            if gamespace_info.get("isActive") is False:
+            if not gamespace_info.get("isActive"):
                 logging.info(
                     f"_cleanup_body: Team {team_id} had an inactive gamespace. "
                     "Removing internal tracking and unassigning their game server..."
@@ -115,7 +114,12 @@ class BackgroundCleanupTask:
             # Send a gamespace cleanup request after its expiration time.
             expire_str = gamespace_info.get("expirationTime")
             try:
-                expiration = parse_datetime(expire_str)
+                if expire_str:
+                    expiration = parse_datetime(expire_str)
+                else:
+                    # Either the gamespace doesn't have a time here for some
+                    # reason, or the gamespace is dead. Don't try to expire it.
+                    expiration = current_time
             except Exception as e:
                 logging.error(
                     "_cleanup_body: Tried to parse gamespace expiration time "
@@ -124,7 +128,7 @@ class BackgroundCleanupTask:
             else:
                 if expiration < current_time:
                     await topomojo.complete_gamespace(gamespace_id)
-        
+
         if not active_teams:
             await cleanup_session()
 
