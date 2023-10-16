@@ -198,9 +198,10 @@ async def retrieve_gamespace_info(
                 gamespaceID=gamespace_id,
                 consoleURLs=console_urls
             )
-        except (ValidationError, TypeError):
+        except (ValidationError, TypeError) as e:
             logging.error(
                 "retrieve_gamespace_info:"
+                f"Exception: {str(e)} -"
                 f"Gamespace {gamespace_id} had a document that could "
                 f"not be parsed as YAML. Contents: {markdown}"
             )
