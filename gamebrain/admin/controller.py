@@ -33,7 +33,8 @@ from pydantic import BaseModel, ValidationError
 import yaml
 
 from ..auth import admin_api_key_dependency
-from .controllermodels import Deployment, ConsoleUrl
+from .controllermodels import Deployment
+from ..commonmodels import ConsoleUrl
 from ..clients import gameboard, topomojo
 from ..clients.gameboard import GameID
 from ..clients.topomojo import GamespaceID

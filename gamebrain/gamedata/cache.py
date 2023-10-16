@@ -36,7 +36,7 @@ from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 import yaml
 
-from ..admin.controllermodels import DeploymentSession, ConsoleUrl
+from ..admin.controllermodels import DeploymentSession
 from ..db import get_team, get_active_teams
 from ..clients.gameboardmodels import (
     GameEngineQuestionView,

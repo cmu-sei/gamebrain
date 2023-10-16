@@ -22,6 +22,7 @@
 
 # DM23-0100
 
+from ..commonmodels import ConsoleUrl
 from datetime import datetime
 import enum
 from typing import Literal
@@ -71,12 +72,6 @@ class Dispatch(BaseModel):
     fail_text: Regex = ""
     if_fail: list[DispatchID] = []
     always_run: list[DispatchID] = []
-
-
-class ConsoleUrl(BaseModel):
-    id: str
-    url: str
-    name: str
 
 
 class GamespaceData(BaseModel):
