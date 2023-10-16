@@ -1845,66 +1845,85 @@ class GameStateManager:
         retract = 1
 
     @classmethod
+    async def _update_team_urls_body(
+        cls,
+        team_id: TeamID,
+        extend_or_retract: ExtendOrRetract = ExtendOrRetract.retract,
+    ):
+        team_data = cls._cache.team_map.__root__[team_id]
+        if team_data.ship.gamespaceData.isPC4Workspace:
+            # This method is only used in newer game types.
+            team_data.ship.challengeURLs = None
+            return
+
+        team_challenge_map = cls._cache.challenges[team_id]
+
+        team_challenge_urls = []
+
+        ship_gamespace_vm_urls = [
+            VmURL(
+                vmName=console_url.name,
+                vmURL=console_url.url,
+            ) for console_url in team_data.ship.gamespaceData.consoleURLs]
+
+        challenge_urls = ChallengeURLs(
+            missionID="ship",
+            missionName="Ship Consoles",
+            vmURLs=ship_gamespace_vm_urls,
+        )
+        team_challenge_urls.append(challenge_urls)
+
+        if extend_or_retract == cls.ExtendOrRetract.retract:
+            team_data.ship.challengeURLs = team_challenge_urls
+            return
+
+        for mission_id, gamespace_data in team_challenge_map.items():
+            if team_data.currentStatus.currentLocation != gamespace_data.locationID:
+                continue
+            global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
+            if not global_mission_data:
+                logging.error(
+                    "update_team_urls: "
+                    f"Team {team_id} had a gamespace for mission "
+                    f"{mission_id}, but no such mission exists. "
+                    "Unable to extract VM Consoles."
+                )
+                continue
+            mission_name = global_mission_data.title
+
+            gamespace_vm_urls = [
+                VmURL(
+                    vmName=console_url.name,
+                    vmURL=console_url.url,
+                ) for console_url in gamespace_data.consoleURLs]
+
+            challenge_urls = ChallengeURLs(
+                missionID=mission_id,
+                missionName=mission_name,
+                vmURLs=gamespace_vm_urls,
+            )
+            team_challenge_urls.append(challenge_urls)
+        team_data.ship.challengeURLs = team_challenge_urls
+
+    @classmethod
     async def update_team_urls(
         cls,
         team_id: TeamID,
         extend_or_retract: ExtendOrRetract = ExtendOrRetract.retract,
     ):
         async with cls._lock:
-            team_data = cls._cache.team_map.__root__[team_id]
-            if team_data.ship.gamespaceData.isPC4Workspace:
-                # This method is only used in newer game types.
-                team_data.ship.challengeURLs = None
-                return
+            await cls._update_team_urls_body(team_id, extend_or_retract)
 
-            team_challenge_map = cls._cache.challenges[team_id]
-
-            team_challenge_urls = []
-
-            ship_gamespace_vm_urls = [
-                VmURL(
-                    vmName=console_url.name,
-                    vmURL=console_url.url,
-                ) for console_url in team_data.ship.gamespaceData.consoleURLs]
-
-            challenge_urls = ChallengeURLs(
-                missionID="ship",
-                missionName="Ship Consoles",
-                vmURLs=ship_gamespace_vm_urls,
-            )
-            team_challenge_urls.append(challenge_urls)
-
-            if extend_or_retract == cls.ExtendOrRetract.retract:
-                team_data.ship.challengeURLs = team_challenge_urls
-                return
-
-            for mission_id, gamespace_data in team_challenge_map.items():
-                if team_data.currentStatus.currentLocation != gamespace_data.locationID:
-                    continue
-                global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
-                if not global_mission_data:
-                    logging.error(
-                        "update_team_urls: "
-                        f"Team {team_id} had a gamespace for mission "
-                        f"{mission_id}, but no such mission exists. "
-                        "Unable to extract VM Consoles."
-                    )
-                    continue
-                mission_name = global_mission_data.title
-
-                gamespace_vm_urls = [
-                    VmURL(
-                        vmName=console_url.name,
-                        vmURL=console_url.url,
-                    ) for console_url in gamespace_data.consoleURLs]
-
-                challenge_urls = ChallengeURLs(
-                    missionID=mission_id,
-                    missionName=mission_name,
-                    vmURLs=gamespace_vm_urls,
-                )
-                team_challenge_urls.append(challenge_urls)
-            team_data.ship.challengeURLs = team_challenge_urls
+    @classmethod
+    async def update_all_active_team_urls(
+        cls,
+        extend_or_retract: ExtendOrRetract = ExtendOrRetract.retract,
+    ):
+        async with cls._lock:
+            active_teams = await get_active_teams()
+            for team in active_teams:
+                team_id = team["id"]
+                await cls._update_team_urls_body(team_id, extend_or_retract)
 
     @classmethod
     async def _pc4_network_change_team_gamespace(

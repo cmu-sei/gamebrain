@@ -325,7 +325,6 @@ async def _internal_deploy(deployment_data: Deployment):
                 for vm in ship_console_urls
             }
         )
-        await GameStateManager.update_team_urls(team.id)
 
     await store_game_session(
         session_teams,
@@ -336,6 +335,7 @@ async def _internal_deploy(deployment_data: Deployment):
     )
 
     await GameStateManager.init_challenges(gamespace_info)
+    await GameStateManager.update_all_active_team_urls()
     await GameStateManager.start_game_timers()
 
 
