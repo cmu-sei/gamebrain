@@ -92,7 +92,7 @@ GamespaceID = str
 JsonStr = str
 
 VmName = str
-VmURL = str
+VmUrlStr = str
 
 NPCShipMap = dict[NPCShipID, NPCShipData]
 ChallengeMap = dict[MissionID, GamespaceData]
@@ -1815,7 +1815,7 @@ class GameStateManager:
     async def pc4_update_team_urls(
         cls,
         team_id: TeamID,
-        pc4_urls: dict[VmName, VmURL],
+        pc4_urls: dict[VmName, VmUrlStr],
     ):
         async with cls._lock:
             team_data = cls._cache.team_map.__root__.get(team_id)
