@@ -29,3 +29,9 @@ class Deployment(BaseModel):
     game: DeploymentGame
     session: DeploymentSession
     teams: list[DeploymentTeam]
+
+
+class ConsoleUrl(BaseModel):
+    id: str
+    url: str
+    name: str

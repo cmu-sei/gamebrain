@@ -33,7 +33,7 @@ from pydantic import BaseModel, ValidationError
 import yaml
 
 from ..auth import admin_api_key_dependency
-from .controllermodels import Deployment
+from .controllermodels import Deployment, ConsoleUrl
 from ..clients import gameboard, topomojo
 from ..clients.gameboard import GameID
 from ..clients.topomojo import GamespaceID
@@ -123,12 +123,6 @@ class HeadlessManager:
             return assignments
 
 
-class ConsoleUrl(BaseModel):
-    id: str
-    url: str
-    name: str
-
-
 def construct_vm_url(gamespace_id: str, vm_name: str):
     gameboard_base_url = get_settings().gameboard.base_url
     return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
@@ -179,13 +173,13 @@ class TooManyShipGamespacesFound(Exception):
 
 async def retrieve_gamespace_info(
     team_id: str,
-    gamespaces: list[GamespaceID],
+    gamespace_consoles: dict[GamespaceID, list[ConsoleUrl]],
 ) -> TeamGamespaceInfo:
     ship_gamespace_id = None
     ship_gamespace_data = None
     gamespace_data = {}
 
-    for gamespace_id in gamespaces:
+    for gamespace_id, console_urls in gamespace_consoles.items():
         preview_data = await topomojo.get_gamespace(gamespace_id)
         markdown = preview_data.get("markdown")
         if not markdown:
@@ -198,7 +192,11 @@ async def retrieve_gamespace_info(
             raise KeyError()
         gs_data_yaml = yaml.safe_load(markdown)
         try:
-            gs_data = GamespaceData(**gs_data_yaml, gamespaceID=gamespace_id)
+            gs_data = GamespaceData(
+                **gs_data_yaml,
+                gamespaceID=gamespace_id,
+                consoleURLs=console_urls
+            )
         except (ValidationError, TypeError):
             logging.error(
                 "retrieve_gamespace_info:"
@@ -283,18 +281,23 @@ async def _internal_deploy(deployment_data: Deployment):
     deployment_data.session.now = gamebrain_time
 
     for team in deployment_data.teams:
-        team_gamespace_vms = {gs.id: gs.vmUris for gs in team.gamespaces}
+        team_gamespace_vms = {
+            gs.id: parse_vm_urls(gs.vmUris)
+            for gs in team.gamespaces
+        }
         team_gamespace_info = await retrieve_gamespace_info(
             team.id,
-            team_gamespace_vms.keys(),
+            team_gamespace_vms,
         )
 
         gamespace_info[team.id] = team_gamespace_info
         session_teams.append(team.id)
 
         logging.info(
+            "_internal_deploy: "
             f"Team {team} had gamespace mappings "
-            f"{json.dumps(team_gamespace_info.gamespaces, indent=2, default=str)}")
+            f"{team_gamespace_info.gamespaces.dict()}"
+        )
 
         await GameStateManager.new_team(
             team.id,
@@ -308,18 +311,21 @@ async def _internal_deploy(deployment_data: Deployment):
             team_name=team.name,
         )
 
-        ship_vm_urls = team_gamespace_vms[
+        ship_console_urls = team_gamespace_vms[
             team_gamespace_info.ship_gamespace_id
         ]
 
-        console_urls = parse_vm_urls(ship_vm_urls)
-
         await store_virtual_machines(
-            team.id, [console_url.dict() for console_url in console_urls]
+            team.id, [console_url.dict() for console_url in ship_console_urls]
         )
-        await GameStateManager.update_team_urls(
-            team.id, {vm.name: vm.url for vm in console_urls}
+        await GameStateManager.pc4_update_team_urls(
+            team.id,
+            {
+                vm.name: vm.url
+                for vm in ship_console_urls
+            }
         )
+        await GameStateManager.update_team_urls(team.id)
 
     await store_game_session(
         session_teams,
@@ -438,6 +444,6 @@ async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostD
         await store_virtual_machines(
             team_id, [console_url.dict() for console_url in console_urls]
         )
-        await GameStateManager.update_team_urls(
+        await GameStateManager.pc4_update_team_urls(
             team_id, {vm.name: vm.url for vm in console_urls}
         )

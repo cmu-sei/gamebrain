@@ -119,7 +119,7 @@ class TeamLocks:
 
 
 async def cleanup_team(team_id: str):
-    await GameStateManager.update_team_urls(team_id, {})
+    await GameStateManager.pc4_update_team_urls(team_id, {})
     await GameStateManager.uninit_team(team_id)
     await deactivate_team(team_id)
 

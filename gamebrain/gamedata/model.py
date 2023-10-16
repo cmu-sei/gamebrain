@@ -73,6 +73,12 @@ class Dispatch(BaseModel):
     always_run: list[DispatchID] = []
 
 
+class ConsoleUrl(BaseModel):
+    id: str
+    url: str
+    name: str
+
+
 class GamespaceData(BaseModel):
     # A workspace without a task ID denotes a ship gamespace.
     # Mutually exclusive with gatewayVmName and gatewayNic.
@@ -89,6 +95,7 @@ class GamespaceData(BaseModel):
     initial_dispatches: list[DispatchID] = []
     # Filled in by Gamebrain, not Topomojo.
     gamespaceID: GamespaceID
+    consoleURLs: list[ConsoleUrl]
     # Only the ship workspace should have the following values.
     useGalaxyDisplayMap: bool | None
     useCodices: bool | None
@@ -281,22 +288,33 @@ class PowerStatus(enum.Enum):
     off = "off"
 
 
+class VmURL(BaseModel):
+    vmName: str
+    vmURL: str
+
+
+class ChallengeURLs(BaseModel):
+    missionID: MissionID
+    missionName: str
+    vmURLs: list[VmURL]
+
+
 class ShipDataTeamSpecific(BaseModel):
     class Config:
         use_enum_values = True
 
-    codexURL: str
-    workstation1URL: str
-    workstation2URL: str
-    workstation3URL: str
-    workstation4URL: str
-    workstation5URL: str
+    codexURL: str = ""
+    workstation1URL: str = ""
+    workstation2URL: str = ""
+    workstation3URL: str = ""
+    workstation4URL: str = ""
+    workstation5URL: str = ""
+    challengeURLs: list[ChallengeURLs] = None
     commPower: PowerStatus = PowerStatus.off
     flightPower: PowerStatus = PowerStatus.off
     navPower: PowerStatus = PowerStatus.off
     pilotPower: PowerStatus = PowerStatus.off
     nextJumpTime: str = ""
-    gamespaceId: GamespaceID = ""
     antennaVmName: str = ""
     # NICs are zero-indexed.
     antennaNic: int

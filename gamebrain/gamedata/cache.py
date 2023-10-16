@@ -36,7 +36,7 @@ from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 import yaml
 
-from ..admin.controllermodels import DeploymentSession
+from ..admin.controllermodels import DeploymentSession, ConsoleUrl
 from ..db import get_team, get_active_teams
 from ..clients.gameboardmodels import (
     GameEngineQuestionView,
@@ -45,6 +45,7 @@ from ..clients.gameboardmodels import (
 )
 from .model import (
     AssociatedChallengeData,
+    ChallengeURLs,
     DispatchID,
     Dispatch,
     NPCShipData,
@@ -76,6 +77,7 @@ from .model import (
     LocationUnlockResponse,
     GenericResponse,
     ScanResponse,
+    VmURL,
 )
 from ..clients import gameboard, topomojo
 
@@ -386,7 +388,7 @@ class GameStateManager:
     async def _get_vm_id_from_name_for_team(
         team_id: TeamID, team_data: InternalTeamGameData, vm_name: str
     ) -> GenericResponse:
-        gamespace_id = team_data.ship.gamespaceId
+        gamespace_id = team_data.ship.gamespaceData.gamespaceID
 
         if not gamespace_id:
             message = f"No Ship Gamespace for Team {team_id}"
@@ -1406,7 +1408,6 @@ class GameStateManager:
             new_team_state.session.useCodices = ship_gamespace_info.useCodices
             new_team_state.session.timerTitle = ship_gamespace_info.timerTitle
 
-            new_team_state.ship.gamespaceId = ship_gamespace_info.gamespaceID
             new_team_state.ship.antennaVmName = ship_gamespace_info.gatewayVmName
             new_team_state.ship.antennaNic = ship_gamespace_info.gatewayNic
             new_team_state.ship.gamespaceData = ship_gamespace_info
@@ -1811,31 +1812,99 @@ class GameStateManager:
             )
 
     @classmethod
-    async def update_team_urls(cls, team_id: TeamID, vm_urls: dict[VmName, VmURL]):
+    async def pc4_update_team_urls(
+        cls,
+        team_id: TeamID,
+        pc4_urls: dict[VmName, VmURL],
+    ):
         async with cls._lock:
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 raise NonExistentTeam()
 
-            team_data.ship.workstation1URL = vm_urls.get(
+            team_data.ship.workstation1URL = pc4_urls.get(
                 "operator-terminal-1", "")
-            team_data.ship.workstation2URL = vm_urls.get(
+            team_data.ship.workstation2URL = pc4_urls.get(
                 "operator-terminal-2", "")
-            team_data.ship.workstation3URL = vm_urls.get(
+            team_data.ship.workstation3URL = pc4_urls.get(
                 "operator-terminal-3", "")
-            team_data.ship.workstation4URL = vm_urls.get(
+            team_data.ship.workstation4URL = pc4_urls.get(
                 "operator-terminal-4", "")
-            team_data.ship.workstation5URL = vm_urls.get(
+            team_data.ship.workstation5URL = pc4_urls.get(
                 "operator-terminal-5", "")
-            team_data.ship.codexURL = vm_urls.get("codex-decoder", "")
+            team_data.ship.codexURL = pc4_urls.get("codex-decoder", "")
 
             logging.info(
-                f"Team Data for team {team_id} updated: {json.dumps(team_data.ship.dict(), indent=2)}"
+                "pc4_update_team_urls: "
+                f"Team Data for team {team_id} updated: "
+                "{team_data.ship.dict()}"
             )
 
     class ExtendOrRetract(Enum):
         extend = 0
         retract = 1
+
+    @classmethod
+    async def update_team_urls(
+        cls,
+        team_id: TeamID,
+        extend_or_retract: ExtendOrRetract = ExtendOrRetract.retract,
+    ):
+        async with cls._lock:
+            team_data = cls._cache.team_map.__root__[team_id]
+            if team_data.ship.gamespaceData.isPC4Workspace:
+                # This method is only used in newer game types.
+                team_data.ship.challengeURLs = None
+                return
+
+            team_challenge_map = cls._cache.challenges[team_id]
+
+            team_challenge_urls = []
+
+            ship_gamespace_vm_urls = [
+                VmURL(
+                    vmName=console_url.name,
+                    vmURL=console_url.url,
+                ) for console_url in team_data.ship.gamespaceData.consoleURLs]
+
+            challenge_urls = ChallengeURLs(
+                missionID="ship",
+                missionName="Ship Consoles",
+                vmURLs=ship_gamespace_vm_urls,
+            )
+            team_challenge_urls.append(challenge_urls)
+
+            if extend_or_retract == cls.ExtendOrRetract.retract:
+                team_data.ship.challengeURLs = team_challenge_urls
+                return
+
+            for mission_id, gamespace_data in team_challenge_map.items():
+                if team_data.currentStatus.currentLocation != gamespace_data.locationID:
+                    continue
+                global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
+                if not global_mission_data:
+                    logging.error(
+                        "update_team_urls: "
+                        f"Team {team_id} had a gamespace for mission "
+                        f"{mission_id}, but no such mission exists. "
+                        "Unable to extract VM Consoles."
+                    )
+                    continue
+                mission_name = global_mission_data.title
+
+                gamespace_vm_urls = [
+                    VmURL(
+                        vmName=console_url.name,
+                        vmURL=console_url.url,
+                    ) for console_url in gamespace_data.consoleURLs]
+
+                challenge_urls = ChallengeURLs(
+                    missionID=mission_id,
+                    missionName=mission_name,
+                    vmURLs=gamespace_vm_urls,
+                )
+                team_challenge_urls.append(challenge_urls)
+            team_data.ship.challengeURLs = team_challenge_urls
 
     @classmethod
     async def _pc4_network_change_team_gamespace(
@@ -1904,6 +1973,8 @@ class GameStateManager:
                     "_bulk_network_change_team_gamespaces: "
                     f"Team {team_id} got a VM ID Response failure."
                 )
+
+        await cls.update_team_urls(team_id, extend_or_retract)
 
     @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
