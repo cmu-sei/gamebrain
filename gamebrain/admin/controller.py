@@ -296,7 +296,7 @@ async def _internal_deploy(deployment_data: Deployment):
         logging.info(
             "_internal_deploy: "
             f"Team {team} had gamespace mappings "
-            f"{json.dumps(team_gamespace_info.gamespaces, indent=2)}"
+            f"{json.dumps(team_gamespace_info.gamespaces, indent=2, default=str)}"
         )
 
         await GameStateManager.new_team(
