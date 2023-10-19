@@ -1054,20 +1054,6 @@ class GameStateManager:
         team_data: InternalTeamGameData,
         challenge: list[GameEngineGameState]
     ):
-        markdown = challenge.markdown
-        gamespace_id = challenge.id
-        gs_data_yaml = yaml.safe_load(markdown)
-        try:
-            gs_data = GamespaceData(
-                **gs_data_yaml, gamespaceID=gamespace_id
-            )
-        except ValidationError:
-            logging.error(
-                f"Gamespace {gamespace_id} had a document that "
-                "could not be parsed as YAML."
-            )
-            return
-
         if await cls._handle_first_year_tasks(
             team_id,
             team_data,
@@ -1076,11 +1062,39 @@ class GameStateManager:
             return
 
         if challenge.isActive or not challenge.endTime:
-            # We're looking for completed challenges here.
+            # The condition is for completed challenges.
             return
 
-        global_task = cls._cache.task_map.__root__.get(
-            gs_data.taskID)
+        gamespace_id = challenge.id
+        mission_id = cls._cache.gamespace_to_mission.get(gamespace_id)
+        if not mission_id:
+            logging.error(
+                "_mission_timer_challenge_handling: "
+                f"Got a challenge for team {team_id} "
+                f"indicating a gamespace ID {gamespace_id}, "
+                "but that gamespace was not mapped to a mission."
+            )
+            return
+
+        team_challenge_data = cls._cache.challenges.get(team_id)
+        if not team_challenge_data:
+            logging.error(
+                "_mission_timer_challenge_handling: "
+                f"Got an uninitialized team ID: {team_id}"
+            )
+            return
+
+        gs_data = team_challenge_data.get(mission_id)
+        if not gs_data:
+            logging.error(
+                "_mission_timer_challenge_handling: "
+                f"Had a challenge with ID {gamespace_id} for team "
+                f"{team_id} that mapped to a mission {mission_id}, "
+                "but no gamespace data was saved during challenge init."
+            )
+            return
+
+        global_task = cls._cache.task_map.__root__.get(gs_data.taskID)
         if global_task is None:
             logging.error(
                 f"Team challenge {gamespace_id} listed task "
