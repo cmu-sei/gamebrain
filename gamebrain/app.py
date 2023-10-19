@@ -119,6 +119,15 @@ async def publish_event(team_id: str, event_message: str):
 @APP.on_event("startup")
 async def startup():
     logging.info(f"Python version: {sys.version}")
+    try:
+        with open("/build-date.txt") as f:
+            logging.info(
+                f"Build time: {f.read().strip()}"
+            )
+    except FileNotFoundError:
+        logging.warning(
+                "Build time file not found."
+        )
     await Global.init()
 
 
