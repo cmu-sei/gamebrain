@@ -33,8 +33,7 @@ import logging
 from typing import Literal
 
 from httpx import AsyncClient
-from pydantic import BaseModel, ValidationError
-import yaml
+from pydantic import BaseModel
 
 from ..admin.controllermodels import DeploymentSession
 from ..db import get_team, get_active_teams
