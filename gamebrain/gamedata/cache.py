@@ -1657,6 +1657,11 @@ class GameStateManager:
 
                 team_score_data = await gameboard.team_score(team_id)
                 mission_map = cls._map_team_score_data(team_score_data)
+                logging.info(
+                    "get_team_data: "
+                    f"Got score data for team {team_id}: "
+                    f"{json.dumps(mission_map, indent=2, default=str)}"
+                )
 
             if not team_data:
                 raise NonExistentTeam()
