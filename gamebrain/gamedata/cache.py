@@ -1051,7 +1051,7 @@ class GameStateManager:
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
-        challenge: list[GameEngineGameState]
+        challenge: GameEngineGameState,
     ):
         if await cls._handle_first_year_tasks(
             team_id,
