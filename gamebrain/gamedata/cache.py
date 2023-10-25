@@ -1471,9 +1471,9 @@ class GameStateManager:
 
         mission_map = {}
         for team_challenge_score in team_score_data.score.challenges:
-            gamespace_id = team_challenge_score.challenge.id
+            gamespace_id = team_challenge_score.id
             mission_id = cls._cache.gamespace_to_mission.get(gamespace_id)
-            challenge_spec = spec_map[team_challenge_score.spec.id]
+            challenge_spec = spec_map[team_challenge_score.specId]
             if not mission_id:
                 logging.info(
                     f"Tried to look up gamespace {gamespace_id} to get "
