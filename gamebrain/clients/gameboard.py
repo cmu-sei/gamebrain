@@ -161,8 +161,8 @@ async def team_score(team_id: str) -> TeamGameScoreQueryResponse:
 
     try:
         return TeamGameScoreQueryResponse(**result)
-    except ValidationError:
+    except ValidationError as e:
         error(
             f"Gameboard team/{team_id}/score returned JSON that could "
-            "not be validated as a TeamGameScoreSummary."
+            f"not be validated as a TeamGameScoreSummary - {str(e)}"
         )
