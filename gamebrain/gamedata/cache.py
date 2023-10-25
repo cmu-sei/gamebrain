@@ -2015,7 +2015,7 @@ class GameStateManager:
                     f"Team {team_id} got a VM ID Response failure."
                 )
 
-        await cls.update_team_urls(team_id, extend_or_retract)
+        await cls._update_team_urls_body(team_id, extend_or_retract)
 
     @classmethod
     async def extend_antenna(cls, team_id: TeamID) -> GenericResponse:
