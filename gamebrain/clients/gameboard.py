@@ -31,7 +31,7 @@ from httpx import AsyncClient
 from pydantic import ValidationError
 
 from .common import _service_request_and_log, HttpMethod
-from .gameboardmodels import GameEngineGameState, TeamGameScoreSummary
+from .gameboardmodels import GameEngineGameState, TeamGameScoreQueryResponse
 
 
 GAMEBOARD_CLIENT = None
@@ -154,13 +154,13 @@ async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
     return challenge_states
 
 
-async def team_score(team_id: str) -> TeamGameScoreSummary:
+async def team_score(team_id: str) -> TeamGameScoreQueryResponse:
     result = await _gameboard_get(f"team/{team_id}/score")
     if result is None:
         return None
 
     try:
-        return TeamGameScoreSummary(**result)
+        return TeamGameScoreQueryResponse(**result)
     except ValidationError:
         error(
             f"Gameboard team/{team_id}/score returned JSON that could "

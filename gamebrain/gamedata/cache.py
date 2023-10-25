@@ -39,7 +39,7 @@ from ..admin.controllermodels import DeploymentSession
 from ..db import get_team, get_active_teams
 from ..clients.gameboardmodels import (
     GameEngineQuestionView,
-    TeamGameScoreSummary,
+    TeamGameScoreQueryResponse,
     GameEngineGameState
 )
 from .model import (
@@ -1456,7 +1456,7 @@ class GameStateManager:
 
     @classmethod
     def _map_team_score_data(
-        cls, team_score_data: TeamGameScoreSummary
+        cls, team_score_data: TeamGameScoreQueryResponse
     ) -> {MissionID, MissionScoreData}:
         """
         Assumes that the class lock is held.
@@ -1464,10 +1464,16 @@ class GameStateManager:
         if not team_score_data:
             return {}
 
+        spec_map = {
+            spec.id: spec
+            for spec in team_score_data.gameInfo.specs
+        }
+
         mission_map = {}
-        for challenge_score_summary in team_score_data.challengeScoreSummaries:
-            gamespace_id = challenge_score_summary.challenge.id
+        for team_challenge_score in team_score_data.score.challenges:
+            gamespace_id = team_challenge_score.challenge.id
             mission_id = cls._cache.gamespace_to_mission.get(gamespace_id)
+            challenge_spec = spec_map[team_challenge_score.spec.id]
             if not mission_id:
                 logging.info(
                     f"Tried to look up gamespace {gamespace_id} to get "
@@ -1477,19 +1483,13 @@ class GameStateManager:
                 continue
 
             mission_score_data = {
-                "current_score": challenge_score_summary.score.totalScore,
-                "possible_max_score": challenge_score_summary.score.completionScore
-                + sum(
-                    map(
-                        lambda b: b.pointValue,
-                        challenge_score_summary.bonuses,
-                    )
-                ),
-                "base_solve_value": challenge_score_summary.score.completionScore,
+                "current_score": team_challenge_score.score.completionScore,
+                "possible_max_score": challenge_spec.maxPossibleScore,
+                "base_solve_value": challenge_spec.completionScore,
                 "bonus_remaining": sum(
                     map(
                         lambda b: b.pointValue,
-                        challenge_score_summary.unclaimedBonuses,
+                        team_challenge_score.unclaimedBonuses,
                     )
                 ),
             }

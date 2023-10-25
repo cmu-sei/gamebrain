@@ -78,6 +78,18 @@ class Score(BaseModel):
     totalScore: int
 
 
+class SimpleSponsor(BaseModel):
+    id: str
+    name: str
+    logo: str
+
+
+class PlayerWithSponsor(BaseModel):
+    id: str
+    name: str
+    sponsor: SimpleSponsor
+
+
 class GameScoreAutoChallengeBonus(BaseModel):
     id: str
     description: str
@@ -93,7 +105,29 @@ class ManualChallengeBonusViewModel(BaseModel):
     challengeId: str
 
 
-class TeamChallengeScoreSummary(BaseModel):
+class GameScoringConfigChallengeBonus(BaseModel):
+    id: str
+    description: str
+    pointValue: float
+
+
+class GameScoringConfigChallengeSpec(BaseModel):
+    id: str
+    name: str
+    description: str
+    completionScore: float
+    possibleBonuses: list[GameScoringConfigChallengeBonus]
+    maxPossibleScore: float
+
+
+class GameScoreGameInfo(BaseModel):
+    id: str
+    name: str
+    isTeamGame: bool
+    specs: list[GameScoringConfigChallengeSpec]
+
+
+class TeamChallengeScore(BaseModel):
     challenge: SimpleEntity
     spec: SimpleEntity
     team: SimpleEntity
@@ -105,8 +139,15 @@ class TeamChallengeScoreSummary(BaseModel):
     unclaimedBonuses: list[GameScoreAutoChallengeBonus]
 
 
-class TeamGameScoreSummary(BaseModel):
-    game: SimpleEntity
+class GameScoreTeam(BaseModel):
     team: SimpleEntity
-    score: Score
-    challengeScoreSummaries: list[TeamChallengeScoreSummary]
+    players: list[PlayerWithSponsor]
+    rank: int
+    overallScore: Score
+    totalTimeMs: int
+    challenges: list[TeamChallengeScore]
+
+
+class TeamGameScoreQueryResponse(BaseModel):
+    gameInfo: GameScoreGameInfo
+    score: GameScoreTeam
