@@ -114,7 +114,7 @@ class GameScoringConfigChallengeBonus(BaseModel):
 class GameScoringConfigChallengeSpec(BaseModel):
     id: str
     name: str
-    description: str
+    description: str | None
     completionScore: float
     possibleBonuses: list[GameScoringConfigChallengeBonus]
     maxPossibleScore: float
@@ -128,9 +128,10 @@ class GameScoreGameInfo(BaseModel):
 
 
 class TeamChallengeScore(BaseModel):
-    challenge: SimpleEntity
-    spec: SimpleEntity
-    team: SimpleEntity
+    id: str
+    specId: str
+    name: str
+    result: str
     score: Score
     # Actual type is .NET System.TimeSpan, but I don't care.
     timeElapsed: Any
