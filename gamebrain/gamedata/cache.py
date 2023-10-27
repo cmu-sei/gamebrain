@@ -1891,6 +1891,7 @@ class GameStateManager:
         challenge_urls = ChallengeURLs(
             missionID="ship",
             missionName="Ship Consoles",
+            missionIcon="",
             vmURLs=ship_gamespace_vm_urls,
         )
         team_challenge_urls.append(challenge_urls)
@@ -1922,6 +1923,7 @@ class GameStateManager:
             challenge_urls = ChallengeURLs(
                 missionID=mission_id,
                 missionName=mission_name,
+                missionIcon=global_mission_data.missionIcon,
                 vmURLs=gamespace_vm_urls,
             )
             team_challenge_urls.append(challenge_urls)

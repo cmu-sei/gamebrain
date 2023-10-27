@@ -290,6 +290,7 @@ class VmURL(BaseModel):
 
 class ChallengeURLs(BaseModel):
     missionID: MissionID
+    missionIcon: str
     missionName: str
     vmURLs: list[VmURL]
 
