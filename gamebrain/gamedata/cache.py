@@ -601,6 +601,20 @@ class GameStateManager:
             team_data.missions[global_mission.missionID] = unlocked_mission
 
     @classmethod
+    def _get_mission_completion_for_teams(
+        cls,
+        global_mission: InternalGlobalMissionData
+    ) -> int:
+        total_completions = 0
+        for team_id, team_data in cls._cache.team_map.__root__.items():
+            team_mission = team_data.missions.get(global_mission.missionID)
+            if not team_mission:
+                # This team has not even unlocked the mission, so move on.
+                continue
+            total_completions += int(team_mission.complete)
+        return total_completions
+
+    @classmethod
     def _complete_mission_and_unlock_next(
         cls,
         team_id: TeamID,
@@ -608,16 +622,6 @@ class GameStateManager:
         team_mission: InternalTeamMissionData,
         global_mission: InternalGlobalMissionData,
     ):
-        def get_mission_completion_for_teams():
-            total_completions = 0
-            for team_id, team_data in cls._cache.team_map.__root__.items():
-                team_mission = team_data.missions.get(global_mission.missionID)
-                if not team_mission:
-                    # This team has not even unlocked the mission, so move on.
-                    continue
-                total_completions += int(team_mission.complete)
-            return total_completions
-
         team_mission.complete = True
         team_data.session.teamCodexCount = sum((
             1 if team_mission.complete and not global_mission.isSpecial else 0
@@ -627,7 +631,7 @@ class GameStateManager:
         if not global_mission.firstNthCompletionUnlocks:
             return
 
-        times_completed = get_mission_completion_for_teams()
+        times_completed = cls._get_mission_completion_for_teams()
 
         idx = (
             times_completed
@@ -1555,6 +1559,8 @@ class GameStateManager:
         associated_challenges = {}
         mission_unlock_codes = {}
 
+        total_teams = get_active_teams()
+
         for mission in team_data.missions.values():
             if not mission.unlocked:
                 continue
@@ -1612,12 +1618,19 @@ class GameStateManager:
                     f"mission {mission.missionID}"
                 )
 
+            teams_solved = cls._get_mission_completion_for_teams(mission_global)
+            completion_data = {
+                "solveTeams": teams_solved,
+                "totalTeams": len(total_teams),
+            }
+
             mission_full = MissionDataFull(
                 **mission_global.dict()
                 | mission.dict()
                 | {"taskList": mission_task_data}
                 | position_data
                 | score_data
+                | completion_data
             )
             full_mission_data.append(mission_full)
 
