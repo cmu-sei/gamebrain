@@ -1549,7 +1549,7 @@ class GameStateManager:
         return mission_task_data
 
     @classmethod
-    def _get_team_unlocked_missions(
+    async def _get_team_unlocked_missions(
         cls,
         team_id: str,
         team_data: InternalTeamGameData,
@@ -1691,7 +1691,7 @@ class GameStateManager:
 
             full_loc_data = cls._get_team_unlocked_locations(team_data)
 
-            full_mission_data = cls._get_team_unlocked_missions(
+            full_mission_data = await cls._get_team_unlocked_missions(
                 team_id,
                 team_data,
                 mission_map
