@@ -1559,7 +1559,7 @@ class GameStateManager:
         associated_challenges = {}
         mission_unlock_codes = {}
 
-        total_teams = get_active_teams()
+        total_teams = await get_active_teams()
 
         for mission in team_data.missions.values():
             if not mission.unlocked:
