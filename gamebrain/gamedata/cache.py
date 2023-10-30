@@ -1240,10 +1240,19 @@ class GameStateManager:
         force_target_network: bool = False,
         target_gamespace_id: GamespaceID = None,
     ):
+
         gamespace_id = gamespace_data.gamespaceID
         gateway_vm_name = gamespace_data.gatewayVmName
         gateway_nic = gamespace_data.gatewayNic
         location_id = gamespace_data.locationID
+
+        if gamespace_data.noGateway:
+            logging.info(
+                "_change_gamespace_gateway_network: "
+                f"Gamespace {gamespace_data} has noGateway "
+                "set to True. Will not attempt to change a network for it."
+            )
+            return
 
         if not location_id and not force_target_network:
             logging.warning(
