@@ -82,9 +82,11 @@ class GamespaceData(BaseModel):
     # to use when extending the ship antenna.
     locationID: str | None
     # If location ID is defined in a challenge workspace,
-    # the following two will also need to be defined.
+    # the following two will also need to be defined OR
+    # set noGateway: true in the workspace document.
     gatewayVmName: str | None
     gatewayNic: int | None
+    noGateway: bool = False
     # Next two are currently unused.
     dispatches: list[Dispatch] = []
     initial_dispatches: list[DispatchID] = []
@@ -116,11 +118,13 @@ class GamespaceData(BaseModel):
 
         # Specifically check if these were unspecified or null.
         (locationID,
+         noGateway,
          gatewayVmName,
          gatewayNic) = (values.get("locationID") is not None,
+                        values.get("noGateway") is not None,
                         values.get("gatewayVmName") is not None,
                         values.get("gatewayNic") is not None)
-        if locationID:
+        if locationID and not noGateway:
             if not gatewayVmName and not gatewayNic:
                 raise_and_error("locationID", "gatewayVmName and gatewayNic")
             elif not gatewayVmName:
