@@ -1902,25 +1902,24 @@ class GameStateManager:
 
         team_challenge_map = cls._cache.challenges[team_id]
 
-        team_challenge_urls = []
-
         ship_gamespace_vm_urls = [
             VmURL(
                 vmName=console_url.name,
                 vmURL=console_url.url,
             ) for console_url in team_data.ship.gamespaceData.consoleURLs]
 
-        challenge_urls = ChallengeURLs(
+        ship_challenge_urls = ChallengeURLs(
             missionID="ship",
             missionName="Ship Consoles",
             missionIcon="",
             vmURLs=ship_gamespace_vm_urls,
         )
-        team_challenge_urls.append(challenge_urls)
 
         if extend_or_retract == cls.ExtendOrRetract.retract:
-            team_data.ship.challengeURLs = team_challenge_urls
+            team_data.ship.challengeURLs = [ship_challenge_urls]
             return
+
+        team_challenge_urls = []
 
         for mission_id, gamespace_data in team_challenge_map.items():
             if team_data.currentStatus.currentLocation != gamespace_data.locationID:
@@ -1949,7 +1948,9 @@ class GameStateManager:
                 vmURLs=gamespace_vm_urls,
             )
             team_challenge_urls.append(challenge_urls)
-        team_data.ship.challengeURLs = team_challenge_urls
+
+        team_challenge_urls.sort(key=lambda el: el.missionName)
+        team_data.ship.challengeURLs = [ship_challenge_urls] + team_challenge_urls
 
     @classmethod
     async def update_team_urls(
