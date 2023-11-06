@@ -562,6 +562,7 @@ class GameStateManager:
 
         if not first_task:
             logging.error(
+                "_handle_mission_unlock:"
                 f"Mission {global_mission.missionID} "
                 f"indicated its first task is {global_mission.first_task} "
                 "which does not exist in the game data."
@@ -586,6 +587,11 @@ class GameStateManager:
         ]
 
         if team_mission := team_data.missions.get(global_mission.missionID):
+            logging.info(
+                "_handle_mission_unlock:"
+                f"Team mission data found for team {team_id}. "
+                f"Marking mission {global_mission.missionID} unlocked."
+            )
             team_mission.unlocked = True
             if len(team_mission.taskList) < len(task_list):
                 # If the team mission data came from team_initial_state, it
@@ -593,6 +599,12 @@ class GameStateManager:
                 # it alone.
                 team_mission.taskList = task_list
         else:
+            logging.info(
+                "_handle_mission_unlock:"
+                f"Team mission data not found for team {team_id}. "
+                "Constructing internal data and then "
+                f"marking mission {global_mission.missionID} unlocked."
+            )
             unlocked_mission = InternalTeamMissionData(
                 missionID=global_mission.missionID,
                 taskList=task_list,
@@ -622,6 +634,10 @@ class GameStateManager:
         team_mission: InternalTeamMissionData,
         global_mission: InternalGlobalMissionData,
     ):
+        logging.info(
+            "_complete_mission_and_unlock_next: "
+            f"Marking mission {team_mission.missionID} complete for team {team_id}."
+        )
         team_mission.complete = True
         team_data.session.teamCodexCount = sum((
             1 if team_mission.complete and not global_mission.isSpecial else 0
@@ -629,9 +645,14 @@ class GameStateManager:
         ))
 
         if not global_mission.firstNthCompletionUnlocks:
+            logging.warning(
+                "_complete_mission_and_unlock_next: "
+                f"Mission {team_mission.missionID} does not unlock any "
+                "additional missions. No problem if this is intentional."
+            )
             return
 
-        times_completed = cls._get_mission_completion_for_teams()
+        times_completed = cls._get_mission_completion_for_teams(global_mission)
 
         idx = (
             times_completed
