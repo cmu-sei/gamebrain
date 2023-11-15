@@ -233,7 +233,7 @@ class AssociatedChallengeData(BaseModel):
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
     taskList: list[TaskDataFull]
 
-    associatedChallenges: list[AssociatedChallengeData]
+    associatedChallenges: list[AssociatedChallengeData] = []
 
     # The next four come from the workspace document.
     galaxyMapXPos: float = 0.0
