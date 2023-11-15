@@ -99,10 +99,9 @@ class GamespaceData(BaseModel):
     timerTitle: str = ""
     gatewayWanNetworkName: str | None
     isPC4Workspace: bool = False
-    # The next five may be specified in the workspace document
+    # The next four may be specified in the workspace document
     # OR the game data JSON. Values specified in the workspace
     # document will take priority.
-    associatedChallenges: list[MissionID] = []
     galaxyMapXPos: float = 0.0
     galaxyMapYPos: float = 0.0
     galaxyMapTargetXPos: float = 0.0
@@ -201,8 +200,6 @@ class MissionData(BaseModel):
     # completes the mission first. The last list of mission IDs will be used
     # for all subsequent completions.
     firstNthCompletionUnlocks: list[list[MissionID]] = []
-
-    associatedChallenges: list[MissionID] = []
 
     # Mostly for testing purposes. Enables adding coordinates through
     # the game data document without creating a workspace.

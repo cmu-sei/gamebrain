@@ -1329,8 +1329,6 @@ class GameStateManager:
         # The values may be specified in the initial game data, but the
         # workspace values should be prioritized.
 
-        if not gamespace_data.associatedChallenges:
-            gamespace_data.associatedChallenges = global_mission.associatedChallenges
         if not gamespace_data.galaxyMapXPos:
             gamespace_data.galaxyMapXPos = global_mission.galaxyMapXPos
         if not gamespace_data.galaxyMapYPos:
@@ -1623,7 +1621,13 @@ class GameStateManager:
                 position_data["galaxyMapTargetXPos"] = gamespace_data.galaxyMapTargetXPos
                 position_data["galaxyMapTargetYPos"] = gamespace_data.galaxyMapTargetYPos
 
-                associated_challenges[mission.missionID] = gamespace_data.associatedChallenges
+                associated_mission_ids = {
+                    mission_id
+                    for completion_order in mission_global.firstNthCompletionUnlocks
+                    for mission_id in completion_order
+                }
+
+                associated_challenges[mission.missionID] = list(associated_mission_ids).sort()
                 location = cls._cache.location_map.__root__.get(gamespace_data.locationID)
                 if location:
                     mission_unlock_codes[mission.missionID] = location.unlockCode
