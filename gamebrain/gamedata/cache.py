@@ -1625,7 +1625,11 @@ class GameStateManager:
                     for mission_id in completion_order
                 }
 
-                associated_challenges[mission.missionID] = list(associated_mission_ids).sort()
+                associated_challenges[mission.missionID] = sorted(
+                    list(
+                        associated_mission_ids
+                    )
+                )
                 location = cls._cache.location_map.__root__.get(gamespace_data.locationID)
                 if location:
                     mission_unlock_codes[mission.missionID] = location.unlockCode
