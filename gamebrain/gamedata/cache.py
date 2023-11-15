@@ -1453,8 +1453,6 @@ class GameStateManager:
             new_team_state.session.useCodices = ship_gamespace_info.useCodices
             new_team_state.session.timerTitle = ship_gamespace_info.timerTitle
 
-            new_team_state.ship.antennaVmName = ship_gamespace_info.gatewayVmName
-            new_team_state.ship.antennaNic = ship_gamespace_info.gatewayNic
             new_team_state.ship.gamespaceData = ship_gamespace_info
 
             cls._cache.team_map.__root__[team_id] = new_team_state
