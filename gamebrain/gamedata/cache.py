@@ -2125,7 +2125,7 @@ class GameStateManager:
             if not team_data:
                 raise NonExistentTeam()
 
-            if team_data.session.pc4Game:
+            if team_data.ship.gamespaceData.isPC4Workspace:
                 await cls._pc4_network_change_team_gamespace(
                     team_data,
                     cls.ExtendOrRetract.retract,
