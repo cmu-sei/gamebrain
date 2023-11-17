@@ -2167,7 +2167,7 @@ class GameStateManager:
     @classmethod
     async def retract_antenna(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
-            return cls._retract_antenna_body(team_id)
+            return await cls._retract_antenna_body(team_id)
 
     @classmethod
     async def unlock_location(
