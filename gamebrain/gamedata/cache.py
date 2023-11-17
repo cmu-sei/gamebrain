@@ -2119,51 +2119,55 @@ class GameStateManager:
             )
 
     @classmethod
+    async def _retract_antenna_body(cls, team_id: TeamID) -> GenericResponse:
+        team_data = cls._cache.team_map.__root__.get(team_id)
+        if not team_data:
+            raise NonExistentTeam()
+
+        if team_data.ship.gamespaceData.isPC4Workspace:
+            await cls._pc4_network_change_team_gamespace(
+                team_data,
+                cls.ExtendOrRetract.retract,
+            )
+        else:
+            network_name = team_data.ship.gamespaceData.gatewayWanNetworkName
+            ship_gamespace_id = team_data.ship.gamespaceData.gamespaceID
+            if not network_name:
+                logging.warning(
+                    f"Gamespace {ship_gamespace_id} does not have "
+                    "'gatewayWanNetworkName' specified. Defaulting to 'ship'"
+                )
+                network_name = "ship"
+
+            await cls._bulk_network_change_team_gamespaces(
+                    team_id,
+                    team_data,
+                    network_name,
+                    cls.ExtendOrRetract.retract,
+                    target_gamespace_id=ship_gamespace_id,
+            )
+
+        team_data.currentStatus.antennaExtended = False
+        team_data.currentStatus.networkConnected = False
+        team_data.currentStatus.networkName = (
+            cls._settings.game.antenna_retracted_network
+        )
+
+        cls._mark_task_complete_if_unlocked(
+            team_id,
+            team_data,
+            "antennaRetracted"
+        )
+
+        return GenericResponse(
+            success=True,
+            message=f"Team {team_id} retracted their antenna."
+        )
+
+    @classmethod
     async def retract_antenna(cls, team_id: TeamID) -> GenericResponse:
         async with cls._lock:
-            team_data = cls._cache.team_map.__root__.get(team_id)
-            if not team_data:
-                raise NonExistentTeam()
-
-            if team_data.ship.gamespaceData.isPC4Workspace:
-                await cls._pc4_network_change_team_gamespace(
-                    team_data,
-                    cls.ExtendOrRetract.retract,
-                )
-            else:
-                network_name = team_data.ship.gamespaceData.gatewayWanNetworkName
-                ship_gamespace_id = team_data.ship.gamespaceData.gamespaceID
-                if not network_name:
-                    logging.warning(
-                        f"Gamespace {ship_gamespace_id} does not have "
-                        "'gatewayWanNetworkName' specified. Defaulting to 'ship'"
-                    )
-                    network_name = "ship"
-
-                await cls._bulk_network_change_team_gamespaces(
-                        team_id,
-                        team_data,
-                        network_name,
-                        cls.ExtendOrRetract.retract,
-                        target_gamespace_id=ship_gamespace_id,
-                )
-
-            team_data.currentStatus.antennaExtended = False
-            team_data.currentStatus.networkConnected = False
-            team_data.currentStatus.networkName = (
-                cls._settings.game.antenna_retracted_network
-            )
-
-            cls._mark_task_complete_if_unlocked(
-                team_id,
-                team_data,
-                "antennaRetracted"
-            )
-
-            return GenericResponse(
-                success=True,
-                message=f"Team {team_id} retracted their antenna."
-            )
+            return cls._retract_antenna_body(team_id)
 
     @classmethod
     async def unlock_location(
@@ -2365,6 +2369,7 @@ class GameStateManager:
                 powerStatus=team_data.currentStatus.powerStatus,
             )
             team_data.currentStatus = new_status
+            await cls._retract_antenna_body(team_id)
 
             cls._mark_task_complete_if_unlocked(team_id, team_data, "jump")
 
