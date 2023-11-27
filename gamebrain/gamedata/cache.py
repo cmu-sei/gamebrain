@@ -1400,20 +1400,27 @@ class GameStateManager:
                     )
 
     @classmethod
-    async def uninit_challenges(cls):
-        async with cls._lock:
-            cls._cache.challenges = {}
+    async def _uninit_body(cls, team_id: TeamID):
+        try:
+            del cls._cache.challenges[team_id]
+        except KeyError:
+            logging.warning(
+                f"Tried to uninit team {team_id} but it "
+                "was not being tracked in the challenge map."
+            )
 
     @classmethod
-    async def uninit_team(cls, team_id):
+    async def uninit_challenges(cls):
         async with cls._lock:
-            try:
-                del cls._cache.challenges[team_id]
-            except KeyError:
-                logging.warning(
-                    f"Tried to uninit team {team_id} but it "
-                    "was not being tracked in the challenge map."
-                )
+            # Don't delete from an iterating dict.
+            teams = list(cls._cache.challenges.keys())
+            for team_id in teams:
+                await cls._uninit_body(team_id)
+
+    @classmethod
+    async def uninit_team(cls, team_id: TeamID):
+        async with cls._lock:
+            await cls._uninit_body(team_id)
 
     @classmethod
     async def new_team(
