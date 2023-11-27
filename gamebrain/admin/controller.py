@@ -377,26 +377,6 @@ async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     return DeploymentResponse(__root__=assignments)
 
 
-@admin_router.post("/undeploy")
-async def undeploy():
-    active_teams = await get_teams_active()
-
-    for team_id in active_teams.__root__:
-        async with TeamLocks(team_id):
-            team_data = await get_team(team_id)
-            if not team_data:
-                logging.error(
-                    f"get_teams_active() call returned team {team_id}, "
-                    "but no such team appears to exist."
-                )
-                continue
-
-            await deactivate_team(team_id)
-    await deactivate_game_session()
-    await GameStateManager.uninit_challenges()
-    await GameStateManager.stop_game_timers()
-
-
 class ActiveTeamsResponse(BaseModel):
     __root__: dict[TeamID, HeadlessUrl]
 
