@@ -36,7 +36,7 @@ from httpx import AsyncClient
 from pydantic import BaseModel
 
 from ..admin.controllermodels import DeploymentSession
-from ..db import get_team, get_active_teams
+from ..db import get_team, get_active_teams, get_team_game_session
 from ..clients.gameboardmodels import (
     GameEngineQuestionView,
     TeamGameScoreQueryResponse,
@@ -609,17 +609,36 @@ class GameStateManager:
             team_data.missions[global_mission.missionID] = unlocked_mission
 
     @classmethod
-    def _get_mission_completion_for_teams(
+    def _get_mission_completion_in_team_session(
         cls,
-        global_mission: InternalGlobalMissionData
+        team_id: TeamID,
+        global_mission: InternalGlobalMissionData,
     ) -> int:
+        session = await get_team_game_session(team_id)
+        if not session:
+            logging.error(
+                "_get_mission_completion_in_team_session: "
+                f"Team {team_id} is not associated with any session."
+            )
+        session_teams = [team["id"] for team in session["teams"]]
         total_completions = 0
-        for team_id, team_data in cls._cache.team_map.__root__.items():
+
+        for team_id in session_teams:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                logging.error(
+                    "_get_mission_completion_in_team_session: "
+                    f"Session {session['id']} had a team {team_id} that is "
+                    "not being tracked in GameStateManager."
+                )
+                continue
+
             team_mission = team_data.missions.get(global_mission.missionID)
             if not team_mission:
                 # This team has not even unlocked the mission, so move on.
                 continue
             total_completions += int(team_mission.complete)
+
         return total_completions
 
     @classmethod
@@ -646,7 +665,9 @@ class GameStateManager:
             )
             return
 
-        times_completed = cls._get_mission_completion_for_teams(global_mission)
+        times_completed = cls._get_mission_completion_in_team_session(
+            team_id, global_mission
+        )
 
         idx = (
             times_completed
@@ -1171,7 +1192,6 @@ class GameStateManager:
             except Exception as e:
                 logging.error(f"Mission timer task exception: {e}")
 
-
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
         try:
@@ -1184,16 +1204,16 @@ class GameStateManager:
     @classmethod
     async def start_game_timers(cls):
         async with cls._lock:
-            cls._active_game_timer_task = asyncio.create_task(
-                cls._game_timer_task())
-            cls._active_game_timer_task.add_done_callback(
-                cls._handle_task_result)
-
-            cls._active_dispatch_timer_task = asyncio.create_task(
-                cls._dispatch_timer_task()
-            )
-            cls._active_dispatch_timer_task.add_done_callback(
-                cls._handle_task_result)
+            # cls._active_game_timer_task = asyncio.create_task(
+            #     cls._game_timer_task())
+            # cls._active_game_timer_task.add_done_callback(
+            #     cls._handle_task_result)
+            #
+            # cls._active_dispatch_timer_task = asyncio.create_task(
+            #     cls._dispatch_timer_task()
+            # )
+            # cls._active_dispatch_timer_task.add_done_callback(
+            #     cls._handle_task_result)
 
             cls._active_mission_timer_task = asyncio.create_task(
                 cls._mission_timer_task()
@@ -1201,22 +1221,22 @@ class GameStateManager:
             cls._active_mission_timer_task.add_done_callback(
                 cls._handle_task_result)
 
-    @classmethod
-    async def stop_game_timers(cls):
-        async with cls._lock:
-            if cls._active_game_timer_task is None:
-                logging.warning(
-                    "stop_game_timers called without timers being started.")
-                return
-
-            cls._active_game_timer_task.cancel()
-            cls._active_game_timer_task = None
-
-            cls._active_dispatch_timer_task.cancel()
-            cls._active_dispatch_timer_task = None
-
-            cls._active_mission_timer_task.cancel()
-            cls._active_mission_timer_task = None
+    # @classmethod
+    # async def stop_game_timers(cls):
+    #     async with cls._lock:
+    #         if cls._active_game_timer_task is None:
+    #             logging.warning(
+    #                 "stop_game_timers called without timers being started.")
+    #             return
+    #
+    #         cls._active_game_timer_task.cancel()
+    #         cls._active_game_timer_task = None
+    #
+    #         cls._active_dispatch_timer_task.cancel()
+    #         cls._active_dispatch_timer_task = None
+    #
+    #         cls._active_mission_timer_task.cancel()
+    #         cls._active_mission_timer_task = None
 
     @classmethod
     async def get_total_points(cls) -> int:
@@ -1410,10 +1430,11 @@ class GameStateManager:
             )
 
     @classmethod
-    async def uninit_challenges(cls):
+    async def uninit_challenges(cls, teams: list[str] = None):
         async with cls._lock:
-            # Don't delete from an iterating dict.
-            teams = list(cls._cache.challenges.keys())
+            if teams is None:
+                # Don't delete from an iterating dict.
+                teams = list(cls._cache.challenges.keys())
             for team_id in teams:
                 await cls._uninit_body(team_id)
 

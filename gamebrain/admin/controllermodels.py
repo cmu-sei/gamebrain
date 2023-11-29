@@ -19,10 +19,16 @@ class DeploymentGamespace(BaseModel):
     vmUris: list[str]
 
 
+class PlayerInfo(BaseModel):
+    playerId: str
+    userId: str
+
+
 class DeploymentTeam(BaseModel):
     id: str
     name: str
     gamespaces: list[DeploymentGamespace]
+    players: list[PlayerInfo]
 
 
 class Deployment(BaseModel):
