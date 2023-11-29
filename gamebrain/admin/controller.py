@@ -41,13 +41,12 @@ from ..clients.topomojo import GamespaceID
 from ..config import get_settings
 from ..db import (
     deactivate_team,
-    deactivate_game_session,
     get_team,
     store_virtual_machines,
     store_team,
     get_assigned_headless_urls,
     store_game_session,
-    get_active_game_session,
+    PlayerInfo as DBPlayerInfo
 )
 from ..gamedata.cache import (
     GameStateManager,
@@ -256,10 +255,6 @@ def parse_vm_urls(vm_urls: list[str]) -> list[ConsoleUrl]:
 
 
 async def _internal_deploy(deployment_data: Deployment):
-    if await get_active_game_session():
-        logging.error("Deployment failed because there is already an active game session.")
-        return
-
     gamespace_info = {}
 
     session_teams = []
@@ -325,17 +320,26 @@ async def _internal_deploy(deployment_data: Deployment):
             }
         )
 
+    players = [
+        DBPlayerInfo(
+            player_id=player.playerId,
+            user_id=player.userId,
+            team_id=team.id,
+        )
+        for team in deployment_data.teams
+        for player in team.players
+    ]
     await store_game_session(
         session_teams,
         deployment_data.session.sessionBegin,
         deployment_data.session.sessionEnd,
         deployment_data.session.now,
         deployment_data.game.id,
+        players,
     )
 
     await GameStateManager.init_challenges(gamespace_info)
     await GameStateManager.update_all_active_team_urls()
-    await GameStateManager.start_game_timers()
 
 
 class VideoRefreshManager:

@@ -213,6 +213,7 @@ class Global:
             logging.info(
                 "Initializing game data cache from initial_state.json.")
         await GameStateManager.init(initial_cache, settings)
+        await GameStateManager.start_game_timers()
 
         cls._init_db_sync_task()
         # cls._init_grader_task()
