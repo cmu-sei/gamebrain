@@ -22,18 +22,19 @@
 
 # DM23-0100
 
-import asyncio
 import json as jsonlib
-import time
+from logging import error, warning
 import ssl
 from typing import Any, Optional
 
-from authlib.integrations.httpx_client.oauth2_client import AsyncOAuth2Client
 from httpx import AsyncClient
+from pydantic import ValidationError
 
 from .common import _service_request_and_log, HttpMethod
-from ..util import url_path_join
+from .gameboardmodels import GameEngineGameState, TeamGameScoreQueryResponse
 
+
+GAMEBOARD_CLIENT = None
 
 GameID = str
 
@@ -48,65 +49,32 @@ def get_settings():
     return ModuleSettings.settings
 
 
-class AuthTokenCache:
-    """
-    It's stupid, but the authlib httpx integration doesn't seem to insert the authorization header when using
-    client.send, so I just construct an OAuth2AsyncClient to fetch a token, and then hand it off to an AsyncClient.
-    """
+def _get_gameboard_client() -> AsyncClient:
+    global GAMEBOARD_CLIENT
 
-    token = None
-    token_lock = asyncio.Lock()
-
-    @classmethod
-    def _get_token_client(cls):
+    if not GAMEBOARD_CLIENT:
         settings = get_settings()
         ssl_context = ssl.create_default_context()
         if settings.ca_cert_path:
             ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
+        api_key = settings.gameboard.x_api_key
+        api_client = settings.gameboard.x_api_client
 
-        return AsyncOAuth2Client(
-            settings.identity.client_id,
-            settings.identity.client_secret,
+        GAMEBOARD_CLIENT = AsyncClient(
+            base_url=settings.gameboard.base_api_url,
             verify=ssl_context,
+            headers={"x-api-key": api_key, "x-api-client": api_client},
+            timeout=60.0,
         )
 
-    @classmethod
-    async def get_access_token(cls, settings: "SettingsModel") -> str:
-        async with cls.token_lock:
-            if not cls.token or ((cls.token["expires_at"] - time.time()) < 30.0):
-                client = cls._get_token_client()
-                await client.fetch_token(
-                    url_path_join(
-                        settings.identity.base_url, settings.identity.token_endpoint
-                    ),
-                    username=settings.identity.token_user,
-                    password=settings.identity.token_password,
-                )
-                cls.token = client.token
-            return cls.token["access_token"]
-
-
-def _get_gameboard_client(access_token: str) -> AsyncClient:
-    settings = get_settings()
-    ssl_context = ssl.create_default_context()
-    if settings.ca_cert_path:
-        ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
-
-    return AsyncClient(
-        base_url=settings.gameboard.base_api_url,
-        verify=ssl_context,
-        headers={"Authorization": f"Bearer {access_token}"},
-        timeout=60.0,
-    )
+    return GAMEBOARD_CLIENT
 
 
 async def _gameboard_request(
     method: HttpMethod, endpoint: str, data: Optional[Any]
 ) -> Optional[Any] | None:
-    settings = get_settings()
-    access_token = await AuthTokenCache.get_access_token(settings)
     response = await _service_request_and_log(
-        _get_gameboard_client(access_token), method, endpoint, data
+        _get_gameboard_client(), method, endpoint, data
     )
     try:
         return response.json()
@@ -156,7 +124,7 @@ async def get_teams(game_id: str):
 
 async def create_challenge(game_id: str, team_id: str):
     return await _gameboard_post(
-        f"unity/challenges",
+        "unity/challenges",
         {
             "gameId": game_id,
             "teamId": team_id,
@@ -165,15 +133,36 @@ async def create_challenge(game_id: str, team_id: str):
     )
 
 
-async def mission_update(
-    team_id: str, mission_id: str, mission_name: str, points_scored: int
-):
-    return await _gameboard_post(
-        "unity/mission-update",
-        {
-            "teamId": team_id,
-            "missionId": mission_id,
-            "missionName": mission_name,
-            "pointsScored": points_scored,
-        },
-    )
+async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
+    result = await _gameboard_get("gameEngine/state", {"teamId": team_id})
+    if result is None:
+        return None
+
+    challenge_states = []
+    for challenge_status in result:
+        try:
+            game_state = GameEngineGameState(**challenge_status)
+        except ValidationError:
+            warning(
+                "Gameboard gameEngine/state returned an item that could not "
+                f"be validated as a GameEngineGameState: {challenge_status}. "
+                "This is expected for the team's ship workspace."
+            )
+        else:
+            challenge_states.append(game_state)
+
+    return challenge_states
+
+
+async def team_score(team_id: str) -> TeamGameScoreQueryResponse:
+    result = await _gameboard_get(f"team/{team_id}/score")
+    if result is None:
+        return None
+
+    try:
+        return TeamGameScoreQueryResponse(**result)
+    except ValidationError as e:
+        error(
+            f"Gameboard team/{team_id}/score returned JSON that could "
+            f"not be validated as a TeamGameScoreSummary - {str(e)}"
+        )

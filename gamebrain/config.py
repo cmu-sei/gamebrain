@@ -58,8 +58,6 @@ class IdentitySettingsModel(BaseModel):
     client_id: str
     client_secret: str
     jwt_issuer: str
-    token_user: str
-    token_password: str
     jwt_audiences: JwtAudiencesModel
 
 
@@ -67,6 +65,8 @@ class GameboardSettingsModel(BaseModel):
     # base_url is used to construct VM console URLs
     base_url: str
     base_api_url: str
+    x_api_key: str
+    x_api_client: str
 
 
 class TopomojoSettingsModel(BaseModel):
@@ -211,12 +211,14 @@ class Global:
         else:
             with open("initial_state.json") as f:
                 initial_cache = GameDataCacheSnapshot(**json.load(f))
-            logging.info("Initializing game data cache from initial_state.json.")
+            logging.info(
+                "Initializing game data cache from initial_state.json.")
         await GameStateManager.init(initial_cache, settings)
 
         cls._init_db_sync_task()
-        cls._init_grader_task()
+        # cls._init_grader_task()
         cls._init_cleanup_task()
+        # cls._init_video_freshness_task()
 
     @classmethod
     def _init_jwks(cls):
@@ -225,7 +227,8 @@ class Global:
         if settings.ca_cert_path:
             ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
         cls.jwks = httpx.get(
-            url_path_join(settings.identity.base_url, settings.identity.jwks_endpoint),
+            url_path_join(settings.identity.base_url,
+                          settings.identity.jwks_endpoint),
             verify=ssl_context,
         ).json()
 
@@ -243,7 +246,8 @@ class Global:
 
     @classmethod
     def _init_grader_task(cls):
-        cls.grader_task = asyncio.create_task(GamespaceStatusTask.init(get_settings()))
+        cls.grader_task = asyncio.create_task(
+            GamespaceStatusTask.init(get_settings()))
         cls.grader_task.add_done_callback(cls._handle_task_result)
 
     @classmethod
@@ -252,6 +256,13 @@ class Global:
             BackgroundCleanupTask.init(get_settings())
         )
         cls.cleanup_task.add_done_callback(cls._handle_task_result)
+
+    # To prevent the videos from being knocked out of caching.
+    @classmethod
+    def _init_video_freshness_task(cls):
+        cls.freshness_task = asyncio.create_task(
+            GameStateManager.video_freshness_task())
+        cls.freshness_task.add_done_callback(cls._handle_task_result)
 
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:

@@ -25,7 +25,7 @@
 import asyncio
 from datetime import datetime, timezone
 import logging
-import os
+import sys
 from typing import Dict, List, Optional
 
 from fastapi import (
@@ -49,6 +49,7 @@ import yappi
 from .auth import check_jwt
 from .admin.controller import admin_router
 import gamebrain.db as db
+from gamebrain.gamedata.model import GenericResponse
 from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
 from .gamedata.controller import router as gd_router
@@ -93,9 +94,9 @@ async def debug_exception_handler(request: Request, exc: HTTPException):
 
 @APP.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    body = await request.json()
     logging.error(
-        f"Got invalid request headers: {request.headers} and body {str(request)}"
-    )
+        f"Got invalid request headers: {request.headers} and body {body}")
     return await request_validation_exception_handler(request, exc)
 
 
@@ -117,6 +118,16 @@ async def publish_event(team_id: str, event_message: str):
 
 @APP.on_event("startup")
 async def startup():
+    logging.info(f"Python version: {sys.version}")
+    try:
+        with open("/build-date.txt") as f:
+            logging.info(
+                f"Build time: {f.read().strip()}"
+            )
+    except FileNotFoundError:
+        logging.warning(
+                "Build time file not found."
+        )
     await Global.init()
 
 
@@ -135,6 +146,15 @@ async def get_team_from_user(
     post_data: GetTeamPostData,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ):
+    session = await db.get_active_game_session()
+    if not session:
+        logging.warning("get_team_from_user: There is no active game session.")
+        return
+    game_id = session.get("game_id")
+    if not game_id:
+        logging.error("get_team_from_user: Active game session has no game ID.")
+        return
+
     try:
         payload = check_jwt(
             post_data.user_token,
@@ -147,9 +167,10 @@ async def get_team_from_user(
 
     user_id = payload["sub"]
 
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
 
-    player = await gameboard.get_player_by_user_id(user_id, get_settings().game.game_id)
+    player = await gameboard.get_player_by_user_id(user_id, game_id)
 
     team_id = player["teamId"]
 
@@ -246,12 +267,14 @@ async def change_vm_net(
 async def _change_vm_net(vm_id: str, new_net: str):
     vm = await db.get_vm(vm_id)
     if not vm:
-        raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
+        raise HTTPException(
+            status_code=400, detail="Specified VM cannot be found.")
     team_id = vm["team_id"]
 
     possible_networks = (await topomojo.get_vm_nets(vm_id)).get("net")
     if possible_networks is None:
-        raise HTTPException(status_code=400, detail="Specified VM cannot be found.")
+        raise HTTPException(
+            status_code=400, detail="Specified VM cannot be found.")
 
     for net in possible_networks:
         if net.startswith(new_net):
@@ -272,7 +295,6 @@ async def create_challenge_secrets(
     team_id: str,
     secrets: List[str],
 ):
-
     await db.store_team(team_id)
     await db.store_challenge_secrets(team_id, secrets)
 
@@ -284,14 +306,35 @@ async def add_media_urls(
     await db.store_media_assets(media_map)
 
 
-@gamestate_router.get("/team_active/{team_id}")
-async def get_is_team_active(
-    team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())
-) -> bool:
-    check_jwt(auth.credentials, get_settings().identity.jwt_audiences.gamestate_api)
+@admin_router.get("/team_active/{team_id}")
+async def admin_get_is_team_active(
+    team_id: str
+) -> GenericResponse:
+    return await get_is_team_active(team_id)
 
-    team = await db.get_team(team_id)
-    return bool(team.get("gamespace_id"))
+
+@gamestate_router.get("/team_active/{team_id}")
+async def gamestate_get_is_team_active(
+    team_id: str, auth: HTTPAuthorizationCredentials = Security(HTTPBearer())
+) -> GenericResponse:
+    check_jwt(auth.credentials, get_settings(
+    ).identity.jwt_audiences.gamestate_api)
+
+    return await get_is_team_active(team_id)
+
+
+async def get_is_team_active(
+    team_id: str
+) -> GenericResponse:
+    active_teams = {
+        team["id"]
+        for team in await db.get_active_teams()
+    }
+    response = GenericResponse(
+        success=(team_id in active_teams),
+        message=team_id
+    )
+    return response
 
 
 @gamestate_router.websocket("/websocket/events")

@@ -23,27 +23,42 @@
 # DM23-0100
 
 import asyncio
+from datetime import datetime, timezone
 import json
 import logging
-from datetime import datetime, timezone
+from urllib.parse import urlparse, parse_qs
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+import yaml
 
 from ..auth import admin_api_key_dependency
+from .controllermodels import Deployment
+from ..commonmodels import ConsoleUrl
 from ..clients import gameboard, topomojo
 from ..clients.gameboard import GameID
-from ..clients.topomojo import GamespaceID, GamespaceExpiration
+from ..clients.topomojo import GamespaceID
 from ..config import get_settings
 from ..db import (
-    expire_team_gamespace,
+    deactivate_team,
+    deactivate_game_session,
     get_team,
-    get_teams,
     store_virtual_machines,
     store_team,
     get_assigned_headless_urls,
+    store_game_session,
+    get_active_game_session,
 )
-from ..gamedata.cache import GameStateManager, TeamID, MissionID, NonExistentTeam
+from ..gamedata.cache import (
+    GameStateManager,
+    TeamID,
+    MissionID,
+    NonExistentTeam,
+)
+from ..gamedata.model import (
+    GamespaceData,
+    TeamGamespaceInfo,
+)
 from ..util import url_path_join, TeamLocks
 
 
@@ -56,47 +71,57 @@ admin_router = APIRouter(
 )
 
 
+class OutOfGameServersError(Exception):
+    ...
+
+
 class HeadlessManager:
     _lock = asyncio.Lock()
 
     @classmethod
-    async def assign_headless(cls, team_id: TeamID):
+    async def assign_headless(cls, teams: list[TeamID]) -> dict[TeamID, HeadlessUrl]:
         async with cls._lock:
             assigned_headless_urls = await get_assigned_headless_urls()
 
-            if url := assigned_headless_urls.get(team_id):
-                return str(url)
+            assignments = {}
 
-            all_headless_urls = set(get_settings().game.headless_client_urls.values())
+            for team_id in teams:
+                if url := assigned_headless_urls.get(team_id):
+                    # Somehow this team already had a headless URL.
+                    logging.warning(
+                        f"Team {team_id} was already assigned a headless URL. "
+                        "This is fine, but atypical and may indicate other "
+                        "problems."
+                    )
+                    assignments[team_id] = url
+                    teams.remove(team_id)
+
+            all_headless_urls = set(
+                get_settings().game.headless_client_urls.values())
 
             available_headless_urls = all_headless_urls - set(
                 assigned_headless_urls.values()
             )
-            try:
-                headless_url = available_headless_urls.pop()
-            except KeyError:
-                logging.warning(
-                    f"Team {team_id} tried to request a headless client assignment, but the pool is expended.\n"
-                    f"The current assignments are: {json.dumps(assigned_headless_urls, indent=2)}"
+
+            if len(available_headless_urls) < len(teams):
+                logging.error(
+                    "Could not assign a headless clients for all teams in "
+                    "a deployment request.\n"
+                    "The current assignments are:\n"
+                    f"{json.dumps(assigned_headless_urls, indent=2)}"
                 )
-                return None
+                raise OutOfGameServersError
 
-            logging.info(f"Assigning headless server {headless_url} to team {team_id}.")
-            await store_team(team_id, headless_url=str(headless_url))
-            return str(headless_url)
+            for team_id in teams:
+                # Should be fine to pop without a try block because of the
+                # previous check.
+                headless_url = available_headless_urls.pop()
+                assignments[team_id] = headless_url
+                logging.info(
+                    f"Assigning server {headless_url} to team {team_id}.")
+                await store_team(team_id, headless_url=str(headless_url))
 
-
-class ConsoleUrl(BaseModel):
-    id: str
-    url: str
-    name: str
-
-
-class DeployResponse(BaseModel):
-    headlessUrl: HeadlessUrl | None
-    gamespaceId: GamespaceID | None
-    vms: list[ConsoleUrl]
-    totalPoints: int
+            return assignments
 
 
 def construct_vm_url(gamespace_id: str, vm_name: str):
@@ -127,69 +152,11 @@ def console_urls_from_vm_data(
     return console_urls
 
 
-async def get_team_from_db(team_id: TeamID) -> dict:
-    team_data = await get_team(team_id)
-
-    if expiration := team_data.get("gamespace_expiration"):
-        if datetime.now(timezone.utc) > expiration:
-            logging.info(
-                f"Team {team_id} had an expired gamespace {team_data['gamespace_id']}. "
-                f"Expiration time was {expiration}. "
-                "Dropping internal tracking."
-            )
-            del team_data["gamespace_expiration"]
-            del team_data["gamespace_id"]
-            del team_data["vm_data"]
-            del team_data["headless_url"]
-            await expire_team_gamespace(team_id)
-
-    return team_data
-
-
-async def register_gamespace_and_get_vms(
-    game_id: GameID, team_id: TeamID, total_points: int
-) -> (GamespaceID, GamespaceExpiration, list[ConsoleUrl]):
-    gameboard_team = await gameboard.get_team(team_id)
-    if not gameboard_team:
-        logging.error(
-            f"Unable to retrieve team data from Gameboard for team {team_id}."
-        )
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-    game_specs = await gameboard.get_game_specs(game_id)
-    if not game_specs:
-        logging.error(
-            f"Unable to retrieve game specs from Gameboard for game {game_id}."
-        )
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-    try:
-        game_specs = game_specs.pop()
-    except IndexError:
-        logging.error(f"Game {game_id} does not have any specs defined in Gameboard.")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-    external_id = game_specs["externalId"]
-    gamespace = await topomojo.register_gamespace(
-        external_id,
-        gameboard_team["sessionEnd"],
-        gameboard_team["members"],
-        total_points,
-    )
-    if not gamespace or "vms" not in gamespace:
-        logging.error(
-            f"Unable to register a gamespace for team {team_id} from workspace {external_id}."
-        )
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-    console_urls = console_urls_from_vm_data(gamespace["id"], gamespace["vms"])
-
-    return gamespace["id"], gamespace["expirationTime"], console_urls
-
-
 async def get_team_name(game_id: GameID, team_id: TeamID) -> str:
     teams_list = await gameboard.get_teams(game_id)
     if not teams_list:
-        logging.error(f"Unable to get teams list from Gameboard for game {game_id}.")
+        logging.error(
+            f"Unable to get teams list from Gameboard for game {game_id}.")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     for team_meta in teams_list:
         if team_meta["id"] == team_id:
@@ -197,121 +164,249 @@ async def get_team_name(game_id: GameID, team_id: TeamID) -> str:
     return f"Unknown Name for Team {team_id}"
 
 
-@admin_router.get("/deploy/{game_id}/{team_id}")
-async def get_deployment(game_id: GameID, team_id: TeamID) -> DeployResponse:
-    return await deploy(game_id, team_id, False)
+class ShipGamespaceNotFound(Exception):
+    ...
 
 
-@admin_router.post("/deploy/{game_id}/{team_id}")
-async def create_deployment(game_id: GameID, team_id: TeamID) -> DeployResponse:
-    return await deploy(game_id, team_id, True)
+class TooManyShipGamespacesFound(Exception):
+    ...
 
 
-async def deploy(
-    game_id: GameID,
-    team_id: TeamID,
-    create_gamespace_if_none: bool,
-) -> DeployResponse:
-    async with TeamLocks(team_id):
-        team_data = await get_team_from_db(team_id)
+async def retrieve_gamespace_info(
+    team_id: str,
+    gamespace_consoles: dict[GamespaceID, list[ConsoleUrl]],
+) -> TeamGamespaceInfo:
+    ship_gamespace_id = None
+    ship_gamespace_data = None
+    gamespace_data = {}
 
-        total_points = await GameStateManager.get_total_points()
-
-        gamespace_id = team_data.get("gamespace_id")
-        headless_url = team_data.get("headless_url")
-        vm_data = team_data.get("vm_data", [])
-        console_urls = []
-        if gamespace_id and vm_data:
-            console_urls = console_urls_from_vm_data(gamespace_id, vm_data)
-
-        if create_gamespace_if_none and (not gamespace_id or not headless_url):
-            # If a team has no gamespace, they should be reset to the beginning of the game.
-            await GameStateManager.new_team(team_id)
-
-            headless_url = await HeadlessManager.assign_headless(team_id)
-            if not headless_url:
-                return DeployResponse(
-                    gamespaceId=None,
-                    headlessUrl=None,
-                    vms=[],
-                    totalPoints=total_points,
-                )
-
-            try:
-                (
-                    gamespace_id,
-                    gamespace_expiration,
-                    console_urls,
-                ) = await register_gamespace_and_get_vms(game_id, team_id, total_points)
-                team_name = await get_team_name(game_id, team_id)
-            except Exception as e:
-                # If anything goes wrong with gamespace deployment,
-                # we should free whatever headless URL was assigned before leaving.
-                await expire_team_gamespace(team_id)
-                raise e
-            await store_team(
-                team_id,
-                gamespace_id=gamespace_id,
-                gamespace_expiration=gamespace_expiration,
-                team_name=team_name,
+    for gamespace_id, console_urls in gamespace_consoles.items():
+        preview_data = await topomojo.get_gamespace(gamespace_id)
+        markdown = preview_data.get("markdown")
+        if not markdown:
+            logging.error(
+                "retrieve_gamespace_info:"
+                f"Gamespace {gamespace_id} preview did not "
+                "contain a 'markdown' field. "
+                f"This is the data returned: {preview_data}"
             )
-            await store_virtual_machines(
-                team_id, [console_url.dict() for console_url in console_urls]
+            raise KeyError()
+        gs_data_yaml = yaml.safe_load(markdown)
+        try:
+            gs_data = GamespaceData(
+                **gs_data_yaml,
+                gamespaceID=gamespace_id,
+                consoleURLs=console_urls
             )
-            await GameStateManager.update_team_urls(
-                team_id, {vm.name: vm.url for vm in console_urls}
+        except (ValidationError, TypeError) as e:
+            logging.error(
+                "retrieve_gamespace_info:"
+                f"Exception: {str(e)} -"
+                f"Gamespace {gamespace_id} had a document that could "
+                f"not be parsed as YAML. Contents: {markdown}"
             )
+            continue
+
+        if gs_data.taskID is None:
+            if ship_gamespace_id:
+                raise TooManyShipGamespacesFound
+            ship_gamespace_id = gamespace_id
+            ship_gamespace_data = gs_data
             logging.info(
-                f"Registered gamespace {gamespace_id} for team {team_id}, "
-                f"assigned to headless server {headless_url}. "
-                f"VM Console URLs: {json.dumps([url.dict() for url in console_urls], indent=2)}"
+                "retrieve_gamespace_in: Found ship gamespace "
+                f"{ship_gamespace_id} for team "
+                f"{team_id}. Gamespace data: {gs_data.dict()} "
+                f"Workspace YAML: {gs_data_yaml}"
             )
+        else:
+            gamespace_data[gs_data.taskID] = gs_data
 
-        return DeployResponse(
-            gamespaceId=gamespace_id,
-            headlessUrl=headless_url,
-            vms=console_urls,
-            totalPoints=total_points,
+    if not ship_gamespace_id:
+        raise ShipGamespaceNotFound
+
+    team_gs_info = TeamGamespaceInfo(
+        ship_gamespace_id=ship_gamespace_id,
+        ship_gamespace_data=ship_gamespace_data,
+        gamespaces=gamespace_data,
+    )
+
+    return team_gs_info
+
+
+class DeploymentResponse(BaseModel):
+    __root__: dict[TeamID, HeadlessUrl]
+
+
+def parse_vm_urls(vm_urls: list[str]) -> list[ConsoleUrl]:
+    console_urls = []
+
+    for url in vm_urls:
+        parsed_url = urlparse(url)
+        parsed_qs = parse_qs(parsed_url.query)
+
+        # Currently these keys should exist in the query string.
+        # Maybe improve in the future by raising a custom exception
+        # if they are not there.
+        vm_id = parsed_qs['s'][0]
+        vm_name = parsed_qs['v'][0]
+
+        console_url = ConsoleUrl(id=vm_id, name=vm_name, url=url)
+
+        console_urls.append(console_url)
+
+    return console_urls
+
+
+async def _internal_deploy(deployment_data: Deployment):
+    if await get_active_game_session():
+        logging.error("Deployment failed because there is already an active game session.")
+        return
+
+    gamespace_info = {}
+
+    session_teams = []
+
+    logging.info(
+        f"Got start time {str(deployment_data.session.sessionBegin)}, "
+        f"end time {str(deployment_data.session.sessionEnd)}, and current "
+        f"time {str(deployment_data.session.now)} from Gameboard."
+    )
+
+    gamebrain_time = datetime.now(tz=timezone.utc)
+    if abs(gamebrain_time - deployment_data.session.now).seconds > 2:
+        logging.warning(
+            f"Deployment at Gamebrain time {gamebrain_time} "
+            "differs more than 2 seconds from deployer time "
+            f"of {deployment_data.session.now}"
         )
 
+    deployment_data.session.now = gamebrain_time
 
-@admin_router.get("/undeploy/{team_id}")
-async def undeploy(
-    team_id: TeamID,
-):
-    async with TeamLocks(team_id):
-        team_data = await get_team(team_id)
-        if not team_data:
-            raise HTTPException(status_code=404, detail="Team not found.")
+    for team in deployment_data.teams:
+        team_gamespace_vms = {
+            gs.id: parse_vm_urls(gs.vmUris)
+            for gs in team.gamespaces
+        }
+        team_gamespace_info = await retrieve_gamespace_info(
+            team.id,
+            team_gamespace_vms,
+        )
 
-        if gamespace_id := team_data.get("gamespace_id"):
-            await topomojo.complete_gamespace(gamespace_id)
-            await expire_team_gamespace(team_id)
+        gamespace_info[team.id] = team_gamespace_info
+        session_teams.append(team.id)
+
+        logging.info(
+            "_internal_deploy: "
+            f"Team {team} had gamespace mappings "
+            f"{json.dumps(team_gamespace_info.gamespaces, indent=2, default=str)}"
+        )
+
+        await GameStateManager.new_team(
+            team.id,
+            deployment_data.session,
+            team_gamespace_info.ship_gamespace_data
+        )
+
+        await store_team(
+            team.id,
+            ship_gamespace_id=team_gamespace_info.ship_gamespace_id,
+            team_name=team.name,
+        )
+
+        ship_console_urls = team_gamespace_vms[
+            team_gamespace_info.ship_gamespace_id
+        ]
+
+        await store_virtual_machines(
+            team.id, [console_url.dict() for console_url in ship_console_urls]
+        )
+        await GameStateManager.pc4_update_team_urls(
+            team.id,
+            {
+                vm.name: vm.url
+                for vm in ship_console_urls
+            }
+        )
+
+    await store_game_session(
+        session_teams,
+        deployment_data.session.sessionBegin,
+        deployment_data.session.sessionEnd,
+        deployment_data.session.now,
+        deployment_data.game.id,
+    )
+
+    await GameStateManager.init_challenges(gamespace_info)
+    await GameStateManager.update_all_active_team_urls()
+    await GameStateManager.start_game_timers()
+
+
+class VideoRefreshManager:
+    _task_lock = asyncio.Lock()
+    _active_task: asyncio.Task = None
+
+    @classmethod
+    async def start_video_refresh_task(cls):
+        async with cls._task_lock:
+            if cls._active_task and not cls._active_task.done():
+                return
+            cls._active_task = asyncio.create_task(
+                GameStateManager.video_freshness_task())
+
+
+DEPLOY_LOCK = asyncio.Lock()
+
+
+@admin_router.post("/deploy")
+async def deploy(deployment_data: Deployment) -> DeploymentResponse:
+    logging.info(
+        "deploy: deployment_data contents - "
+        f"{json.dumps(deployment_data.dict(), default=str, indent=2)}"
+    )
+    await VideoRefreshManager.start_video_refresh_task()
+
+    assignments = await HeadlessManager.assign_headless(
+        [team.id for team in deployment_data.teams]
+    )
+
+    try:
+        async with DEPLOY_LOCK:
+            await _internal_deploy(deployment_data)
+    except Exception as e:
+        for team in deployment_data.teams:
+            await deactivate_team(team.id)
+        raise e
+
+    return DeploymentResponse(__root__=assignments)
+
+
+@admin_router.post("/undeploy")
+async def undeploy():
+    active_teams = await get_teams_active()
+
+    for team_id in active_teams.__root__:
+        async with TeamLocks(team_id):
+            team_data = await get_team(team_id)
+            if not team_data:
+                logging.error(
+                    f"get_teams_active() call returned team {team_id}, "
+                    "but no such team appears to exist."
+                )
+                continue
+
+            await deactivate_team(team_id)
+    await deactivate_game_session()
+    await GameStateManager.uninit_challenges()
+    await GameStateManager.stop_game_timers()
 
 
 class ActiveTeamsResponse(BaseModel):
-    __root__: dict[TeamID, DeployResponse]
+    __root__: dict[TeamID, HeadlessUrl]
 
 
 @admin_router.get("/teams_active")
 async def get_teams_active() -> ActiveTeamsResponse:
-    teams = await get_teams()
-    total_points = await GameStateManager.get_total_points()
-    active_teams = {}
-    for team in teams:
-        gamespace_id = team.get("gamespace_id")
-        headless_url = team.get("headless_url")
-        vm_data = team.get("vm_data")
-        if not (gamespace_id and headless_url and vm_data):
-            # Team is inactive.
-            continue
-        console_urls = console_urls_from_vm_data(gamespace_id, vm_data)
-        active_teams[team.get("id")] = DeployResponse(
-            gamespaceId=gamespace_id,
-            headlessUrl=headless_url,
-            vms=console_urls,
-            totalPoints=total_points,
-        )
+    active_teams = await get_assigned_headless_urls()
 
     response = ActiveTeamsResponse(__root__=active_teams)
     logging.info(f"Active teams: {json.dumps(response.dict(), indent=2)}")
@@ -335,20 +430,22 @@ class UpdateConsoleUrlsPostData(BaseModel):
     __root__: list[ConsoleUrl]
 
 
-@admin_router.post("/update_console_urls/{team_id}")
+# @admin_router.post("/update_console_urls/{team_id}")
 async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostData):
     async with TeamLocks(team_id):
-        team_data = await get_team_from_db(team_id)
+        team_data = await get_team(team_id)
         if not team_data:
-            logging.error(f"update_console_urls Team {team_id} does not exist.")
+            logging.error(
+                f"update_console_urls Team {team_id} does not exist.")
             raise HTTPException(status_code=400, detail="Team does not exist.")
 
         console_urls = post_data.__root__
-        logging.info(f"Got a console URL update for team {team_id}: {console_urls}")
+        logging.info(
+            f"Got a console URL update for team {team_id}: {console_urls}")
 
         await store_virtual_machines(
             team_id, [console_url.dict() for console_url in console_urls]
         )
-        await GameStateManager.update_team_urls(
+        await GameStateManager.pc4_update_team_urls(
             team_id, {vm.name: vm.url for vm in console_urls}
         )

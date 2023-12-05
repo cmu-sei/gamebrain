@@ -33,6 +33,8 @@ from httpx import AsyncClient
 from .common import _service_request_and_log, HttpMethod
 
 
+TOPOMOJO_CLIENT = None
+
 GamespaceID = str
 GamespaceExpiration = str
 
@@ -48,19 +50,24 @@ def get_settings():
 
 
 def _get_topomojo_client() -> AsyncClient:
-    settings = get_settings()
-    ssl_context = ssl.create_default_context()
-    if settings.ca_cert_path:
-        ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
-    api_key = settings.topomojo.x_api_key
-    api_client = settings.topomojo.x_api_client
+    global TOPOMOJO_CLIENT
 
-    return AsyncClient(
-        base_url=settings.topomojo.base_api_url,
-        verify=ssl_context,
-        headers={"x-api-key": api_key, "x-api-client": api_client},
-        timeout=300.0,
-    )
+    if not TOPOMOJO_CLIENT:
+        settings = get_settings()
+        ssl_context = ssl.create_default_context()
+        if settings.ca_cert_path:
+            ssl_context.load_verify_locations(cafile=settings.ca_cert_path)
+        api_key = settings.topomojo.x_api_key
+        api_client = settings.topomojo.x_api_client
+
+        TOPOMOJO_CLIENT = AsyncClient(
+            base_url=settings.topomojo.base_api_url,
+            verify=ssl_context,
+            headers={"x-api-key": api_key, "x-api-client": api_client},
+            timeout=60.0,
+        )
+
+    return TOPOMOJO_CLIENT
 
 
 async def _topomojo_request(
@@ -99,6 +106,10 @@ async def get_workspace(workspace_id: str) -> Optional[Any]:
 
 async def get_gamespace(gamespace_id: str) -> Optional[Any]:
     return await _topomojo_get(f"gamespace/{gamespace_id}")
+
+
+async def get_preview(gamespace_id: str) -> Optional[Any]:
+    return await _topomojo_get(f"preview/{gamespace_id}")
 
 
 async def get_vms_by_gamespace_id(gamespace_id: str) -> Optional[Any]:
@@ -165,27 +176,35 @@ async def change_vm_params(vm_id: str, params: dict):
 async def change_vm_net(vm_id: str, new_net: str):
     possible_nets = await get_vm_nets(vm_id)
     if not possible_nets or "net" not in possible_nets:
-        logging.error(f"Could not retrieve network information for VM {vm_id}.")
+        logging.error(
+            f"Could not retrieve network information for VM {vm_id}.")
         return
 
     possible_nets = possible_nets["net"]
     network_name, *interface = new_net.split(":")
-    for network in possible_nets:
-        if network.startswith(network_name):
-            target_network = network
-            break
-    else:
-        logging.warning(
-            f"Could not change VM {vm_id} to network {network_name} because the network was not found in "
-            f"its list of possible networks: \n{json.dumps(possible_nets, indent=2)}"
-        )
-        return
+    target_network = ""
+
+    if "#" not in network_name:
+        for network in possible_nets:
+            if network.startswith(network_name):
+                target_network = network
+                break
+        else:
+            logging.warning(
+                f"Unable to change VM {vm_id} to network {network_name}. "
+                "The network needs to be suffixed with a gamespace ID, "
+                f"example {network_name}#abcdef1234567890 for cross-gamespace "
+                "networking to work."
+            )
+    if not target_network:
+        target_network = network_name
 
     if interface:
         target_network = f"{target_network}:{interface[0]}"
 
     params = {"key": "net", "value": target_network}
-    logging.info(f"Attempting to change VM {vm_id} to network {target_network}.")
+    logging.info(
+        f"Attempting to change VM {vm_id} to network {target_network}.")
     return await change_vm_params(vm_id, params)
 
 

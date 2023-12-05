@@ -204,7 +204,8 @@
       "commPower": "off",
       "flightPower": "off",
       "navPower": "off",
-      "pilotPower": "off"
+      "pilotPower": "off",
+      "antennaNic": 1
     },
     "locations": [
       {

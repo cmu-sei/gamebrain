@@ -22,12 +22,20 @@
 
 # DM23-0100
 
-from json import JSONDecodeError, load as json_load, loads as json_loads
+import os
+from json import (
+    JSONDecodeError,
+    load as json_load,
+    loads as json_loads,
+    dumps as json_dumps,
+)
 import logging
+import sys
 from typing import TextIO, BinaryIO
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import ValidationError
+import pytest
 
 from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
@@ -47,6 +55,11 @@ from .gamedata.cache import (
     LocationID,
     PowerMode,
 )
+from .util import cleanup_team, cleanup_session
+
+# This whole module was written without thinking about pytest.
+if os.path.basename(sys.argv[0]) in ("pytest", "py.test"):
+    pytest.skip(allow_module_level=True)
 
 
 test_router = APIRouter(
@@ -225,8 +238,7 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
         new_state_data = json_load(file)
     except JSONDecodeError as e:
         raise HTTPException(
-            status_code=400, detail=f"JSON has invalid formatting: {e}"
-        )
+            status_code=400, detail=f"JSON has invalid formatting: {e}")
 
     try:
         new_state = GameDataCacheSnapshot(**new_state_data)
@@ -236,3 +248,13 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
         )
 
     await GameStateManager.init(new_state, GameStateManager._settings)
+
+
+@test_router.get("/end_team_game/{team_id}")
+async def end_team_game(team_id: str):
+    await cleanup_team(team_id)
+
+
+@test_router.get("/end_game_session")
+async def end_game_session():
+    await cleanup_session()

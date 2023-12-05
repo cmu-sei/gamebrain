@@ -25,6 +25,7 @@
 import asyncio
 import json
 import logging
+import traceback
 
 from dataclasses import dataclass
 from pydantic import ValidationError
@@ -47,6 +48,8 @@ class GamespaceStatusTask:
     async def init(cls, settings: "SettingsModel"):
         cls.settings = settings
         cls.challenge_tasks_config = cls.settings.game.challenge_tasks
+
+        logging.info("GamespaceStatusTask.init called.")
 
         return await cls._grader_task()
 
@@ -83,7 +86,7 @@ class GamespaceStatusTask:
             # Dispatch hasn't finished yet.
             return
         if error:
-            logging.error(f"Dispatch had an error: {error}")
+            # logging.error(f"Dispatch had an error: {error}")
             return
         logging.info(f"Dispatch completed successfully: {result}")
         return result

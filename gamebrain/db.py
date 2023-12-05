@@ -28,9 +28,9 @@ from functools import partial
 import json
 from typing import Dict, List, Optional
 
-from dateutil.parser import isoparse
 from sqlalchemy import (
     Column,
+    DateTime,
     Integer,
     String,
     Boolean,
@@ -59,16 +59,30 @@ class DBManager:
         __tablename__ = "challenge_secret"
 
         id = Column(String(40), primary_key=True)
-        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
+        team_id = Column(String(36), ForeignKey(
+            "team_data.id"), nullable=False)
+
+    class GameSession(orm_base):
+        __tablename__ = "game_session"
+
+        id = Column(Integer, primary_key=True)
+        session_start = Column(DateTime(timezone=True), nullable=False)
+        session_end = Column(DateTime(timezone=True), nullable=False)
+        deployer_initial_time = Column(DateTime(timezone=True), nullable=False)
+        game_id = Column(String(36), nullable=False)
+        active = Column(Boolean(), nullable=False)
+
+        teams = relationship("TeamData", lazy="joined")
 
     class TeamData(orm_base):
         __tablename__ = "team_data"
 
         id = Column(String(36), primary_key=True)
-        gamespace_id = Column(String(36))
-        gamespace_expiration = Column(TIMESTAMP(timezone.utc))
+        game_session_id = Column(Integer, ForeignKey("game_session.id"))
+        ship_gamespace_id = Column(String(36))
         headless_url = Column(String)
         team_name = Column(String)
+        active = Column(Boolean(), nullable=False, default=True)
 
         # lazy="joined" to prevent session errors.
         vm_data = relationship("VirtualMachine", lazy="joined")
@@ -80,7 +94,8 @@ class DBManager:
         __tablename__ = "console_url"
 
         id = Column(String(36), primary_key=True)
-        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
+        team_id = Column(String(36), ForeignKey(
+            "team_data.id"), nullable=False)
         url = Column(String, nullable=False)
         name = Column(String, nullable=False)
 
@@ -88,7 +103,8 @@ class DBManager:
         __tablename__ = "event"
 
         id = Column(Integer, primary_key=True)
-        team_id = Column(String(36), ForeignKey("team_data.id"), nullable=False)
+        team_id = Column(String(36), ForeignKey(
+            "team_data.id"), nullable=False)
         message = Column(String, nullable=False)
         received_time = Column(TIMESTAMP(timezone.utc), nullable=False)
 
@@ -119,7 +135,8 @@ class DBManager:
     async def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
         if cls.engine and not drop_first:
             return
-        cls.engine = create_async_engine(connection_string, echo=echo, future=True)
+        cls.engine = create_async_engine(
+            connection_string, echo=echo, future=True)
         # I don't know if expire_on_commit is necessary here, but the SQLAlchemy docs used it.
         cls.session_factory = sessionmaker(
             cls.engine, expire_on_commit=False, class_=AsyncSession
@@ -154,7 +171,8 @@ class DBManager:
 async def store_event(team_id: str, message: str):
     received_time = datetime.now(timezone.utc)
     event = [
-        DBManager.Event(team_id=team_id, message=message, received_time=received_time)
+        DBManager.Event(team_id=team_id, message=message,
+                        received_time=received_time)
     ]
     await DBManager.merge_rows(event)
     return received_time
@@ -182,37 +200,85 @@ async def store_virtual_machines(team_id: str, vms: List[Dict]):
 
 async def store_team(
     team_id: str,
-    gamespace_id: Optional[str] = None,
-    gamespace_expiration: Optional[str] = None,
+    ship_gamespace_id: Optional[str] = None,
     headless_url: Optional[str] | None = "",
     team_name: Optional[str] = None,
+    game_session_id: Optional[int] = None,
 ):
     """
-    gamespace_id: Maximum 36 character string.
-    gamespace_expiration: https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.isoparse
+    ship_gamespace_id: Maximum 36 character string.
     """
     # Avoid clobbering existing values
     kwargs = {}
-    if gamespace_id:
-        kwargs["gamespace_id"] = gamespace_id
-    if gamespace_expiration:
-        kwargs["gamespace_expiration"] = isoparse(gamespace_expiration)
+    if ship_gamespace_id:
+        kwargs["ship_gamespace_id"] = ship_gamespace_id
     if headless_url or headless_url is None:
         kwargs["headless_url"] = headless_url
     if team_name:
         kwargs["team_name"] = team_name
+    if game_session_id:
+        kwargs["game_session_id"] = game_session_id
     team_data = DBManager.TeamData(id=team_id, **kwargs)
     await DBManager.merge_rows([team_data])
 
 
-async def expire_team_gamespace(team_id: str):
+async def store_game_session(
+    team_ids: [str],
+    session_start: datetime,
+    session_end: datetime,
+    deployer_initial_time: datetime,
+    game_id: str
+):
+    session_data = DBManager.GameSession(
+        session_start=session_start,
+        session_end=session_end,
+        deployer_initial_time=deployer_initial_time,
+        game_id=game_id,
+        active=True,
+    )
+    for team_id in team_ids:
+        await store_team(team_id, game_session_id=session_data.id)
+
+    await DBManager.merge_rows([session_data])
+
+
+async def get_active_game_session():
+    try:
+        return (await DBManager.get_rows(
+            DBManager.GameSession,
+            DBManager.GameSession.active == True
+        )).pop()
+    except IndexError:
+        return None
+
+
+async def get_active_teams() -> list[dict]:
+    return await DBManager.get_rows(
+        DBManager.TeamData,
+        DBManager.TeamData.active == True
+    )
+
+
+async def deactivate_team(team_id: str):
+    team = await get_team(team_id)
+    if not team:
+        logging.warning(
+            "deactivate_team: "
+            f"Called with a nonexistent team {team_id}."
+        )
+        return
     team_data = DBManager.TeamData(
-        id=team_id, gamespace_id=None, gamespace_expiration=None, headless_url=None
+        id=team_id,
+        active=False,
     )
     await DBManager.merge_rows([team_data])
-    await DBManager.delete_where(
-        DBManager.VirtualMachine, DBManager.VirtualMachine.team_id == team_id
-    )
+
+
+async def deactivate_game_session():
+    active_game = await get_active_game_session()
+    if active_game:
+        session = DBManager.GameSession(id=active_game["id"], active=False)
+        await DBManager.merge_rows([session])
 
 
 async def get_team(team_id: str) -> Dict:
@@ -280,24 +346,24 @@ async def get_cache_snapshot() -> str | None:
 
 
 async def get_assigned_headless_urls() -> dict[str, str]:
-    # `is not` should be correct, but using it returns all teams in the DB instead of just the ones with headless URLs.
-    teams_with_ips = await DBManager.get_rows(
-        DBManager.TeamData, DBManager.TeamData.headless_url != None
-    )
+    active_teams = await get_active_teams()
 
-    result = {team["id"]: team["headless_url"] for team in teams_with_ips}
+    result = {team["id"]: team["headless_url"] for team in active_teams}
     formatted_result = json.dumps(result, indent=2)
-    logging.debug(f"get_assigned_headless_urls result: {formatted_result}")
+    logging.debug(f"get_assigned_headless_urls: {formatted_result}")
     return result
 
 
 async def get_teams_with_gamespace_ids() -> dict[str, str]:
-    # `is not` should be correct, but using it returns all teams in the DB instead of just the ones with gamespace IDs.
+    # `is not` should be correct, but using it returns all teams
+    # in the DB instead of just the ones with gamespace IDs.
     teams_with_gamespace_ids = await DBManager.get_rows(
-        DBManager.TeamData, DBManager.TeamData.gamespace_id != None
+        DBManager.TeamData, DBManager.TeamData.ship_gamespace_id != None
     )
 
-    result = {team["id"]: team["gamespace_id"] for team in teams_with_gamespace_ids}
+    result = {
+        team["id"]: team["ship_gamespace_id"] for team in teams_with_gamespace_ids
+    }
     formatted_result = json.dumps(result, indent=2)
     logging.debug(f"get_teams_with_gamespace_ids result: {formatted_result}")
     return result

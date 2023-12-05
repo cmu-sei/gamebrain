@@ -17,7 +17,7 @@ identity:
   # A client should be made in Identity specifically for Gamebrain. Its ID should be provided here. Currently this client must be a Resource Owner.
   client_id: gamebrain-client
   # Generate a secret for the Gamebrain client and supply it here.
-  client_secret: 7e972ec6610b49dab492a92ec3d7f5cd
+  client_secret: 0c1a8e7be6624c83bc9b8b2c9b99ac31
   # Configuration section for JWT **scopes** for API endpoints. The name is a holdover from early development.
   jwt_audiences:
     # This scope is required for an individual player's identity token.
@@ -37,15 +37,19 @@ topomojo:
   # This will usually be a URL to Topomojo ending in `/api` or `/api/`.
   base_api_url: https://foundry.local/topomojo/api/
   # Generate a secret for the created bot account and insert it here.
-  x_api_key: xaFmE0_YIo8QjDszdh0L79ySlpI79KfA
+  x_api_key: hjQC_zO2tijlbjPnjIy258fW3J8E3Gc5
   # Gamebrain will need a configured bot account in Topomojo with Observer permission enabled in order to do its work. The name of that bot account should be inserted here.
-  x_api_client: user-bot-test
+  x_api_client: Administrator
 # This is a section with keys related to interactions with Gameboard.
 gameboard:
   # Gameboard's base URL.
   base_url: https://foundry.local/gameboard/
   # Gameboard's API URL. This will usually, but not necessarily, start with `base_url` and then end with `/api` or `/api/`.
   base_api_url: https://foundry.local/gameboard/api/
+  # Generate a secret for the created bot account and insert it here.
+  x_api_key: hjQC_zO2tijlbjPnjIy258fW3J8E3Gc5
+  # Gamebrain will need a configured bot account in Topomojo with Observer permission enabled in order to do its work. The name of that bot account should be inserted here.
+  x_api_client: Administrator
 # This section contains database-related configuration.
 db:
   # This option is directly passed to create_async_engine (https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#sqlalchemy.ext.asyncio.create_async_engine). By default, `requirements.txt` only includes the `asyncpg` package, and that is the only one that has been tested. It should be possible to swap the async engine to use another database by installing another async package, but it has never been tested.
@@ -111,7 +115,7 @@ game:
   # Deprecated.
   gamestate_test_mode: false
   # The Gameboard Game ID which launches teams into the Cubespace game.
-  game_id: f63c8e41fd994e16bad08075dd2a666c
+  game_id: ee7bc919d07941ccad9b80576022a8b3
   # `key: value` pairs addressing each cubespace headless server. The key is the `hostname` the server program can see within its environment. The value is a public URL to the server.
   headless_client_urls:
     "server-1": "https://foundry.local/gameserver/1"
