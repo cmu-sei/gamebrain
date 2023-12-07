@@ -1517,9 +1517,11 @@ class GameStateManager:
                 "possible_max_score": challenge_spec.maxPossibleScore,
                 "base_solve_value": challenge_spec.completionScore,
                 "bonus_remaining": max(
-                    team_challenge_score.unclaimedBonuses,
+                    map(
+                        lambda b: b.pointValue,
+                        team_challenge_score.unclaimedBonuses,
+                    ),
                     default=0,
-                    key=lambda b: b.pointValue,
                 ),
             }
             mission_map[mission_id] = MissionScoreData(**mission_score_data)
