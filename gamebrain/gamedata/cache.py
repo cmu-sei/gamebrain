@@ -1513,14 +1513,15 @@ class GameStateManager:
                 continue
 
             mission_score_data = {
-                "current_score": team_challenge_score.score.completionScore,
+                "current_score": team_challenge_score.score.totalScore,
                 "possible_max_score": challenge_spec.maxPossibleScore,
                 "base_solve_value": challenge_spec.completionScore,
-                "bonus_remaining": sum(
+                "bonus_remaining": max(
                     map(
                         lambda b: b.pointValue,
                         team_challenge_score.unclaimedBonuses,
-                    )
+                    ),
+                    default=0,
                 ),
             }
             mission_map[mission_id] = MissionScoreData(**mission_score_data)
