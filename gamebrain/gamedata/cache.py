@@ -1954,6 +1954,8 @@ class GameStateManager:
                 continue
             if team_data.missions[mission_id].complete:
                 continue
+            if not gamespace_data.consoleURLs:
+                continue
             global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
             if not global_mission_data:
                 logging.error(
