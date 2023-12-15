@@ -1708,6 +1708,13 @@ class GameStateManager:
             else:
                 team_data.ship.nextJumpTime = datetime.datetime.max.isoformat()
 
+            if team_data.currentStatus.antennaExtended:
+                antenna_state = cls.ExtendOrRetract.extend
+            else:
+                antenna_state = cls.ExtendOrRetract.retract
+
+            await cls._update_team_urls_body(team_id, antenna_state)
+
             full_loc_data = cls._get_team_unlocked_locations(team_data)
 
             full_mission_data = await cls._get_team_unlocked_missions(
