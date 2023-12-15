@@ -61,7 +61,16 @@ Settings.init_settings(Global.settings_path)
 
 LOGLEVEL = get_settings().log_level
 print(f"Got log level: {LOGLEVEL}")
-logging.basicConfig(level=LOGLEVEL)
+logging.basicConfig(
+    level=LOGLEVEL,
+    format=(
+        "Time: %(asctime)s |",
+        "File: %(pathname)s |",
+        "Function: %(funcName)s |",
+        "Line: %(lineno)d |",
+        "Message: %(message)s",
+    )
+)
 uvicorn_logger = logging.getLogger("uvicorn.access")
 uvicorn_logger.setLevel(LOGLEVEL)
 
@@ -148,11 +157,11 @@ async def get_team_from_user(
 ):
     session = await db.get_active_game_session()
     if not session:
-        logging.warning("get_team_from_user: There is no active game session.")
+        logging.warning("There is no active game session.")
         return
     game_id = session.get("game_id")
     if not game_id:
-        logging.error("get_team_from_user: Active game session has no game ID.")
+        logging.error("Active game session has no game ID.")
         return
 
     try:

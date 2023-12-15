@@ -409,11 +409,11 @@ class GameStateManager:
 
         now = datetime.datetime.now(timezone.utc)
         if next_refresh <= now:
-            logging.info("video_freshness_task: Starting Video URL refresh...")
+            logging.info("Starting Video URL refresh...")
 
             async with cls._lock:
                 cls._next_video_refresh = now + datetime.timedelta(days=7)
-                logging.info(f"video_freshness_task: Next refresh set to {cls._next_video_refresh}")
+                logging.info(f"Next refresh set to {cls._next_video_refresh}")
 
             async with AsyncClient() as client:
                 # Technically should be a task group or something, but
@@ -425,13 +425,12 @@ class GameStateManager:
                             # just as long as the video downloads.
                             ...
                         if response.is_success:
-                            logging.info(f"video_freshness_task: Refreshed URL {url} successfully.")
+                            logging.info(f"Refreshed URL {url} successfully.")
                         else:
                             logging.error(
-                                f"video_freshness_task: "
                                 f"HTTP Request to {response.url} returned {response.status_code}\n")
         else:
-            logging.info("video_freshness_task: Skipping Video URL refresh...")
+            logging.info("Skipping Video URL refresh...")
 
     @classmethod
     def _set_task_comm_event_active(
@@ -562,7 +561,6 @@ class GameStateManager:
 
         if not first_task:
             logging.error(
-                "_handle_mission_unlock:"
                 f"Mission {global_mission.missionID} "
                 f"indicated its first task is {global_mission.first_task} "
                 "which does not exist in the game data."
@@ -588,7 +586,6 @@ class GameStateManager:
 
         if team_mission := team_data.missions.get(global_mission.missionID):
             logging.info(
-                "_handle_mission_unlock:"
                 f"Team mission data found for team {team_id}. "
                 f"Marking mission {global_mission.missionID} unlocked."
             )
@@ -600,7 +597,6 @@ class GameStateManager:
                 team_mission.taskList = task_list
         else:
             logging.info(
-                "_handle_mission_unlock:"
                 f"Team mission data not found for team {team_id}. "
                 "Constructing internal data and then "
                 f"marking mission {global_mission.missionID} unlocked."
@@ -635,7 +631,6 @@ class GameStateManager:
         global_mission: InternalGlobalMissionData,
     ):
         logging.info(
-            "_complete_mission_and_unlock_next: "
             f"Marking mission {team_mission.missionID} complete for team {team_id}."
         )
         team_mission.complete = True
@@ -646,7 +641,6 @@ class GameStateManager:
 
         if not global_mission.firstNthCompletionUnlocks:
             logging.warning(
-                "_complete_mission_and_unlock_next: "
                 f"Mission {team_mission.missionID} does not unlock any "
                 "additional missions. No problem if this is intentional."
             )
@@ -981,7 +975,7 @@ class GameStateManager:
             for question in challenge_questions
         ]
         logging.info(
-            "_handle_first_year_tasks: Question summary: "
+            "Question summary: "
             f"{json.dumps(question_summary)}"
         )
 
@@ -1011,7 +1005,7 @@ class GameStateManager:
                 continue
 
             logging.info(
-                "_handle_first_year_tasks: Doing special handling "
+                "Doing special handling "
                 f"for team {team_id} and task {task_id}"
             )
 
@@ -1026,14 +1020,14 @@ class GameStateManager:
                         )
                     except TypeError:
                         logging.error(
-                            "_handle_first_year_tasks: Question "
+                            "Question "
                             f"{task_id} in PC4 game had a null answer."
                         )
                     except ValueError:
                         # This means the answer was a non-ISO-format string.
                         # It's no problem if the question is marked correct.
                         logging.error(
-                            "_handle_first_year_tasks: Question "
+                            "Question "
                             f"{task_id} in PC4 game had an answer "
                             "not in ISO format."
                         )
@@ -1051,7 +1045,7 @@ class GameStateManager:
             global_task = cls._cache.task_map.__root__.get(task_id)
             if not global_task:
                 logging.error(
-                    "_handle_first_year_tasks: Gamespace had task ID "
+                    "Gamespace had task ID "
                     f"{task_id}, but it does not exist in the game data."
                 )
                 continue
@@ -1065,7 +1059,7 @@ class GameStateManager:
                 cls._complete_task_and_unlock_next(team_id, team_data, global_task)
             else:
                 logging.error(
-                    "_handle_first_year_tasks: Could not find "
+                    "Could not find "
                     "'cllctn6' in the global task cache."
                 )
 
@@ -1093,7 +1087,6 @@ class GameStateManager:
         mission_id = cls._cache.gamespace_to_mission.get(gamespace_id)
         if not mission_id:
             logging.error(
-                "_mission_timer_challenge_handling: "
                 f"Got a challenge for team {team_id} "
                 f"indicating a gamespace ID {gamespace_id}, "
                 "but that gamespace was not mapped to a mission."
@@ -1103,7 +1096,6 @@ class GameStateManager:
         team_challenge_data = cls._cache.challenges.get(team_id)
         if not team_challenge_data:
             logging.error(
-                "_mission_timer_challenge_handling: "
                 f"Got an uninitialized team ID: {team_id}"
             )
             return
@@ -1111,7 +1103,6 @@ class GameStateManager:
         gs_data = team_challenge_data.get(mission_id)
         if not gs_data:
             logging.error(
-                "_mission_timer_challenge_handling: "
                 f"Had a challenge with ID {gamespace_id} for team "
                 f"{team_id} that mapped to a mission {mission_id}, "
                 "but no gamespace data was saved during challenge init."
@@ -1269,7 +1260,6 @@ class GameStateManager:
 
         if gamespace_data.noGateway:
             logging.info(
-                "_change_gamespace_gateway_network: "
                 f"Gamespace {gamespace_data} has noGateway "
                 "set to True. Will not attempt to change a network for it."
             )
@@ -1277,7 +1267,6 @@ class GameStateManager:
 
         if not location_id and not force_target_network:
             logging.warning(
-                "_change_gamespace_gateway_network: "
                 f"Gamespace {gamespace_id} does not have "
                 "a location ID referenced. This is fine if the ship does not "
                 "need to connect to the gamespace's network."
@@ -1301,7 +1290,6 @@ class GameStateManager:
         )
         if not vm_id_response.success:
             logging.error(
-                "_change_gamespace_gateway_network: "
                 "Could not get a VM ID for a VM named "
                 f"{gateway_vm_name} in "
                 f"Gamespace {gamespace_id}"
@@ -1321,7 +1309,6 @@ class GameStateManager:
             global_mission = cls._cache.mission_map.__root__[mission_id]
         except KeyError:
             logging.error(
-                "_check_galaxy_map_positions: "
                 f"Could not find mission {mission_id}."
             )
             return
@@ -1361,7 +1348,6 @@ class GameStateManager:
             global_task_data = cls._cache.task_map.__root__.get(task_id)
             if not global_task_data:
                 logging.error(
-                    "init_challenges: "
                     f"Gamespace {gamespace_data.gamespaceID} had an "
                     f"invalid task ID {task_id}."
                 )
@@ -1374,7 +1360,6 @@ class GameStateManager:
                 team_data = await get_team(team_id)
                 if not team_data:
                     logging.error(
-                        "init_challenges: "
                         f"Tried to look up team {team_id} "
                         "but it was not found in the database!"
                     )
@@ -1392,7 +1377,6 @@ class GameStateManager:
                     mission_id = get_mission_id(task_id)
                     if not mission_id:
                         logging.warning(
-                            "init_challenges: "
                             f"Team {team_id} gamespace "
                             f"{gamespace_data.gamespaceID} "
                             f"has a task ID {task_id} without a corresponding "
@@ -1411,7 +1395,6 @@ class GameStateManager:
                     cls._cache.gamespace_to_mission[gamespace_id] = mission_id
 
                     logging.info(
-                        "init_challenges: "
                         f"Team {team_id} had mission {mission_id} "
                         f"assigned to gamespace {gamespace_id}."
                     )
@@ -1709,7 +1692,6 @@ class GameStateManager:
                 mission_map = cls._map_team_score_data(team_score_data)
                 if cls._spam_reduction_tracker >= 20:
                     logging.info(
-                        "get_team_data: "
                         f"Got score data for team {team_id}: "
                         f"{json.dumps(mission_map, indent=2, default=str)}"
                     )
@@ -1744,7 +1726,7 @@ class GameStateManager:
 
             if cls._spam_reduction_tracker >= 20:
                 logging.info(
-                    "get_team_data: Full team data response:"
+                    "Full team data response:"
                     f"{json.dumps(full_team_data.dict(), default=str)}"
                 )
                 cls._spam_reduction_tracker = 0
@@ -1907,7 +1889,6 @@ class GameStateManager:
             team_data.ship.codexURL = pc4_urls.get("codex-decoder", "")
 
             logging.info(
-                "pc4_update_team_urls: "
                 f"Team Data for team {team_id} updated: "
                 "{team_data.ship.dict()}"
             )
@@ -1959,7 +1940,6 @@ class GameStateManager:
             global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
             if not global_mission_data:
                 logging.error(
-                    "update_team_urls: "
                     f"Team {team_id} had a gamespace for mission "
                     f"{mission_id}, but no such mission exists. "
                     "Unable to extract VM Consoles."
@@ -2068,7 +2048,6 @@ class GameStateManager:
         for result in results:
             if isinstance(result, cls.VmIdResponseFailure):
                 logging.error(
-                    "_bulk_network_change_team_gamespaces: "
                     f"Team {team_id} got a VM ID Response failure."
                 )
 

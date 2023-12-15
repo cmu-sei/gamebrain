@@ -183,7 +183,6 @@ class Global:
 
     @classmethod
     async def init(cls):
-        logging.basicConfig(level=logging.INFO)
         settings = get_settings()
         if settings.db.drop_app_tables:
             logging.info("db.drop_app_tables setting is ON, dropping tables.")

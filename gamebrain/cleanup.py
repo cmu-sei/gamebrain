@@ -100,13 +100,13 @@ class BackgroundCleanupTask:
             gamespace_info = await topomojo.get_gamespace(gamespace_id)
             if not gamespace_info:
                 logging.warning(
-                    f"_cleanup_body: Tried to get Gamespace info for {gamespace_id}, "
+                    f"Tried to get Gamespace info for {gamespace_id}, "
                     "but received no data from TopoMojo."
                 )
                 continue
             if not gamespace_info.get("isActive"):
                 logging.info(
-                    f"_cleanup_body: Team {team_id} had an inactive gamespace. "
+                    f"Team {team_id} had an inactive gamespace. "
                     "Removing internal tracking and unassigning their game server..."
                 )
                 await cleanup_team(team_id)
@@ -122,7 +122,7 @@ class BackgroundCleanupTask:
                     expiration = current_time
             except Exception as e:
                 logging.error(
-                    "_cleanup_body: Tried to parse gamespace expiration time "
+                    "Tried to parse gamespace expiration time "
                     f"for team {team_id} but got exception {e} instead."
                 )
             else:

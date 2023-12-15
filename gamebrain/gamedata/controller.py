@@ -102,7 +102,7 @@ async def get_extendantenna(
     ).identity.jwt_audiences.gamestate_api)
     try:
         result = await GameStateManager.extend_antenna(team_id)
-        logging.info(f"ExtendAntenna result: \n{result.json(indent=2)}")
+        logging.info(f"{result.json(indent=2)}")
         return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
@@ -117,7 +117,7 @@ async def get_retractantenna(
     ).identity.jwt_audiences.gamestate_api)
     try:
         result = await GameStateManager.retract_antenna(team_id)
-        logging.info(f"RetractAntenna result: \n{result.json(indent=2)}")
+        logging.info(f"{result.json(indent=2)}")
         return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
@@ -159,7 +159,7 @@ async def get_commeventcompleted(
     ).identity.jwt_audiences.gamestate_api)
     try:
         result = await GameStateManager.complete_comm_event(team_id)
-        logging.info(f"CommEventCompleted result: {result}.")
+        logging.info(f"{result}")
         return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
