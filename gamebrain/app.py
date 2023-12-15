@@ -64,10 +64,10 @@ print(f"Got log level: {LOGLEVEL}")
 logging.basicConfig(
     level=LOGLEVEL,
     format=(
-        "Time: %(asctime)s |"
-        "File: %(pathname)s |"
-        "Function: %(funcName)s |"
-        "Line: %(lineno)d |"
+        "Time: %(asctime)s | "
+        "File: %(pathname)s | "
+        "Function: %(funcName)s | "
+        "Line: %(lineno)d | "
         "Message: %(message)s"
     )
 )
