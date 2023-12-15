@@ -1917,15 +1917,17 @@ class GameStateManager:
                 vmURL=console_url.url,
             ) for console_url in team_data.ship.gamespaceData.consoleURLs]
 
-        ship_challenge_urls = ChallengeURLs(
-            missionID="ship",
-            missionName="Ship Consoles",
-            missionIcon="",
-            vmURLs=ship_gamespace_vm_urls,
-        )
+        ship_challenge_urls = [
+            ChallengeURLs(
+                missionID="ship",
+                missionName="Ship Consoles",
+                missionIcon="",
+                vmURLs=ship_gamespace_vm_urls,
+            )
+        ] if ship_gamespace_vm_urls else []
 
         if extend_or_retract == cls.ExtendOrRetract.retract:
-            team_data.ship.challengeURLs = [ship_challenge_urls]
+            team_data.ship.challengeURLs = ship_challenge_urls
             return
 
         team_challenge_urls = []
@@ -1962,7 +1964,7 @@ class GameStateManager:
             team_challenge_urls.append(challenge_urls)
 
         team_challenge_urls.sort(key=lambda el: el.missionName)
-        team_data.ship.challengeURLs = [ship_challenge_urls] + team_challenge_urls
+        team_data.ship.challengeURLs = ship_challenge_urls + team_challenge_urls
 
     @classmethod
     async def update_team_urls(
