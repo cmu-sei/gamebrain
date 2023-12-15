@@ -1952,6 +1952,8 @@ class GameStateManager:
         for mission_id, gamespace_data in team_challenge_map.items():
             if team_data.currentStatus.currentLocation != gamespace_data.locationID:
                 continue
+            if team_data.missions[mission_id].complete:
+                continue
             global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
             if not global_mission_data:
                 logging.error(
