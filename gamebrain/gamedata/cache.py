@@ -1713,7 +1713,8 @@ class GameStateManager:
             else:
                 antenna_state = cls.ExtendOrRetract.retract
 
-            await cls._update_team_urls_body(team_id, antenna_state)
+            if team_id:
+                await cls._update_team_urls_body(team_id, antenna_state)
 
             full_loc_data = cls._get_team_unlocked_locations(team_data)
 
