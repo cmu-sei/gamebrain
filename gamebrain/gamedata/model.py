@@ -87,6 +87,9 @@ class GamespaceData(BaseModel):
     gatewayVmName: str | None
     gatewayNic: int | None
     noGateway: bool = False
+    # Whether the VM consoles listed in this workspace will be
+    # pushed to players.
+    visible: bool = True
     # Next two are currently unused.
     dispatches: list[Dispatch] = []
     initial_dispatches: list[DispatchID] = []

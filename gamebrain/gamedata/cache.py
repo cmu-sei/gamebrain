@@ -1919,11 +1919,14 @@ class GameStateManager:
 
         team_challenge_map = cls._cache.challenges[team_id]
 
-        ship_gamespace_vm_urls = [
-            VmURL(
-                vmName=console_url.name,
-                vmURL=console_url.url,
-            ) for console_url in team_data.ship.gamespaceData.consoleURLs]
+        if team_data.ship.gamespaceData.visible:
+            ship_gamespace_vm_urls = [
+                VmURL(
+                    vmName=console_url.name,
+                    vmURL=console_url.url,
+                ) for console_url in team_data.ship.gamespaceData.consoleURLs]
+        else:
+            ship_gamespace_vm_urls = []
 
         ship_challenge_urls = [
             ChallengeURLs(
@@ -1969,7 +1972,8 @@ class GameStateManager:
                 missionIcon=global_mission_data.missionIcon,
                 vmURLs=gamespace_vm_urls,
             )
-            team_challenge_urls.append(challenge_urls)
+            if gamespace_data.visible:
+                team_challenge_urls.append(challenge_urls)
 
         team_challenge_urls.sort(key=lambda el: el.missionName)
         team_data.ship.challengeURLs = ship_challenge_urls + team_challenge_urls
