@@ -101,12 +101,15 @@ async def _gameboard_put(
 
 
 async def get_player_by_user_id(user_id: str, game_id: str) -> Optional[Any]:
-    players = await _gameboard_get("players")
+    players = await _gameboard_get("players", {"gid": game_id})
     if players:
         # This endpoint claims that it can accept query params, but "uid" appears not to work.
         for player in players:
-            if player["userId"] == user_id and player["gameId"] == game_id:
-                return player
+            try:
+                if player["userId"] == user_id:
+                    return player
+            except TypeError:
+                error("Players: {players}")
     return None
 
 
