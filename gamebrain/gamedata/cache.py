@@ -1704,6 +1704,34 @@ class GameStateManager:
         return full_mission_data
 
     @classmethod
+    async def _handle_show_incomplete_when_away(
+        cls,
+        full_team_data: GameDataResponse,
+    ):
+        for mission in full_team_data.missions:
+            if mission.complete:
+                continue
+            for task in mission.taskList:
+                if (
+                    not task.markCompleteWhen or
+                    not task.showIncompleteWhenAwayOrStatusIncorrect
+                ):
+                    continue
+                if (
+                    full_team_data.currentStatus.currentLocation ==
+                        task.markCompleteWhen.locationID
+                ):
+                    match task.markCompleteWhen.type:
+                        case "explorationMode":
+                            if full_team_data.currentStatus.powerStatus == "explorationMode":
+                                continue
+                        case "antennaExtended":
+                            if full_team_data.currentStatus.antennaExtended:
+                                continue
+
+                task.complete = False
+
+    @classmethod
     async def get_team_data(cls, team_id: TeamID | None) -> GameDataResponse | None:
         async with cls._lock:
             mission_map = {}
@@ -1759,6 +1787,8 @@ class GameStateManager:
                 locations=full_loc_data,
                 missions=full_mission_data,
             )
+
+            await cls._handle_show_incomplete_when_away(full_team_data)
 
             if cls._spam_reduction_tracker >= 20:
                 logging.info(
