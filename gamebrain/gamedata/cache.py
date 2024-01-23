@@ -1694,12 +1694,14 @@ class GameStateManager:
                         task.markCompleteWhen.locationID
                 ):
                     match task.markCompleteWhen.type:
-                        case "explorationMode":
-                            if full_team_data.currentStatus.powerStatus == "explorationMode":
-                                continue
                         case "antennaExtended":
                             if full_team_data.currentStatus.antennaExtended:
                                 continue
+                        case "explorationMode":
+                            if full_team_data.currentStatus.powerStatus == "explorationMode":
+                                continue
+                        case _:
+                            continue
 
                 task.complete = False
 
