@@ -120,7 +120,7 @@ class GameSettingsModel(BaseModel):
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
 
-    challenge_tasks: list[ChallengeTask]
+    challenge_tasks: list[ChallengeTask] = []
 
     headless_client_urls: dict[Hostname, ServerPublicUrl]
 
