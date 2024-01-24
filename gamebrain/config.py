@@ -109,16 +109,19 @@ class ChallengeTask(BaseModel):
 
 
 class GameSettingsModel(BaseModel):
+    # Currently unused.
     event_actions: list[EventActionsSettingsModel] = []
     ship_network_vm_name: Optional[str] = ""
 
     antenna_retracted_network: Optional[str] = "deepspace:1"
+
     # Next 4 only used for PC4 games.
     grading_vm_name: Optional[str] = ""
     grading_vm_dispatch_command: Optional[str] = ""
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
 
+    # Only used in PC4.
     challenge_tasks: list[ChallengeTask] = []
 
     headless_client_urls: dict[Hostname, ServerPublicUrl]
