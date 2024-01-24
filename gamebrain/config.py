@@ -122,8 +122,6 @@ class GameSettingsModel(BaseModel):
 
     challenge_tasks: list[ChallengeTask]
 
-    game_id: str
-
     headless_client_urls: dict[Hostname, ServerPublicUrl]
 
 
