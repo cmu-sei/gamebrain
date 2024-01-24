@@ -54,7 +54,6 @@ class JwtAudiencesModel(BaseModel):
 class IdentitySettingsModel(BaseModel):
     base_url: str
     jwks_endpoint: str
-    client_secret: str
     jwt_issuer: str
     jwt_audiences: JwtAudiencesModel
 
