@@ -122,7 +122,6 @@ class GameSettingsModel(BaseModel):
 
     challenge_tasks: list[ChallengeTask]
 
-    gamestate_test_mode: Optional[bool] = False
     game_id: str
 
     headless_client_urls: dict[Hostname, ServerPublicUrl]
