@@ -114,6 +114,7 @@ class GameSettingsModel(BaseModel):
     ship_network_vm_name: Optional[str] = ""
 
     antenna_retracted_network: Optional[str] = "deepspace:1"
+    # Next 4 only used for PC4 games.
     grading_vm_name: Optional[str] = ""
     grading_vm_dispatch_command: Optional[str] = ""
     final_destination_name: Optional[str] = ""
