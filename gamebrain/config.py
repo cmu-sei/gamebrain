@@ -47,7 +47,6 @@ from .util import url_path_join
 
 class JwtAudiencesModel(BaseModel):
     gamebrain_api_unpriv: str
-    gamebrain_api_priv: str
     gamestate_api: str
 
 
