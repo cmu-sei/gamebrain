@@ -112,7 +112,7 @@ class ChallengeTask(BaseModel):
 
 
 class GameSettingsModel(BaseModel):
-    event_actions: list[EventActionsSettingsModel]
+    event_actions: list[EventActionsSettingsModel] = []
     gamespace_duration_minutes: Optional[int] = 60
     ship_network_vm_name: Optional[str] = ""
 
