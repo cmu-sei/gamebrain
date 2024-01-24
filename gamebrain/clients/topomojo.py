@@ -128,36 +128,6 @@ async def poll_dispatch(dispatch_id: str) -> Optional[Any]:
     return await _topomojo_get(f"dispatch/{dispatch_id}")
 
 
-async def register_gamespace(
-    workspace_id: str, expiration_time: str, team_members: List[Dict], total_points: int
-):
-    """
-    team_members: Each dict contains 'id' and 'approvedName' keys.
-    """
-    settings = get_settings()
-
-    post_data = {
-        "resourceId": workspace_id,
-        "graderKey": "",
-        "graderUrl": "",
-        "variant": 0,
-        "playerCount": len(team_members),
-        "maxAttempts": 3,
-        "maxMinutes": settings.game.gamespace_duration_minutes,
-        "points": total_points,
-        "allowReset": True,
-        "allowPreview": True,
-        "startGamespace": True,
-        "expirationTime": expiration_time,
-        "players": [
-            {"subjectId": player["id"], "subjectName": player["approvedName"]}
-            for player in team_members
-        ],
-    }
-    endpoint = "gamespace"
-    return await _topomojo_post(endpoint, post_data)
-
-
 async def stop_gamespace(gamespace_id: str):
     endpoint = f"gamespace/{gamespace_id}/stop"
     return await _topomojo_post(endpoint, {})
