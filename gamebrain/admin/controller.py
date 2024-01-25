@@ -185,7 +185,6 @@ async def retrieve_gamespace_info(
         markdown = preview_data.get("markdown")
         if not markdown:
             logging.error(
-                "retrieve_gamespace_info:"
                 f"Gamespace {gamespace_id} preview did not "
                 "contain a 'markdown' field. "
                 f"This is the data returned: {preview_data}"
@@ -200,7 +199,6 @@ async def retrieve_gamespace_info(
             )
         except (ValidationError, TypeError) as e:
             logging.error(
-                "retrieve_gamespace_info:"
                 f"Exception: {str(e)} -"
                 f"Gamespace {gamespace_id} had a document that could "
                 f"not be parsed as YAML. Contents: {markdown}"
@@ -213,7 +211,7 @@ async def retrieve_gamespace_info(
             ship_gamespace_id = gamespace_id
             ship_gamespace_data = gs_data
             logging.info(
-                "retrieve_gamespace_in: Found ship gamespace "
+                "Found ship gamespace "
                 f"{ship_gamespace_id} for team "
                 f"{team_id}. Gamespace data: {gs_data.dict()} "
                 f"Workspace YAML: {gs_data_yaml}"
@@ -296,7 +294,6 @@ async def _internal_deploy(deployment_data: Deployment):
         session_teams.append(team.id)
 
         logging.info(
-            "_internal_deploy: "
             f"Team {team} had gamespace mappings "
             f"{json.dumps(team_gamespace_info.gamespaces, indent=2, default=str)}"
         )
@@ -360,7 +357,7 @@ DEPLOY_LOCK = asyncio.Lock()
 @admin_router.post("/deploy")
 async def deploy(deployment_data: Deployment) -> DeploymentResponse:
     logging.info(
-        "deploy: deployment_data contents - "
+        "deployment_data contents - "
         f"{json.dumps(deployment_data.dict(), default=str, indent=2)}"
     )
     await VideoRefreshManager.start_video_refresh_task()
@@ -436,7 +433,7 @@ async def update_console_urls(team_id: TeamID, post_data: UpdateConsoleUrlsPostD
         team_data = await get_team(team_id)
         if not team_data:
             logging.error(
-                f"update_console_urls Team {team_id} does not exist.")
+                f"Team {team_id} does not exist.")
             raise HTTPException(status_code=400, detail="Team does not exist.")
 
         console_urls = post_data.__root__

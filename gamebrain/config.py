@@ -47,16 +47,12 @@ from .util import url_path_join
 
 class JwtAudiencesModel(BaseModel):
     gamebrain_api_unpriv: str
-    gamebrain_api_priv: str
     gamestate_api: str
 
 
 class IdentitySettingsModel(BaseModel):
     base_url: str
-    token_endpoint: str
     jwks_endpoint: str
-    client_id: str
-    client_secret: str
     jwt_issuer: str
     jwt_audiences: JwtAudiencesModel
 
@@ -112,28 +108,27 @@ class ChallengeTask(BaseModel):
 
 
 class GameSettingsModel(BaseModel):
-    event_actions: list[EventActionsSettingsModel]
-    gamespace_duration_minutes: Optional[int] = 60
+    # Currently unused.
+    event_actions: list[EventActionsSettingsModel] = []
     ship_network_vm_name: Optional[str] = ""
 
-    antenna_vm_name: Optional[str] = ""
     antenna_retracted_network: Optional[str] = "deepspace:1"
+
+    # Next 4 only used for PC4 games.
     grading_vm_name: Optional[str] = ""
     grading_vm_dispatch_command: Optional[str] = ""
     final_destination_name: Optional[str] = ""
     final_destination_file_path: Optional[str] = ""
 
-    challenge_tasks: list[ChallengeTask]
-
-    gamestate_test_mode: Optional[bool] = False
-    game_id: str
+    # Only used in PC4.
+    challenge_tasks: list[ChallengeTask] = []
 
     headless_client_urls: dict[Hostname, ServerPublicUrl]
 
 
 class SettingsModel(BaseModel):
     ca_cert_path: str = None
-    app_root_prefix: Optional[str] = "/gamebrain"
+    app_root_prefix: Optional[str] = ""
     identity: IdentitySettingsModel
     topomojo: TopomojoSettingsModel
     gameboard: GameboardSettingsModel
@@ -183,7 +178,6 @@ class Global:
 
     @classmethod
     async def init(cls):
-        logging.basicConfig(level=logging.INFO)
         settings = get_settings()
         if settings.db.drop_app_tables:
             logging.info("db.drop_app_tables setting is ON, dropping tables.")

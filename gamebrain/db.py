@@ -263,7 +263,6 @@ async def deactivate_team(team_id: str):
     team = await get_team(team_id)
     if not team:
         logging.warning(
-            "deactivate_team: "
             f"Called with a nonexistent team {team_id}."
         )
         return
@@ -350,7 +349,7 @@ async def get_assigned_headless_urls() -> dict[str, str]:
 
     result = {team["id"]: team["headless_url"] for team in active_teams}
     formatted_result = json.dumps(result, indent=2)
-    logging.debug(f"get_assigned_headless_urls: {formatted_result}")
+    logging.debug(formatted_result)
     return result
 
 
@@ -365,5 +364,5 @@ async def get_teams_with_gamespace_ids() -> dict[str, str]:
         team["id"]: team["ship_gamespace_id"] for team in teams_with_gamespace_ids
     }
     formatted_result = json.dumps(result, indent=2)
-    logging.debug(f"get_teams_with_gamespace_ids result: {formatted_result}")
+    logging.debug(formatted_result)
     return result

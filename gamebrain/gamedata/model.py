@@ -87,6 +87,9 @@ class GamespaceData(BaseModel):
     gatewayVmName: str | None
     gatewayNic: int | None
     noGateway: bool = False
+    # Whether the VM consoles listed in this workspace will be
+    # pushed to players.
+    visible: bool = True
     # Next two are currently unused.
     dispatches: list[Dispatch] = []
     initial_dispatches: list[DispatchID] = []
@@ -169,6 +172,15 @@ class TaskData(BaseModel):
     markCompleteWhen: TaskBranch = None
     failWhen: TaskBranch = None
     cancelWhen: TaskBranch = None
+    # Pretend the task is incomplete when the ship is away from its
+    # completion location, the current status is incorrect (a markCompleteWhen
+    # which requires exploration mode when the ship is in launch mode, for
+    # example) AND the associated mission is not complete. Only applied when
+    # markCompleteWhen is specified with a location.
+    # Purely for appearance - internal state is not changed, only what is
+    # sent to the game server. Primarily meant for "explorationMode",
+    # or "antennaExtended" at the moment.
+    showIncompleteWhenAwayOrStatusIncorrect: bool = False
 
 
 class TaskDataTeamSpecific(BaseModel):
