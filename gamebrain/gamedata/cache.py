@@ -609,7 +609,7 @@ class GameStateManager:
             team_data.missions[global_mission.missionID] = unlocked_mission
 
     @classmethod
-    def _get_mission_completion_in_team_session(
+    async def _get_mission_completion_in_team_session(
         cls,
         team_id: TeamID,
         global_mission: InternalGlobalMissionData,
@@ -642,7 +642,7 @@ class GameStateManager:
         return total_completions
 
     @classmethod
-    def _complete_mission_and_unlock_next(
+    async def _complete_mission_and_unlock_next(
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
@@ -665,7 +665,7 @@ class GameStateManager:
             )
             return
 
-        times_completed = cls._get_mission_completion_in_team_session(
+        times_completed = await cls._get_mission_completion_in_team_session(
             team_id, global_mission
         )
 
@@ -758,7 +758,7 @@ class GameStateManager:
                     "exist in the global data."
                 )
             else:
-                cls._complete_mission_and_unlock_next(
+                await cls._complete_mission_and_unlock_next(
                     team_id, team_data, mission, global_mission)
 
             logging.info(
