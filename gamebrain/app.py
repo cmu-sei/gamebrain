@@ -161,6 +161,7 @@ async def get_team_from_user(
                 for player in team["players"]:
                     if player["user_id"] == user_id:
                         return (session, team)
+        return (None, None)
 
     check_jwt(
         auth.credentials,
