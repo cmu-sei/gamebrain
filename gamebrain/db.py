@@ -279,12 +279,17 @@ async def store_game_session(
 
 
 async def get_team_game_session(team_id: str):
+    team_data = await get_team(team_id)
+    if not team_data:
+        return None
     try:
-        return (await DBManager.get_rows(
-            DBManager.GameSession,
-            DBManager.GameSession.active == True,
-            team_id in DBManager.GameSession.teams,
-        )).pop()
+        return (
+            await DBManager.get_rows(
+                DBManager.GameSession,
+                DBManager.GameSession.id == team_data.game_session_id,
+                DBManager.GameSession.active == True,
+            )
+        ).pop()
     except IndexError:
         return None
 
