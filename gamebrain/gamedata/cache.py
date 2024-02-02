@@ -1598,7 +1598,10 @@ class GameStateManager:
         mission_unlock_codes = {}
 
         team_session = await get_team_game_session(team_id)
-        total_teams = len(team_session['teams'])
+        if team_session:
+            total_teams = len(team_session['teams'])
+        else:
+            total_teams = 0
 
         for mission in team_data.missions.values():
             if not mission.unlocked:
@@ -1676,7 +1679,7 @@ class GameStateManager:
                 teams_solved = 0
             completion_data = {
                 "solveTeams": teams_solved,
-                "totalTeams": len(total_teams),
+                "totalTeams": total_teams,
             }
 
             mission_full = MissionDataFull(
