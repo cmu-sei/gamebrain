@@ -279,14 +279,14 @@ async def store_game_session(
 
 
 async def get_team_game_session(team_id: str):
-    team_data = await get_team(team_id)
-    if not team_data:
+    team = await get_team(team_id)
+    if not team:
         return None
     try:
         return (
             await DBManager.get_rows(
                 DBManager.GameSession,
-                DBManager.GameSession.id == team_data.game_session_id,
+                DBManager.GameSession.id == team.game_session_id,
                 DBManager.GameSession.active == True,
             )
         ).pop()
@@ -323,9 +323,16 @@ async def deactivate_team(team_id: str):
 
 
 async def deactivate_game_session(session_id: int):
-    active_game = await get_team_game_session(session_id)
-    if active_game:
-        session = DBManager.GameSession(id=active_game["id"], active=False)
+    # active_game = await get_team_game_session(session_id)
+    session = await DBManager.get_rows(
+        DBManager.GameSession,
+        DBManager.GameSession.id == session_id,
+    )
+    if session:
+        session = DBManager.GameSession(
+            id=session["id"],
+            active=False
+        )
         await DBManager.merge_rows([session])
 
 
