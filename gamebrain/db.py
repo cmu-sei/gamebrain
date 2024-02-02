@@ -324,10 +324,14 @@ async def deactivate_team(team_id: str):
 
 async def deactivate_game_session(session_id: int):
     # active_game = await get_team_game_session(session_id)
-    session = await DBManager.get_rows(
-        DBManager.GameSession,
-        DBManager.GameSession.id == session_id,
-    )
+    try:
+        session = (await DBManager.get_rows(
+                DBManager.GameSession,
+                DBManager.GameSession.id == session_id,
+            )
+        ).pop()
+    except IndexError:
+        return
     if session:
         session = DBManager.GameSession(
             id=session["id"],
