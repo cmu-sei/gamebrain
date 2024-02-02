@@ -23,6 +23,7 @@
 # DM23-0100
 
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import partial
 import json
@@ -89,6 +90,15 @@ class DBManager:
         event_log = relationship("Event", lazy="joined")
         secrets = relationship("ChallengeSecret", lazy="joined")
         # ship_data = relationship("GameData", backref="game_data", uselist=False, lazy="joined")
+
+        players = relationship("PlayerInfo", lazy="joined")
+
+    class PlayerInfo(orm_base):
+        __tablename__ = "player_info"
+
+        id = Column(String(36), primary_key=True)
+        team_id = Column(String, ForeignKey("team_data.id"))
+        user_id = Column(String(36))
 
     class VirtualMachine(orm_base):
         __tablename__ = "console_url"
@@ -198,6 +208,29 @@ async def store_virtual_machines(team_id: str, vms: List[Dict]):
     await DBManager.merge_rows(vm_data)
 
 
+@dataclass
+class PlayerInfo:
+    team_id: str
+    player_id: str
+    user_id: str
+
+
+async def store_players(
+    players: list[PlayerInfo]
+):
+    db_players = []
+    for player in players:
+        db_players.append(
+            DBManager.PlayerInfo(
+                id=player.player_id,
+                team_id=player.team_id,
+                user_id=player.user_id,
+            )
+        )
+
+    await DBManager.merge_rows(db_players)
+
+
 async def store_team(
     team_id: str,
     ship_gamespace_id: Optional[str] = None,
@@ -227,7 +260,8 @@ async def store_game_session(
     session_start: datetime,
     session_end: datetime,
     deployer_initial_time: datetime,
-    game_id: str
+    game_id: str,
+    players: list[PlayerInfo],
 ):
     session_data = DBManager.GameSession(
         session_start=session_start,
@@ -239,17 +273,27 @@ async def store_game_session(
     for team_id in team_ids:
         await store_team(team_id, game_session_id=session_data.id)
 
+    await store_players(players)
+
     await DBManager.merge_rows([session_data])
 
 
-async def get_active_game_session():
+async def get_team_game_session(team_id: str):
     try:
         return (await DBManager.get_rows(
             DBManager.GameSession,
-            DBManager.GameSession.active == True
+            DBManager.GameSession.active == True,
+            team_id in DBManager.GameSession.teams,
         )).pop()
     except IndexError:
         return None
+
+
+async def get_active_game_sessions() -> list[dict]:
+    return await DBManager.get_rows(
+        DBManager.GameSession,
+        DBManager.GameSession.active == True,
+    )
 
 
 async def get_active_teams() -> list[dict]:
@@ -273,8 +317,8 @@ async def deactivate_team(team_id: str):
     await DBManager.merge_rows([team_data])
 
 
-async def deactivate_game_session():
-    active_game = await get_active_game_session()
+async def deactivate_game_session(session_id: int):
+    active_game = await get_team_game_session(session_id)
     if active_game:
         session = DBManager.GameSession(id=active_game["id"], active=False)
         await DBManager.merge_rows([session])

@@ -33,8 +33,8 @@ from .gamedata.cache import GameStateManager
 from .db import (
     get_active_teams,
     deactivate_team,
-    get_active_game_session,
     deactivate_game_session,
+    get_active_game_sessions,
 )
 
 
@@ -124,15 +124,18 @@ async def cleanup_team(team_id: str):
     await deactivate_team(team_id)
 
 
-async def cleanup_session():
-    active_teams = await get_active_teams()
-    for team in active_teams:
-        team_id = team["id"]
-        await cleanup_team(team_id)
+async def cleanup_dead_sessions(nuke: bool = False):
+    sessions = await get_active_game_sessions()
+    for session in sessions:
+        session_active_teams = [
+            team for team in session["teams"] if team["active"]
+        ]
+        if session_active_teams and not nuke:
+            continue
+        for team in session_active_teams:
+            await cleanup_team(team["id"])
+        await deactivate_game_session(session["id"])
 
-    session = await get_active_game_session()
-    if session is None:
-        return
-    await GameStateManager.uninit_challenges()
-    await GameStateManager.stop_game_timers()
-    await deactivate_game_session()
+
+async def nuke_active_sessions():
+    await cleanup_dead_sessions(True)

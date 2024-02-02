@@ -55,7 +55,7 @@ from .gamedata.cache import (
     LocationID,
     PowerMode,
 )
-from .util import cleanup_team, cleanup_session
+from .util import cleanup_team, nuke_active_sessions
 
 # This whole module was written without thinking about pytest.
 if os.path.basename(sys.argv[0]) in ("pytest", "py.test"):
@@ -255,6 +255,6 @@ async def end_team_game(team_id: str):
     await cleanup_team(team_id)
 
 
-@test_router.get("/end_game_session")
-async def end_game_session():
-    await cleanup_session()
+@test_router.get("/end_game_sessions")
+async def end_game_sessions():
+    await nuke_active_sessions()
