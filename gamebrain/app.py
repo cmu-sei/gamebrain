@@ -163,7 +163,7 @@ async def get_team_from_user(
                         return (session, team)
         logging.error(
             f"User {user_id} tried to start a game, but could not find"
-            " a session with that user ID. Active sessions: {sessions}"
+            f" a session with that user ID. Active sessions: {sessions}"
         )
         return (None, None)
 
