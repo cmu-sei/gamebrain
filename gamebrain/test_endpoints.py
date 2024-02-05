@@ -41,6 +41,7 @@ from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
+from .db import get_active_game_sessions
 from .gamedata.cache import (
     GameDataCacheSnapshot,
     GameStateManager,
@@ -248,6 +249,11 @@ async def _reload_state_from_file(file: TextIO | BinaryIO):
         )
 
     await GameStateManager.init(new_state, GameStateManager._settings)
+
+
+@test_router.get("/sessions")
+async def list_sessions():
+    return await get_active_game_sessions()
 
 
 @test_router.get("/end_team_game/{team_id}")
