@@ -155,12 +155,16 @@ async def get_team_from_user(
     post_data: GetTeamPostData,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ):
-    def _find_user_session_and_team(sessions):
+    def _find_user_session_and_team(sessions, user_id):
         for session in sessions:
             for team in session["teams"]:
                 for player in team["players"]:
                     if player["user_id"] == user_id:
                         return (session, team)
+        logging.error(
+            f"User {user_id} tried to start a game, but could not find"
+            " a session with that user ID. Active sessions: {sessions}"
+        )
         return (None, None)
 
     check_jwt(
@@ -181,12 +185,8 @@ async def get_team_from_user(
     user_id = payload["sub"]
 
     sessions = await db.get_active_game_sessions()
-    user_session, team_data = _find_user_session_and_team(sessions)
+    user_session, team_data = _find_user_session_and_team(sessions, user_id)
     if not (user_session and team_data):
-        logging.error(
-            f"User {user_id} tried to start a game, but could not find"
-            " a session with that user ID."
-        )
         raise HTTPException(
             status_code=400,
             detail="Failed to find a valid game session."
