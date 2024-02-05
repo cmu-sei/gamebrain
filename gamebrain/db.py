@@ -288,7 +288,7 @@ async def get_team_game_session(team_id: str):
         return (
             await DBManager.get_rows(
                 DBManager.GameSession,
-                DBManager.GameSession.id == team.game_session_id,
+                DBManager.GameSession.id == team["game_session_id"],
                 DBManager.GameSession.active == True,
             )
         ).pop()
