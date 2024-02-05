@@ -270,12 +270,12 @@ async def store_game_session(
         game_id=game_id,
         active=True,
     )
+    await DBManager.merge_rows([session_data])
+
     for team_id in team_ids:
         await store_team(team_id, game_session_id=session_data.id)
 
     await store_players(players)
-
-    await DBManager.merge_rows([session_data])
 
 
 async def get_team_game_session(team_id: str):
