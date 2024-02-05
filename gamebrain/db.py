@@ -164,10 +164,11 @@ class DBManager:
             return [cls._orm_obj_to_dict(item) for item in result]
 
     @classmethod
-    async def merge_rows(cls, items: List):
+    async def merge_rows(cls, items: list[object]) -> list[object]:
+        new_items = []
         async with cls.session_factory() as session:
             for item in items:
-                await session.merge(item)
+                new_items.append(await session.merge(item))
             await session.commit()
 
     @classmethod
@@ -270,10 +271,10 @@ async def store_game_session(
         game_id=game_id,
         active=True,
     )
-    await DBManager.merge_rows([session_data])
+    merged_session_data = await DBManager.merge_rows([session_data])
 
     for team_id in team_ids:
-        await store_team(team_id, game_session_id=session_data.id)
+        await store_team(team_id, game_session_id=merged_session_data[0].id)
 
     await store_players(players)
 
