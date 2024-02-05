@@ -301,6 +301,10 @@ async def get_active_game_sessions() -> list[dict]:
     )
 
 
+async def get_all_sessions() -> list[dict]:
+    return await DBManager.get_rows(DBManager.GameSession)
+
+
 async def get_active_teams() -> list[dict]:
     return await DBManager.get_rows(
         DBManager.TeamData,
