@@ -133,7 +133,13 @@ async def cleanup_dead_sessions(nuke: bool = False):
         if session_active_teams and not nuke:
             continue
         for team in session_active_teams:
+            logging.info(
+                f"Cleaning up team {team['id']}."
+            )
             await cleanup_team(team["id"])
+        logging.info(
+            f"Cleaning up session {session['id']}."
+        )
         await deactivate_game_session(session["id"])
 
 
