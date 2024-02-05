@@ -170,6 +170,7 @@ class DBManager:
             for item in items:
                 new_items.append(await session.merge(item))
             await session.commit()
+        return new_items
 
     @classmethod
     async def delete_where(cls, orm_class: orm_base, *args):
