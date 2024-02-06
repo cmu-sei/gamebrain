@@ -617,9 +617,9 @@ class GameStateManager:
         session = await get_team_game_session(team_id)
         if not session:
             logging.error(
-                "_get_mission_completion_in_team_session: "
                 f"Team {team_id} is not associated with any session."
             )
+            return 0
         session_teams = [team["id"] for team in session["teams"]]
         total_completions = 0
 
@@ -627,7 +627,6 @@ class GameStateManager:
             team_data = cls._cache.team_map.__root__.get(team_id)
             if not team_data:
                 logging.error(
-                    "_get_mission_completion_in_team_session: "
                     f"Session {session['id']} had a team {team_id} that is "
                     "not being tracked in GameStateManager."
                 )
@@ -1671,7 +1670,7 @@ class GameStateManager:
                 )
 
             if team_id:
-                teams_solved = cls._get_mission_completion_in_team_session(
+                teams_solved = await cls._get_mission_completion_in_team_session(
                     team_id,
                     mission_global
                 )
