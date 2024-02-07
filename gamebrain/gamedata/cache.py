@@ -36,7 +36,7 @@ from httpx import AsyncClient
 from pydantic import BaseModel
 
 from ..admin.controllermodels import DeploymentSession
-from ..db import get_team, get_active_teams
+from ..db import get_team, get_active_teams, get_team_game_session
 from ..clients.gameboardmodels import (
     GameEngineQuestionView,
     TeamGameScoreQueryResponse,
@@ -609,21 +609,39 @@ class GameStateManager:
             team_data.missions[global_mission.missionID] = unlocked_mission
 
     @classmethod
-    def _get_mission_completion_for_teams(
+    async def _get_mission_completion_in_team_session(
         cls,
-        global_mission: InternalGlobalMissionData
+        team_id: TeamID,
+        global_mission: InternalGlobalMissionData,
     ) -> int:
+        session = await get_team_game_session(team_id)
+        if not session:
+            logging.error(
+                f"Team {team_id} is not associated with any session."
+            )
+            return 0
+        session_teams = [team["id"] for team in session["teams"]]
         total_completions = 0
-        for team_id, team_data in cls._cache.team_map.__root__.items():
+
+        for team_id in session_teams:
+            team_data = cls._cache.team_map.__root__.get(team_id)
+            if not team_data:
+                logging.error(
+                    f"Session {session['id']} had a team {team_id} that is "
+                    "not being tracked in GameStateManager."
+                )
+                continue
+
             team_mission = team_data.missions.get(global_mission.missionID)
             if not team_mission:
                 # This team has not even unlocked the mission, so move on.
                 continue
             total_completions += int(team_mission.complete)
+
         return total_completions
 
     @classmethod
-    def _complete_mission_and_unlock_next(
+    async def _complete_mission_and_unlock_next(
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
@@ -646,7 +664,9 @@ class GameStateManager:
             )
             return
 
-        times_completed = cls._get_mission_completion_for_teams(global_mission)
+        times_completed = await cls._get_mission_completion_in_team_session(
+            team_id, global_mission
+        )
 
         idx = (
             times_completed
@@ -670,7 +690,7 @@ class GameStateManager:
                 team_id, team_data, unlocked_global_mission)
 
     @classmethod
-    def _complete_task_and_unlock_next(
+    async def _complete_task_and_unlock_next(
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
@@ -737,7 +757,7 @@ class GameStateManager:
                     "exist in the global data."
                 )
             else:
-                cls._complete_mission_and_unlock_next(
+                await cls._complete_mission_and_unlock_next(
                     team_id, team_data, mission, global_mission)
 
             logging.info(
@@ -746,7 +766,7 @@ class GameStateManager:
         return True
 
     @classmethod
-    def _mark_task_complete_if_unlocked(
+    async def _mark_task_complete_if_unlocked(
         cls,
         team_id: TeamID,
         team_data: InternalTeamGameData,
@@ -783,7 +803,7 @@ class GameStateManager:
                     )
                 ):
                     continue
-                cls._complete_task_and_unlock_next(
+                await cls._complete_task_and_unlock_next(
                     team_id, team_data, global_task)
             elif (
                 global_task.cancelWhen
@@ -1049,14 +1069,14 @@ class GameStateManager:
                     f"{task_id}, but it does not exist in the game data."
                 )
                 continue
-            cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+            await cls._complete_task_and_unlock_next(team_id, team_data, global_task)
 
         if send_cllctn6_failure:
             await cls._dispatch_challenge_task_failed(team_id, "cllctn6")
         elif all(cllctn6_completions.values()):
             global_task = cls._cache.task_map.__root__.get("cllctn6")
             if global_task:
-                cls._complete_task_and_unlock_next(team_id, team_data, global_task)
+                await cls._complete_task_and_unlock_next(team_id, team_data, global_task)
             else:
                 logging.error(
                     "Could not find "
@@ -1117,7 +1137,7 @@ class GameStateManager:
             )
             return
 
-        cls._complete_task_and_unlock_next(
+        await cls._complete_task_and_unlock_next(
             team_id,
             team_data,
             global_task
@@ -1171,7 +1191,6 @@ class GameStateManager:
             except Exception as e:
                 logging.error(f"Mission timer task exception: {e}")
 
-
     @staticmethod
     def _handle_task_result(task: asyncio.Task) -> None:
         try:
@@ -1184,16 +1203,16 @@ class GameStateManager:
     @classmethod
     async def start_game_timers(cls):
         async with cls._lock:
-            cls._active_game_timer_task = asyncio.create_task(
-                cls._game_timer_task())
-            cls._active_game_timer_task.add_done_callback(
-                cls._handle_task_result)
-
-            cls._active_dispatch_timer_task = asyncio.create_task(
-                cls._dispatch_timer_task()
-            )
-            cls._active_dispatch_timer_task.add_done_callback(
-                cls._handle_task_result)
+            # cls._active_game_timer_task = asyncio.create_task(
+            #     cls._game_timer_task())
+            # cls._active_game_timer_task.add_done_callback(
+            #     cls._handle_task_result)
+            #
+            # cls._active_dispatch_timer_task = asyncio.create_task(
+            #     cls._dispatch_timer_task()
+            # )
+            # cls._active_dispatch_timer_task.add_done_callback(
+            #     cls._handle_task_result)
 
             cls._active_mission_timer_task = asyncio.create_task(
                 cls._mission_timer_task()
@@ -1201,22 +1220,22 @@ class GameStateManager:
             cls._active_mission_timer_task.add_done_callback(
                 cls._handle_task_result)
 
-    @classmethod
-    async def stop_game_timers(cls):
-        async with cls._lock:
-            if cls._active_game_timer_task is None:
-                logging.warning(
-                    "stop_game_timers called without timers being started.")
-                return
-
-            cls._active_game_timer_task.cancel()
-            cls._active_game_timer_task = None
-
-            cls._active_dispatch_timer_task.cancel()
-            cls._active_dispatch_timer_task = None
-
-            cls._active_mission_timer_task.cancel()
-            cls._active_mission_timer_task = None
+    # @classmethod
+    # async def stop_game_timers(cls):
+    #     async with cls._lock:
+    #         if cls._active_game_timer_task is None:
+    #             logging.warning(
+    #                 "stop_game_timers called without timers being started.")
+    #             return
+    #
+    #         cls._active_game_timer_task.cancel()
+    #         cls._active_game_timer_task = None
+    #
+    #         cls._active_dispatch_timer_task.cancel()
+    #         cls._active_dispatch_timer_task = None
+    #
+    #         cls._active_mission_timer_task.cancel()
+    #         cls._active_mission_timer_task = None
 
     @classmethod
     async def get_total_points(cls) -> int:
@@ -1400,20 +1419,28 @@ class GameStateManager:
                     )
 
     @classmethod
-    async def uninit_challenges(cls):
-        async with cls._lock:
-            cls._cache.challenges = {}
+    async def _uninit_body(cls, team_id: TeamID):
+        try:
+            del cls._cache.challenges[team_id]
+        except KeyError:
+            logging.warning(
+                f"Tried to uninit team {team_id} but it "
+                "was not being tracked in the challenge map."
+            )
 
     @classmethod
-    async def uninit_team(cls, team_id):
+    async def uninit_challenges(cls, teams: list[str] = None):
         async with cls._lock:
-            try:
-                del cls._cache.challenges[team_id]
-            except KeyError:
-                logging.warning(
-                    f"Tried to uninit team {team_id} but it "
-                    "was not being tracked in the challenge map."
-                )
+            if teams is None:
+                # Don't delete from an iterating dict.
+                teams = list(cls._cache.challenges.keys())
+            for team_id in teams:
+                await cls._uninit_body(team_id)
+
+    @classmethod
+    async def uninit_team(cls, team_id: TeamID):
+        async with cls._lock:
+            await cls._uninit_body(team_id)
 
     @classmethod
     async def new_team(
@@ -1569,7 +1596,11 @@ class GameStateManager:
         associated_challenges = {}
         mission_unlock_codes = {}
 
-        total_teams = await get_active_teams()
+        team_session = await get_team_game_session(team_id)
+        if team_session:
+            total_teams = len(team_session['teams'])
+        else:
+            total_teams = 0
 
         for mission in team_data.missions.values():
             if not mission.unlocked:
@@ -1638,10 +1669,16 @@ class GameStateManager:
                     f"mission {mission.missionID}"
                 )
 
-            teams_solved = cls._get_mission_completion_for_teams(mission_global)
+            if team_id:
+                teams_solved = await cls._get_mission_completion_in_team_session(
+                    team_id,
+                    mission_global
+                )
+            else:
+                teams_solved = 0
             completion_data = {
                 "solveTeams": teams_solved,
-                "totalTeams": len(total_teams),
+                "totalTeams": total_teams,
             }
 
             mission_full = MissionDataFull(
@@ -1802,7 +1839,7 @@ class GameStateManager:
                 )
                 return
 
-            cls._complete_task_and_unlock_next(
+            await cls._complete_task_and_unlock_next(
                 team_id, team_data, global_task_data)
 
     @classmethod
@@ -1886,7 +1923,7 @@ class GameStateManager:
                             "but the task doesn't exist."
                         )
                         continue
-                    cls._complete_task_and_unlock_next(
+                    await cls._complete_task_and_unlock_next(
                         team_id, team_data, global_task_data
                     )
 
@@ -2138,7 +2175,7 @@ class GameStateManager:
             team_data.currentStatus.networkConnected = True
             team_data.currentStatus.networkName = network_name
 
-            cls._mark_task_complete_if_unlocked(
+            await cls._mark_task_complete_if_unlocked(
                 team_id,
                 team_data,
                 "antennaExtended"
@@ -2183,7 +2220,7 @@ class GameStateManager:
             cls._settings.game.antenna_retracted_network
         )
 
-        cls._mark_task_complete_if_unlocked(
+        await cls._mark_task_complete_if_unlocked(
             team_id,
             team_data,
             "antennaRetracted"
@@ -2401,7 +2438,7 @@ class GameStateManager:
             team_data.currentStatus = new_status
             await cls._retract_antenna_body(team_id)
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, "jump")
+            await cls._mark_task_complete_if_unlocked(team_id, team_data, "jump")
 
             if team_location.visited:
                 cls._find_comm_event_to_activate(team_id, team_data)
@@ -2445,7 +2482,7 @@ class GameStateManager:
             else:
                 first_contact_event = {}
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, "scan")
+            await cls._mark_task_complete_if_unlocked(team_id, team_data, "scan")
 
             return ScanResponse(
                 success=True,
@@ -2465,7 +2502,7 @@ class GameStateManager:
 
             team_data.currentStatus.powerStatus = new_mode
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, new_mode)
+            await cls._mark_task_complete_if_unlocked(team_id, team_data, new_mode)
 
             return GenericResponse(success=True, message=new_mode)
 
@@ -2540,7 +2577,7 @@ class GameStateManager:
                     team_data.currentStatus.firstContactComplete = True
                     team_comm_location.visited = True
 
-            cls._mark_task_complete_if_unlocked(team_id, team_data, "comm")
+            await cls._mark_task_complete_if_unlocked(team_id, team_data, "comm")
 
             cls._find_comm_event_to_activate(team_id, team_data)
 

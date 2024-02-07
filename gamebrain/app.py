@@ -155,14 +155,22 @@ async def get_team_from_user(
     post_data: GetTeamPostData,
     auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
 ):
-    session = await db.get_active_game_session()
-    if not session:
-        logging.warning("There is no active game session.")
-        return
-    game_id = session.get("game_id")
-    if not game_id:
-        logging.error("Active game session has no game ID.")
-        return
+    def _find_user_session_and_team(sessions, user_id):
+        for session in sessions:
+            for team in session["teams"]:
+                for player in team["players"]:
+                    if player["user_id"] == user_id:
+                        return (session, team)
+        logging.error(
+            f"User {user_id} tried to start a game, but could not find"
+            f" a session with that user ID. Active sessions: {sessions}"
+        )
+        return (None, None)
+
+    check_jwt(
+        auth.credentials,
+        get_settings().identity.jwt_audiences.gamestate_api
+    )
 
     try:
         payload = check_jwt(
@@ -176,14 +184,13 @@ async def get_team_from_user(
 
     user_id = payload["sub"]
 
-    check_jwt(auth.credentials, get_settings(
-    ).identity.jwt_audiences.gamestate_api)
-
-    player = await gameboard.get_player_by_user_id(user_id, game_id)
-
-    team_id = player["teamId"]
-
-    team_data = await db.get_team(team_id)
+    sessions = await db.get_active_game_sessions()
+    user_session, team_data = _find_user_session_and_team(sessions, user_id)
+    if not (user_session and team_data):
+        raise HTTPException(
+            status_code=400,
+            detail="Failed to find a valid game session."
+        )
 
     assigned_headless_url = team_data["headless_url"]
     request_headless_url = get_settings().game.headless_client_urls.get(
@@ -200,7 +207,7 @@ async def get_team_from_user(
             f" (It was assigned to {assigned_headless_url}.)",
         )
 
-    return {"teamID": team_id}
+    return {"teamID": team_data["id"]}
 
 
 def construct_vm_url(gamespace_id: str, vm_name: str):

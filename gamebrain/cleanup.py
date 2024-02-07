@@ -30,7 +30,7 @@ from . import db
 from .clients import topomojo
 from .util import (
     cleanup_team,
-    cleanup_session,
+    cleanup_dead_sessions,
     parse_datetime,
 )
 
@@ -129,8 +129,7 @@ class BackgroundCleanupTask:
                 if expiration < current_time:
                     await topomojo.complete_gamespace(gamespace_id)
 
-        if not active_teams:
-            await cleanup_session()
+        await cleanup_dead_sessions()
 
     @classmethod
     async def _cleanup_task(cls):
