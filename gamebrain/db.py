@@ -146,7 +146,11 @@ class DBManager:
         if cls.engine and not drop_first:
             return
         cls.engine = create_async_engine(
-            connection_string, echo=echo, future=True)
+            connection_string,
+            echo=echo,
+            future=True,
+            pool_pre_ping=True,
+        )
         # I don't know if expire_on_commit is necessary here, but the SQLAlchemy docs used it.
         cls.session_factory = sessionmaker(
             cls.engine, expire_on_commit=False, class_=AsyncSession
