@@ -23,6 +23,7 @@
 # DM23-0100
 
 import asyncio
+import datetime
 import json
 import logging
 import os.path
@@ -231,7 +232,13 @@ class Global:
     async def _db_sync_task(cls):
         while True:
             snapshot = await GameStateManager.snapshot_data()
-            await db.store_cache_snapshot(snapshot)
+            try:
+                await db.store_cache_snapshot(snapshot)
+            except Exception as e:
+                logging.exception(e)
+            else:
+                time = datetime.datetime.now(tz=datetime.timezone.utc)
+                logging.debug(f"Saved cache snapshot at {time}.")
             await asyncio.sleep(10)
 
     @classmethod
