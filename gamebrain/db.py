@@ -142,7 +142,12 @@ class DBManager:
         return result
 
     @classmethod
-    async def init_db(cls, connection_string: str = "", drop_first=False, echo=False):
+    async def init_db(
+        cls,
+        connection_string: str = "",
+        drop_first=False,
+        echo=False
+    ):
         if cls.engine and not drop_first:
             return
         cls.engine = create_async_engine(
@@ -150,6 +155,10 @@ class DBManager:
             echo=echo,
             future=True,
             pool_pre_ping=True,
+            pool_timeout=10,
+            connect_args={
+                "timeout": 10,
+            },
         )
         # I don't know if expire_on_commit is necessary here, but the SQLAlchemy docs used it.
         cls.session_factory = sessionmaker(
@@ -336,9 +345,9 @@ async def deactivate_game_session(session_id: int):
     # active_game = await get_team_game_session(session_id)
     try:
         session = (await DBManager.get_rows(
-                DBManager.GameSession,
-                DBManager.GameSession.id == session_id,
-            )
+            DBManager.GameSession,
+            DBManager.GameSession.id == session_id,
+        )
         ).pop()
     except IndexError:
         return
