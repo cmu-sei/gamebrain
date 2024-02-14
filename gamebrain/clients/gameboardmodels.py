@@ -143,9 +143,8 @@ class TeamChallengeScore(BaseModel):
 class GameScoreTeam(BaseModel):
     team: SimpleEntity
     players: list[PlayerWithSponsor]
-    rank: int
     overallScore: Score
-    totalTimeMs: int
+    cumulativeTimeMs: int
     challenges: list[TeamChallengeScore]
 
 
