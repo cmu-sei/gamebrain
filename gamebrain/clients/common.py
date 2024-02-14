@@ -35,6 +35,12 @@ class HttpMethod(Enum):
     POST = "POST"
 
 
+class RequestFailure(Exception):
+    def __init__(self, message, status_code, *args, **kwargs):
+        super().__init__(message, *args, **kwargs)
+        self.status_code = status_code
+
+
 async def _service_request_and_log(
     client: AsyncClient, method: HttpMethod, endpoint: str, data: dict[Any] = None
 ) -> Response:
@@ -56,12 +62,14 @@ async def _service_request_and_log(
         api_key = request.headers.get('x-api-key')
         if api_key:
             request.headers['x-api-key'] = '<secret>'
-        error(
+        message = (
             f"HTTP Request to {response.url} returned {response.status_code}\n"
             f"HTTP Method was: {request.method}\n"
             f"Headers were: {request.headers}\n"
             f"Request Body was: {request.content}\n"
             f"Response content was: {response.content}\n"
         )
+        error(message)
+        raise RequestFailure(message, response.status_code)
 
     return response

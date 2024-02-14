@@ -26,11 +26,11 @@ import json
 import json as jsonlib
 import logging
 import ssl
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from httpx import AsyncClient
 
-from .common import _service_request_and_log, HttpMethod
+from .common import _service_request_and_log, HttpMethod, RequestFailure
 
 
 TOPOMOJO_CLIENT = None
@@ -73,9 +73,13 @@ def _get_topomojo_client() -> AsyncClient:
 async def _topomojo_request(
     method: HttpMethod, endpoint: str, data: Optional[Any]
 ) -> Optional[Any] | None:
-    response = await _service_request_and_log(
-        _get_topomojo_client(), method, endpoint, data
-    )
+    try:
+        response = await _service_request_and_log(
+            _get_topomojo_client(), method, endpoint, data
+        )
+    except RequestFailure:
+        return None
+
     try:
         return response.json()
     except jsonlib.JSONDecodeError:
@@ -100,20 +104,12 @@ async def _topomojo_put(
     return await _topomojo_request(HttpMethod.PUT, endpoint, json_data)
 
 
-async def get_workspace(workspace_id: str) -> Optional[Any]:
-    return await _topomojo_get(f"workspace/{workspace_id}")
-
-
 async def get_gamespace(gamespace_id: str) -> Optional[Any]:
     return await _topomojo_get(f"gamespace/{gamespace_id}")
 
 
-async def get_preview(gamespace_id: str) -> Optional[Any]:
-    return await _topomojo_get(f"preview/{gamespace_id}")
-
-
 async def get_vms_by_gamespace_id(gamespace_id: str) -> Optional[Any]:
-    return await _topomojo_get(f"vms", {"filter": gamespace_id})
+    return await _topomojo_get("vms", {"filter": gamespace_id})
 
 
 async def get_vm_nets(vm_id: str) -> Optional[Any]:
@@ -126,11 +122,6 @@ async def get_vm_desc(vm_id: str) -> Optional[Any]:
 
 async def poll_dispatch(dispatch_id: str) -> Optional[Any]:
     return await _topomojo_get(f"dispatch/{dispatch_id}")
-
-
-async def stop_gamespace(gamespace_id: str):
-    endpoint = f"gamespace/{gamespace_id}/stop"
-    return await _topomojo_post(endpoint, {})
 
 
 async def complete_gamespace(gamespace_id: str):
