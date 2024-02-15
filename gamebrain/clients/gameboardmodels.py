@@ -151,3 +151,8 @@ class GameScoreTeam(BaseModel):
 class TeamGameScoreQueryResponse(BaseModel):
     gameInfo: GameScoreGameInfo
     score: GameScoreTeam
+
+
+class TeamData(BaseModel):
+    teamId: str
+    sessionEnd: datetime

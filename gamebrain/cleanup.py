@@ -27,53 +27,16 @@ from datetime import datetime, timezone, timedelta
 import logging
 
 from . import db
-from .clients import topomojo
-from .util import (
-    cleanup_team,
-    cleanup_dead_sessions,
-    parse_datetime,
-)
+from .clients import gameboard
+from .util import cleanup_team, cleanup_dead_sessions
 
-CLEANUP_TIME = timedelta(minutes=1)
+CLEANUP_INTERVAL = timedelta(seconds=30)
 
 
 class BackgroundCleanupTask:
-    settings: "SettingsModel"
-
-    _revisit_dict: dict[str, datetime]
-
     @classmethod
-    async def init(cls, settings: "SettingsModel"):
-        cls.settings = settings
-        cls._revisit_dict = {}
-
+    async def init(cls):
         return await cls._cleanup_task()
-
-    @classmethod
-    async def handle_active_team_without_gamespace(
-            cls,
-            team_id: str,
-            current_time: datetime
-    ):
-        first_failure_time = cls._revisit_dict.get(team_id)
-        if not first_failure_time:
-            cls._revisit_dict[team_id] = current_time
-            logging.warning(
-                f"Team {team_id} is considered active, "
-                "but does not have a gamespace ID. "
-                "It's possible that this check was done after "
-                "a headless assignment but before deployment "
-                "finished, so this is only a problem if it "
-                "doesn't resolve shortly."
-            )
-        elif (current_time - first_failure_time) > CLEANUP_TIME:
-            logging.error(
-                f"Team {team_id} had a game server assigned to them, "
-                f"but had no gamespace assigned after {str(CLEANUP_TIME)}. "
-                "Deactivating the team..."
-            )
-            await cleanup_team(team_id)
-            del cls._revisit_dict[team_id]
 
     @classmethod
     async def _cleanup_body(cls):
@@ -82,52 +45,26 @@ class BackgroundCleanupTask:
         active_teams = await db.get_active_teams()
         for team in active_teams:
             team_id = team["id"]
-            gamespace_id = team.get("ship_gamespace_id")
-            if not gamespace_id:
-                await cls.handle_active_team_without_gamespace(
-                    team_id,
-                    current_time
-                )
-                continue
-
-            # If the team was added to the revisit dict in the
-            # previous check, it should be removed.
             try:
-                del cls._revisit_dict[team_id]
-            except KeyError:
-                ...
-
-            gamespace_info = await topomojo.get_gamespace(gamespace_id)
-            if not gamespace_info:
-                logging.warning(
-                    f"Tried to get Gamespace info for {gamespace_id}, "
-                    "but received no data from TopoMojo."
-                )
-                continue
-            if not gamespace_info.get("isActive"):
+                team_data = await gameboard.get_team(team_id)
+            except gameboard.TeamDoesNotExist:
                 logging.info(
-                    f"Team {team_id} had an inactive gamespace. "
-                    "Removing internal tracking and unassigning their game server..."
+                    f"get_team reports team {team_id} "
+                    "does not exist. Cleaning up."
                 )
                 await cleanup_team(team_id)
 
-            # Send a gamespace cleanup request after its expiration time.
-            expire_str = gamespace_info.get("expirationTime")
-            try:
-                if expire_str:
-                    expiration = parse_datetime(expire_str)
-                else:
-                    # Either the gamespace doesn't have a time here for some
-                    # reason, or the gamespace is dead. Don't try to expire it.
-                    expiration = current_time
-            except Exception as e:
-                logging.error(
-                    "Tried to parse gamespace expiration time "
-                    f"for team {team_id} but got exception {e} instead."
+            if not team_data:
+                # Does not necessarily mean the team is inactive.
+                # Gameboard may be down or unreachable.
+                continue
+
+            if current_time > team_data.sessionEnd:
+                logging.info(
+                    f"get_team session end has passed for {team_id}. "
+                    "Cleaning up."
                 )
-            else:
-                if expiration < current_time:
-                    await topomojo.complete_gamespace(gamespace_id)
+                await cleanup_team(team_id)
 
         await cleanup_dead_sessions()
 
@@ -135,7 +72,7 @@ class BackgroundCleanupTask:
     async def _cleanup_task(cls):
         while True:
             try:
-                await asyncio.sleep(30)
+                await asyncio.sleep(CLEANUP_INTERVAL.seconds)
 
                 await cls._cleanup_body()
 

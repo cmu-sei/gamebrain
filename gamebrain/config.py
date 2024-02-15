@@ -254,9 +254,7 @@ class Global:
 
     @classmethod
     def _init_cleanup_task(cls):
-        cls.cleanup_task = asyncio.create_task(
-            BackgroundCleanupTask.init(get_settings())
-        )
+        cls.cleanup_task = asyncio.create_task(BackgroundCleanupTask.init())
         cls.cleanup_task.add_done_callback(cls._handle_task_result)
 
     # To prevent the videos from being knocked out of caching.

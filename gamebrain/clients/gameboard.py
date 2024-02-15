@@ -31,7 +31,11 @@ from httpx import AsyncClient
 from pydantic import ValidationError
 
 from .common import _service_request_and_log, HttpMethod, RequestFailure
-from .gameboardmodels import GameEngineGameState, TeamGameScoreQueryResponse
+from .gameboardmodels import (
+    GameEngineGameState,
+    TeamGameScoreQueryResponse,
+    TeamData
+)
 
 
 GAMEBOARD_CLIENT = None
@@ -98,6 +102,24 @@ async def _gameboard_put(
     endpoint: str, json_data: Optional[Any]
 ) -> Optional[Any] | None:
     return await _gameboard_request(HttpMethod.PUT, endpoint, json_data)
+
+
+class TeamDoesNotExist(Exception):
+    """
+    Raised when get_team receives a response
+    indicating the team does not exist.
+    """
+    pass
+
+
+async def get_team(team_id: str) -> TeamData | None:
+    try:
+        return await _gameboard_get(f"teams/{team_id}")
+    except RequestFailure as e:
+        if e.status_code == 404:
+            raise TeamDoesNotExist
+        else:
+            return None
 
 
 async def get_teams(game_id: str):
