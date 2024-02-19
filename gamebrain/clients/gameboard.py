@@ -116,7 +116,7 @@ async def get_team(team_id: str) -> TeamData | None:
     try:
         return await _gameboard_get(f"teams/{team_id}")
     except RequestFailure as e:
-        if e.status_code == 404:
+        if e.status_code == 400:
             raise TeamDoesNotExist
         else:
             return None
