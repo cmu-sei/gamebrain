@@ -1616,7 +1616,9 @@ class GameStateManager:
             )
 
             try:
-                gamespace_data = cls._cache.challenges[team_id].get(mission.missionID)
+                gamespace_data = cls._cache.challenges[team_id].get(
+                    mission.missionID
+                )
             except KeyError:
                 gamespace_data = None
             position_data = {}
@@ -1645,7 +1647,9 @@ class GameStateManager:
                         associated_mission_ids
                     )
                 )
-                location = cls._cache.location_map.__root__.get(gamespace_data.locationID)
+                location = cls._cache.location_map.__root__.get(
+                    gamespace_data.locationID
+                )
                 if location:
                     mission_unlock_codes[mission.missionID] = location.unlockCode
                 else:
@@ -2019,7 +2023,9 @@ class GameStateManager:
                 continue
             if not gamespace_data.consoleURLs:
                 continue
-            global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
+            global_mission_data = cls._cache.mission_map.__root__.get(
+                mission_id
+            )
             if not global_mission_data:
                 logging.error(
                     f"Team {team_id} had a gamespace for mission "
@@ -2164,11 +2170,11 @@ class GameStateManager:
                     network_name = "ship"
 
                 await cls._bulk_network_change_team_gamespaces(
-                        team_id,
-                        team_data,
-                        network_name,
-                        cls.ExtendOrRetract.extend,
-                        target_gamespace_id=ship_gamespace_id
+                    team_id,
+                    team_data,
+                    network_name,
+                    cls.ExtendOrRetract.extend,
+                    target_gamespace_id=ship_gamespace_id
                 )
 
             team_data.currentStatus.antennaExtended = True
@@ -2207,11 +2213,11 @@ class GameStateManager:
                 network_name = "ship"
 
             await cls._bulk_network_change_team_gamespaces(
-                    team_id,
-                    team_data,
-                    network_name,
-                    cls.ExtendOrRetract.retract,
-                    target_gamespace_id=ship_gamespace_id,
+                team_id,
+                team_data,
+                network_name,
+                cls.ExtendOrRetract.retract,
+                target_gamespace_id=ship_gamespace_id,
             )
 
         team_data.currentStatus.antennaExtended = False
