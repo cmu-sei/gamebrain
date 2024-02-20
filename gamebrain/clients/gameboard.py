@@ -83,6 +83,9 @@ async def _gameboard_request(
     try:
         return response.json()
     except jsonlib.JSONDecodeError:
+        warning(
+            f"Unable to decode Gameboard response: {response}"
+        )
         return None
 
 
