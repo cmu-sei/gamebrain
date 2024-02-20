@@ -117,12 +117,16 @@ class TeamDoesNotExist(Exception):
 
 async def get_team(team_id: str) -> TeamData | None:
     try:
-        return await _gameboard_get(f"teams/{team_id}")
+        data = await _gameboard_get(f"teams/{team_id}")
+        return TeamData(**data)
     except RequestFailure as e:
         if e.status_code == 400:
             raise TeamDoesNotExist
         else:
             return None
+    except ValidationError as e:
+        error(e)
+        return None
 
 
 async def get_teams(game_id: str):
