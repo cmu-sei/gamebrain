@@ -64,6 +64,7 @@ print(f"Got log level: {LOGLEVEL}")
 logging.basicConfig(
     level=LOGLEVEL,
     format=(
+        "Severity: %(levelname)s | "
         "Time: %(asctime)s | "
         "File: %(pathname)s | "
         "Function: %(funcName)s | "
