@@ -2518,7 +2518,9 @@ class GameStateManager:
     ):
         def is_relevant_task(global_task: InternalGlobalTaskData) -> bool:
             team_task = team_data.tasks.get(global_task.taskID)
-            if not (team_task and team_task.visible):
+            if not team_task:
+                return False
+            if not team_task.visible:
                 return False
             if team_task.complete:
                 return False
@@ -2532,6 +2534,10 @@ class GameStateManager:
                 != team_data.currentStatus.currentLocation
             ):
                 return False
+            logging.info(
+                f"{global_task.taskID} is considered "
+                "a relevant comm event task."
+            )
             return True
 
         relevant_tasks = list(
