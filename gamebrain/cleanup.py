@@ -57,6 +57,10 @@ class BackgroundCleanupTask:
             if not team_data:
                 # Does not necessarily mean the team is inactive.
                 # Gameboard may be down or unreachable.
+                logging.info(
+                    "get_team call did not return any team data for "
+                    f"team {team_id}"
+                )
                 continue
 
             if current_time > team_data.sessionEnd:
