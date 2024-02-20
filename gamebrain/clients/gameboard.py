@@ -81,7 +81,12 @@ async def _gameboard_request(
         _get_gameboard_client(), method, endpoint, data
     )
     try:
-        return response.json()
+        data = response.json()
+        if not data:
+            warning(
+                f"Request to {endpoint} returned empty data."
+            )
+        return data
     except jsonlib.JSONDecodeError:
         warning(
             f"Unable to decode Gameboard response: {response}"
