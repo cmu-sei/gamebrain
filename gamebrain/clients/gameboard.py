@@ -122,11 +122,11 @@ async def get_team(team_id: str) -> TeamData | None:
     except RequestFailure as e:
         if e.status_code == 400:
             raise TeamDoesNotExist
-        else:
-            return None
     except ValidationError as e:
         error(e)
-        return None
+    except Exception as e:
+        error(f"{e} | Data is {data}")
+    return None
 
 
 async def get_teams(game_id: str):
