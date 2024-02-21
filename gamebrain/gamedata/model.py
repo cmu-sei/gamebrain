@@ -97,8 +97,8 @@ class GamespaceData(BaseModel):
     gamespaceID: GamespaceID
     consoleURLs: list[ConsoleUrl]
     # Only the ship workspace should have the following values.
-    useGalaxyDisplayMap: bool | None
-    useCodices: bool | None
+    useGalaxyDisplayMap: bool = True
+    useCodices: bool = False
     timerTitle: str = ""
     gatewayWanNetworkName: str | None
     isPC4Workspace: bool = False
@@ -331,8 +331,8 @@ class SessionDataTeamSpecific(BaseModel):
     teamInfoName: str = None
     teamCodexCount: int = 0
     jumpCutsceneURL: str
-    useGalaxyDisplayMap: bool = False
-    useCodices: bool = True
+    useGalaxyDisplayMap: bool = True
+    useCodices: bool = False
     displayIncompleteMissionPogs: bool = False
     timerTitle: str = ""
     gameStartTime: datetime = datetime.fromordinal(1)
