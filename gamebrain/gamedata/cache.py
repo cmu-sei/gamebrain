@@ -2084,6 +2084,7 @@ class GameStateManager:
             location_data = cls._cache.location_map.__root__[location_id]
             network_name = location_data.networkName
         else:
+            location_id = None
             network_name = cls._settings.game.antenna_retracted_network
 
         await cls._change_gamespace_gateway_network(
