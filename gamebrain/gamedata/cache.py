@@ -2518,6 +2518,13 @@ class GameStateManager:
         cls, team_id: TeamID, team_data: InternalTeamGameData
     ):
         def is_relevant_task(global_task: InternalGlobalTaskData) -> bool:
+            # Check if the associated mission is even unlocked.
+            team_mission = team_data.missions.get(global_task.missionID)
+            if not team_mission:
+                return False
+            if not team_mission.unlocked:
+                return False
+
             team_task = team_data.tasks.get(global_task.taskID)
             if not team_task:
                 return False
@@ -2525,6 +2532,7 @@ class GameStateManager:
                 return False
             if team_task.complete:
                 return False
+
             completion_criteria = global_task.markCompleteWhen
             if not completion_criteria:
                 return False
