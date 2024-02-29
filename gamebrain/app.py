@@ -64,6 +64,7 @@ print(f"Got log level: {LOGLEVEL}")
 logging.basicConfig(
     level=LOGLEVEL,
     format=(
+        "Severity: %(levelname)s | "
         "Time: %(asctime)s | "
         "File: %(pathname)s | "
         "Function: %(funcName)s | "
@@ -135,7 +136,7 @@ async def startup():
             )
     except FileNotFoundError:
         logging.warning(
-                "Build time file not found."
+            "Build time file not found."
         )
     await Global.init()
 

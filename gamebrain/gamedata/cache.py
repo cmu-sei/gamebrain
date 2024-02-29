@@ -476,9 +476,9 @@ class GameStateManager:
             team_data.missions[global_task.missionID].tasks.append(
                 global_task.taskID)
             logging.info(f"Team {team_id} unlocked task {global_task.taskID}.")
-            cls._find_comm_event_to_activate(team_id, team_data)
         else:
             team_task.visible = True
+        cls._find_comm_event_to_activate(team_id, team_data)
 
     @classmethod
     def _unlock_tasks_until_completion_criteria(
@@ -1616,7 +1616,9 @@ class GameStateManager:
             )
 
             try:
-                gamespace_data = cls._cache.challenges[team_id].get(mission.missionID)
+                gamespace_data = cls._cache.challenges[team_id].get(
+                    mission.missionID
+                )
             except KeyError:
                 gamespace_data = None
             position_data = {}
@@ -1645,7 +1647,9 @@ class GameStateManager:
                         associated_mission_ids
                     )
                 )
-                location = cls._cache.location_map.__root__.get(gamespace_data.locationID)
+                location = cls._cache.location_map.__root__.get(
+                    gamespace_data.locationID
+                )
                 if location:
                     mission_unlock_codes[mission.missionID] = location.unlockCode
                 else:
@@ -2019,7 +2023,9 @@ class GameStateManager:
                 continue
             if not gamespace_data.consoleURLs:
                 continue
-            global_mission_data = cls._cache.mission_map.__root__.get(mission_id)
+            global_mission_data = cls._cache.mission_map.__root__.get(
+                mission_id
+            )
             if not global_mission_data:
                 logging.error(
                     f"Team {team_id} had a gamespace for mission "
@@ -2078,6 +2084,7 @@ class GameStateManager:
             location_data = cls._cache.location_map.__root__[location_id]
             network_name = location_data.networkName
         else:
+            location_id = None
             network_name = cls._settings.game.antenna_retracted_network
 
         await cls._change_gamespace_gateway_network(
@@ -2164,11 +2171,11 @@ class GameStateManager:
                     network_name = "ship"
 
                 await cls._bulk_network_change_team_gamespaces(
-                        team_id,
-                        team_data,
-                        network_name,
-                        cls.ExtendOrRetract.extend,
-                        target_gamespace_id=ship_gamespace_id
+                    team_id,
+                    team_data,
+                    network_name,
+                    cls.ExtendOrRetract.extend,
+                    target_gamespace_id=ship_gamespace_id
                 )
 
             team_data.currentStatus.antennaExtended = True
@@ -2207,11 +2214,11 @@ class GameStateManager:
                 network_name = "ship"
 
             await cls._bulk_network_change_team_gamespaces(
-                    team_id,
-                    team_data,
-                    network_name,
-                    cls.ExtendOrRetract.retract,
-                    target_gamespace_id=ship_gamespace_id,
+                team_id,
+                team_data,
+                network_name,
+                cls.ExtendOrRetract.retract,
+                target_gamespace_id=ship_gamespace_id,
             )
 
         team_data.currentStatus.antennaExtended = False
@@ -2511,11 +2518,23 @@ class GameStateManager:
         cls, team_id: TeamID, team_data: InternalTeamGameData
     ):
         def is_relevant_task(global_task: InternalGlobalTaskData) -> bool:
+            # Check if the associated mission is even unlocked.
+            team_mission = team_data.missions.get(global_task.missionID)
+            if not team_mission:
+                return False
+            if not team_mission.unlocked:
+                return False
+            if team_mission.complete:
+                return False
+
             team_task = team_data.tasks.get(global_task.taskID)
-            if not (team_task and team_task.visible):
+            if not team_task:
+                return False
+            if not team_task.visible:
                 return False
             if team_task.complete:
                 return False
+
             completion_criteria = global_task.markCompleteWhen
             if not completion_criteria:
                 return False
@@ -2526,6 +2545,10 @@ class GameStateManager:
                 != team_data.currentStatus.currentLocation
             ):
                 return False
+            logging.info(
+                f"{global_task.taskID} is considered "
+                "a relevant comm event task."
+            )
             return True
 
         relevant_tasks = list(

@@ -30,8 +30,12 @@ from typing import Any, Optional
 from httpx import AsyncClient
 from pydantic import ValidationError
 
-from .common import _service_request_and_log, HttpMethod
-from .gameboardmodels import GameEngineGameState, TeamGameScoreQueryResponse
+from .common import _service_request_and_log, HttpMethod, RequestFailure
+from .gameboardmodels import (
+    GameEngineGameState,
+    TeamGameScoreQueryResponse,
+    TeamData
+)
 
 
 GAMEBOARD_CLIENT = None
@@ -77,8 +81,16 @@ async def _gameboard_request(
         _get_gameboard_client(), method, endpoint, data
     )
     try:
-        return response.json()
+        data = response.json()
+        if not data:
+            warning(
+                f"Request to {endpoint} returned empty data."
+            )
+        return data
     except jsonlib.JSONDecodeError:
+        warning(
+            f"Unable to decode Gameboard response: {response}"
+        )
         return None
 
 
@@ -100,45 +112,35 @@ async def _gameboard_put(
     return await _gameboard_request(HttpMethod.PUT, endpoint, json_data)
 
 
-async def get_player_by_user_id(user_id: str, game_id: str) -> Optional[Any]:
-    players = await _gameboard_get("players", {"gid": game_id})
-    if players:
-        # This endpoint claims that it can accept query params, but "uid" appears not to work.
-        for player in players:
-            try:
-                if player["userId"] == user_id:
-                    return player
-            except TypeError:
-                error("Players: {players}")
+class TeamDoesNotExist(Exception):
+    """
+    Raised when get_team receives a response
+    indicating the team does not exist.
+    """
+    pass
+
+
+async def get_team(team_id: str) -> TeamData | None:
+    try:
+        data = await _gameboard_get(f"team/{team_id}")
+        return TeamData(**data)
+    except RequestFailure as e:
+        if e.status_code == 400:
+            raise TeamDoesNotExist
     return None
 
 
-async def get_game_specs(game_id: str):
-    return await _gameboard_get(f"game/{game_id}/specs")
-
-
-async def get_team(team_id: str):
-    return await _gameboard_get(f"team/{team_id}")
-
-
 async def get_teams(game_id: str):
-    return await _gameboard_get(f"teams/{game_id}")
-
-
-async def create_challenge(game_id: str, team_id: str):
-    return await _gameboard_post(
-        "unity/challenges",
-        {
-            "gameId": game_id,
-            "teamId": team_id,
-            "points": get_settings().game.total_points,
-        },
-    )
+    try:
+        return await _gameboard_get(f"teams/{game_id}")
+    except RequestFailure:
+        return None
 
 
 async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
-    result = await _gameboard_get("gameEngine/state", {"teamId": team_id})
-    if result is None:
+    try:
+        result = await _gameboard_get("gameEngine/state", {"teamId": team_id})
+    except RequestFailure:
         return None
 
     challenge_states = []
@@ -157,9 +159,10 @@ async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
     return challenge_states
 
 
-async def team_score(team_id: str) -> TeamGameScoreQueryResponse:
-    result = await _gameboard_get(f"team/{team_id}/score")
-    if result is None:
+async def team_score(team_id: str) -> TeamGameScoreQueryResponse | None:
+    try:
+        result = await _gameboard_get(f"team/{team_id}/score")
+    except RequestFailure:
         return None
 
     try:
