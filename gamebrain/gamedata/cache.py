@@ -1496,13 +1496,19 @@ class GameStateManager:
 
     @classmethod
     def _map_team_score_data(
-        cls, team_score_data: TeamGameScoreQueryResponse
+        cls,
+        team_score_data: TeamGameScoreQueryResponse,
+        gs_ignore_ids: list[str] = None,
     ) -> {MissionID, MissionScoreData}:
         """
         Assumes that the class lock is held.
         """
         if not team_score_data:
             return {}
+
+        if gs_ignore_ids is None:
+            gs_ignore_ids = []
+        gs_ignore_ids = set(gs_ignore_ids)
 
         spec_map = {
             spec.id: spec
@@ -1512,13 +1518,14 @@ class GameStateManager:
         mission_map = {}
         for team_challenge_score in team_score_data.score.challenges:
             gamespace_id = team_challenge_score.id
+            if gamespace_id in gs_ignore_ids:
+                continue
             mission_id = cls._cache.gamespace_to_mission.get(gamespace_id)
             challenge_spec = spec_map[team_challenge_score.specId]
             if not mission_id:
-                logging.info(
+                logging.warning(
                     f"Tried to look up gamespace {gamespace_id} to get "
-                    "a mission ID, but it was not there. This is normal "
-                    "if the gamespace is from a ship workspace."
+                    "a mission ID, but it was not there."
                 )
                 continue
 
