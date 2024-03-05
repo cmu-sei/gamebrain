@@ -1767,7 +1767,10 @@ class GameStateManager:
                 team_data.session.gameCurrentTime = gamebrain_time
 
                 team_score_data = await gameboard.team_score(team_id)
-                mission_map = cls._map_team_score_data(team_score_data)
+                mission_map = cls._map_team_score_data(
+                    team_score_data,
+                    [team_data.ship.gamespaceData.gamespaceID]
+                )
                 if cls._spam_reduction_tracker >= 20:
                     logging.info(
                         f"Got score data for team {team_id}: "
