@@ -137,21 +137,29 @@ async def get_teams(game_id: str):
         return None
 
 
-async def mission_update(team_id: str) -> list[GameEngineGameState] | None:
+async def mission_update(
+        team_id: str,
+        ignore_ids: list[str] = None,
+) -> list[GameEngineGameState] | None:
     try:
         result = await _gameboard_get("gameEngine/state", {"teamId": team_id})
     except RequestFailure:
         return None
 
+    if ignore_ids is None:
+        ignore_ids = []
+    ignore_ids = set(ignore_ids)
+
     challenge_states = []
     for challenge_status in result:
+        if challenge_status["id"] in ignore_ids:
+            continue
         try:
             game_state = GameEngineGameState(**challenge_status)
         except ValidationError:
-            warning(
+            error(
                 "Gameboard gameEngine/state returned an item that could not "
-                f"be validated as a GameEngineGameState: {challenge_status}. "
-                "This is expected for the team's ship workspace."
+                f"be validated as a GameEngineGameState: {challenge_status}."
             )
         else:
             challenge_states.append(game_state)
