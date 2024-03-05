@@ -1155,7 +1155,10 @@ class GameStateManager:
                 continue
 
             try:
-                team_challenges = await gameboard.mission_update(team_id)
+                team_challenges = await gameboard.mission_update(
+                    team_id,
+                    [team_data.ship.gamespaceData.gamespaceID],
+                )
             except TypeError:
                 logging.error(
                     "Attempted to get a mission update for team "
