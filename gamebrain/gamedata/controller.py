@@ -163,29 +163,3 @@ async def get_commeventcompleted(
         return result
     except NonExistentTeam:
         raise HTTPException(status_code=404, detail="Team not found.")
-
-
-@router.get("/GameData/CodexStationPowerOn/{team_id}")
-async def get_codexstationpoweron(
-    team_id: TeamID,
-    auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
-) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings(
-    ).identity.jwt_audiences.gamestate_api)
-    try:
-        return await GameStateManager.codex_power(team_id, PowerStatus.on)
-    except NonExistentTeam:
-        raise HTTPException(status_code=404, detail="Team not found.")
-
-
-@router.get("/GameData/CodexStationPowerOff/{team_id}")
-async def get_codexstationpoweroff(
-    team_id: TeamID,
-    auth: HTTPAuthorizationCredentials = Security((HTTPBearer())),
-) -> GenericResponse:
-    check_jwt(auth.credentials, get_settings(
-    ).identity.jwt_audiences.gamestate_api)
-    try:
-        return await GameStateManager.codex_power(team_id, PowerStatus.off)
-    except NonExistentTeam:
-        raise HTTPException(status_code=404, detail="Team not found.")
