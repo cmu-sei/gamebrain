@@ -1828,7 +1828,8 @@ class GameStateManager:
                 cls._spam_reduction_tracker += 1
 
             # This value is not used in PC5.
-            if not team_data.ship.gamespaceData.isPC4Workspace:
+            if team_data.ship.gamespaceData and \
+                    not team_data.ship.gamespaceData.isPC4Workspace:
                 team_data.session.teamCodexCount = 0
 
             return full_team_data
