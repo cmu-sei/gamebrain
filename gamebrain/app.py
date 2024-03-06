@@ -211,11 +211,6 @@ async def get_team_from_user(
     return {"teamID": team_data["id"]}
 
 
-def construct_vm_url(gamespace_id: str, vm_name: str):
-    gameboard_base_url = get_settings().gameboard.base_url
-    return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
-
-
 @priv_router.post("/event/{team_id}")
 async def push_event(
     team_id: str,

@@ -123,34 +123,6 @@ class HeadlessManager:
             return assignments
 
 
-def construct_vm_url(gamespace_id: str, vm_name: str):
-    gameboard_base_url = get_settings().gameboard.base_url
-    return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
-
-
-def console_urls_from_vm_data(
-    gamespace_id: GamespaceID, vm_data: dict | None
-) -> list[ConsoleUrl]:
-    console_urls = []
-    if not all((gamespace_id, vm_data)):
-        return console_urls
-
-    for vm in vm_data:
-        visible = vm.get("isVisible")
-        # Mock hypervisor doesn't include this key for some reason.
-        if visible or visible is None:
-            console_urls.append(
-                ConsoleUrl(
-                    **{
-                        "id": vm["id"],
-                        "url": construct_vm_url(gamespace_id, vm["name"]),
-                        "name": vm["name"],
-                    }
-                )
-            )
-    return console_urls
-
-
 async def get_team_name(game_id: GameID, team_id: TeamID) -> str:
     teams_list = await gameboard.get_teams(game_id)
     if not teams_list:

@@ -59,8 +59,6 @@ class IdentitySettingsModel(BaseModel):
 
 
 class GameboardSettingsModel(BaseModel):
-    # base_url is used to construct VM console URLs
-    base_url: str
     base_api_url: str
     x_api_key: str
     x_api_client: str
