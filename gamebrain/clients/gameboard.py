@@ -68,7 +68,7 @@ def _get_gameboard_client() -> AsyncClient:
             base_url=settings.gameboard.base_api_url,
             verify=ssl_context,
             headers={"x-api-key": api_key, "x-api-client": api_client},
-            timeout=60.0,
+            timeout=10.0,
         )
 
     return GAMEBOARD_CLIENT
