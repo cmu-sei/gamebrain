@@ -282,10 +282,10 @@ async def adjust_logging_interval(
     module: str,
     interval: int
 ):
-    if interval < 1:
+    if interval < 0:
         raise HTTPException(
             status_code=400,
-            detail="Interval must be a positive value."
+            detail="Interval must be a non-negative value."
         )
 
     match module:

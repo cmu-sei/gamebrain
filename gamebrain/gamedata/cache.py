@@ -1818,7 +1818,7 @@ class GameStateManager:
 
             await cls._handle_show_incomplete_when_away(full_team_data)
 
-            if cls._spam_reduction_tracker >= 20:
+            if cls._spam_reduction_tracker >= SPAM_REDUCTION_FACTOR:
                 logging.info(
                     "Full team data response:"
                     f"{json.dumps(full_team_data.dict(), default=str)}"
