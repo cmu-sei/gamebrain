@@ -30,8 +30,6 @@ topomojo:
   x_api_client: Administrator
 # This is a section with keys related to interactions with Gameboard.
 gameboard:
-  # Gameboard's base URL.
-  base_url: https://foundry.local/gameboard/
   # Gameboard's API URL. This will usually, but not necessarily, start with `base_url` and then end with `/api` or `/api/`.
   base_api_url: https://foundry.local/gameboard/api/
   # Generate a secret for the created bot account and insert it here.

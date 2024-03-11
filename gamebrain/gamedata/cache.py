@@ -1155,7 +1155,10 @@ class GameStateManager:
                 continue
 
             try:
-                team_challenges = await gameboard.mission_update(team_id)
+                team_challenges = await gameboard.mission_update(
+                    team_id,
+                    [team_data.ship.gamespaceData.gamespaceID],
+                )
             except TypeError:
                 logging.error(
                     "Attempted to get a mission update for team "
@@ -1496,13 +1499,19 @@ class GameStateManager:
 
     @classmethod
     def _map_team_score_data(
-        cls, team_score_data: TeamGameScoreQueryResponse
+        cls,
+        team_score_data: TeamGameScoreQueryResponse,
+        gs_ignore_ids: list[str] = None,
     ) -> {MissionID, MissionScoreData}:
         """
         Assumes that the class lock is held.
         """
         if not team_score_data:
             return {}
+
+        if gs_ignore_ids is None:
+            gs_ignore_ids = []
+        gs_ignore_ids = set(gs_ignore_ids)
 
         spec_map = {
             spec.id: spec
@@ -1512,13 +1521,14 @@ class GameStateManager:
         mission_map = {}
         for team_challenge_score in team_score_data.score.challenges:
             gamespace_id = team_challenge_score.id
+            if gamespace_id in gs_ignore_ids:
+                continue
             mission_id = cls._cache.gamespace_to_mission.get(gamespace_id)
             challenge_spec = spec_map[team_challenge_score.specId]
             if not mission_id:
-                logging.info(
+                logging.warning(
                     f"Tried to look up gamespace {gamespace_id} to get "
-                    "a mission ID, but it was not there. This is normal "
-                    "if the gamespace is from a ship workspace."
+                    "a mission ID, but it was not there."
                 )
                 continue
 
@@ -1760,7 +1770,10 @@ class GameStateManager:
                 team_data.session.gameCurrentTime = gamebrain_time
 
                 team_score_data = await gameboard.team_score(team_id)
-                mission_map = cls._map_team_score_data(team_score_data)
+                mission_map = cls._map_team_score_data(
+                    team_score_data,
+                    [team_data.ship.gamespaceData.gamespaceID]
+                )
                 if cls._spam_reduction_tracker >= 20:
                     logging.info(
                         f"Got score data for team {team_id}: "
@@ -1813,6 +1826,11 @@ class GameStateManager:
                 cls._spam_reduction_tracker = 0
             else:
                 cls._spam_reduction_tracker += 1
+
+            # This value is not used in PC5.
+            if team_data.ship.gamespaceData and \
+                    not team_data.ship.gamespaceData.isPC4Workspace:
+                team_data.session.teamCodexCount = 0
 
             return full_team_data
 
@@ -2610,41 +2628,3 @@ class GameStateManager:
             return GenericResponse(
                 success=True, message="Incoming comm event completed."
             )
-
-    @classmethod
-    async def check_vm_power_status(cls, vm_id: str) -> PowerStatus | None:
-        desc = await topomojo.get_vm_desc(vm_id)
-        if not desc or "state" not in desc:
-            return
-
-        return PowerStatus(desc["state"])
-
-    @classmethod
-    async def change_vm_power_status(cls, vm_id: str, new_setting: PowerStatus):
-        # str to shut up linter
-        await topomojo.change_vm_power(vm_id, str(new_setting.value))
-
-    @classmethod
-    async def codex_power(
-        cls, team_id: TeamID, new_setting: PowerStatus
-    ) -> GenericResponse:
-        async with cls._lock:
-            team_data = cls._cache.team_map.__root__.get(team_id)
-            if not team_data:
-                raise NonExistentTeam()
-
-            vm_id = ""
-            current_power = await cls.check_vm_power_status(vm_id)
-            if current_power == new_setting:
-                return GenericResponse(
-                    success=False,
-                    message=f"codexAlready{new_setting.value.capitalize()}",
-                )
-            elif current_power is None:
-                return GenericResponse(
-                    success=False,
-                    message="TopoMojoAPIFailure",
-                )
-
-            await cls.change_vm_power_status(vm_id, new_setting)
-            return GenericResponse(success=True, message=f"{vm_id}_{new_setting}")

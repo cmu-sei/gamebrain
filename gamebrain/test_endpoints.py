@@ -269,3 +269,8 @@ async def end_team_game(team_id: str):
 @test_router.get("/end_game_sessions")
 async def end_game_sessions():
     await nuke_active_sessions()
+
+
+@test_router.get("/exit")
+async def exit():
+    sys.exit(1337)

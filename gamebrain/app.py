@@ -96,17 +96,35 @@ APP = FastAPI(
 )
 
 
+def get_sanitized_headers(request: Request) -> dict:
+    # Starlette's Request Headers property is immutable,
+    # but I want to remove the API key from logs.
+    headers = dict(request.headers)
+    api_key = headers.get('x-api-key')
+    if api_key:
+        headers['x-api-key'] = '<secret>'
+    return headers
+
+
 @APP.exception_handler(HTTPException)
-async def debug_exception_handler(request: Request, exc: HTTPException):
-    logging.error(request.headers)
+async def debug_exception_handler(
+    request: Request,
+    exc: HTTPException
+):
+    headers = get_sanitized_headers(request)
+    logging.error(headers)
     return await http_exception_handler(request, exc)
 
 
 @APP.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError
+):
+    headers = get_sanitized_headers(request)
     body = await request.json()
     logging.error(
-        f"Got invalid request headers: {request.headers} and body {body}")
+        f"Got invalid request headers: {headers} and body {body}")
     return await request_validation_exception_handler(request, exc)
 
 
@@ -209,11 +227,6 @@ async def get_team_from_user(
         )
 
     return {"teamID": team_data["id"]}
-
-
-def construct_vm_url(gamespace_id: str, vm_name: str):
-    gameboard_base_url = get_settings().gameboard.base_url
-    return url_path_join(gameboard_base_url, f"/mks/?f=1&s={gamespace_id}&v={vm_name}")
 
 
 @priv_router.post("/event/{team_id}")
