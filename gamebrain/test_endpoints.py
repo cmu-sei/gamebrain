@@ -42,6 +42,7 @@ from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
 from .db import get_active_game_sessions, get_all_sessions
+import gamebrain.gamedata.cache as cache
 from .gamedata.cache import (
     GameDataCacheSnapshot,
     GameStateManager,
@@ -274,3 +275,24 @@ async def end_game_sessions():
 @test_router.get("/exit")
 async def exit():
     sys.exit(1337)
+
+
+@test_router.get("/logs/{module}/{interval}")
+async def adjust_logging_interval(
+    module: str,
+    interval: int
+):
+    if interval < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Interval must be a positive value."
+        )
+
+    match module:
+        case "cache":
+            cache.SPAM_REDUCTION_FACTOR = interval
+        case _:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid module specified."
+            )

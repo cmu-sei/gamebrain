@@ -1774,7 +1774,7 @@ class GameStateManager:
                     team_score_data,
                     [team_data.ship.gamespaceData.gamespaceID]
                 )
-                if cls._spam_reduction_tracker >= 20:
+                if cls._spam_reduction_tracker >= SPAM_REDUCTION_FACTOR:
                     logging.info(
                         f"Got score data for team {team_id}: "
                         f"{json.dumps(mission_map, indent=2, default=str)}"
