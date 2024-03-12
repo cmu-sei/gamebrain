@@ -1827,7 +1827,24 @@ class GameStateManager:
             else:
                 cls._spam_reduction_tracker += 1
 
-            # This value is not used in PC5.
+            # Temporary for investigating a bug.
+            def inspect_mission_complete_and_associated_challenges(
+                mission: MissionDataFull
+            ) -> bool:
+                if not mission.complete:
+                    return False
+                if mission.associatedChallenges:
+                    return False
+                return True
+            for mission in full_team_data.missions:
+                if inspect_mission_complete_and_associated_challenges(mission):
+                    logging.warning(
+                        "Found a completed mission lacking "
+                        "associated challenges: "
+                        f"{mission}"
+                    )
+
+                # This value is not used in PC5.
             if team_data.ship.gamespaceData and \
                     not team_data.ship.gamespaceData.isPC4Workspace:
                 team_data.session.teamCodexCount = 0
