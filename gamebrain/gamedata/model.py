@@ -240,6 +240,7 @@ class MissionScoreData(BaseModel):
 class AssociatedChallengeData(BaseModel):
     missionID: MissionID
     unlockCode: str
+    complete: bool
 
 
 class MissionDataFull(MissionData, MissionDataTeamSpecific):
