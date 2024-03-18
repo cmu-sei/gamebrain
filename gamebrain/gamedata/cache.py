@@ -1155,9 +1155,12 @@ class GameStateManager:
                 continue
 
             try:
+                ignore_ids = [team_data.ship.gamespaceData.gamespaceID]
+                if team_data.ship.gamespaceData.isPC4Workspace:
+                    ignore_ids = None
                 team_challenges = await gameboard.mission_update(
                     team_id,
-                    [team_data.ship.gamespaceData.gamespaceID],
+                    ignore_ids,
                 )
             except TypeError:
                 logging.error(
@@ -1168,7 +1171,8 @@ class GameStateManager:
             else:
                 logging.info(
                     "Got mission update for team "
-                    f"{team_id}. Response: {team_challenges}"
+                    f"{team_id}. Team challenges length: "
+                    f"{len(team_challenges)}"
                 )
 
             if not team_challenges:
