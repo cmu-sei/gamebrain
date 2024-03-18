@@ -1168,7 +1168,7 @@ class GameStateManager:
             else:
                 logging.info(
                     "Got mission update for team "
-                    f"{team_id}."
+                    f"{team_id}. Response: {team_challenges}"
                 )
 
             if not team_challenges:
