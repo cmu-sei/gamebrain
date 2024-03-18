@@ -1637,10 +1637,12 @@ class GameStateManager:
                 gamespace_data = None
             position_data = {}
             if team_id and not gamespace_data:
-                logging.error(
-                    f"Team {team_id}'s mission {mission.missionID} has "
-                    "not been populated with gamespace data."
-                )
+                # This is expected for PC4 games.
+                if not team_data.ship.gamespaceData.isPC4Workspace:
+                    logging.error(
+                        f"Team {team_id}'s mission {mission.missionID} has "
+                        "not been populated with gamespace data."
+                    )
             elif team_id is None:
                 # This is fine, but don't try to access gamespace_data.
                 pass
