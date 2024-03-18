@@ -1602,7 +1602,7 @@ class GameStateManager:
         team_data: InternalTeamGameData,
         mission_map: dict[MissionID, MissionScoreData]
     ) -> list[MissionDataFull]:
-        full_mission_data = []
+        full_mission_data = {}
         associated_challenges = {}
         mission_unlock_codes = {}
 
@@ -1703,9 +1703,9 @@ class GameStateManager:
                 | score_data
                 | completion_data
             )
-            full_mission_data.append(mission_full)
+            full_mission_data[mission_full.missionID] = mission_full
 
-        for mission_data in full_mission_data:
+        for mission_data in full_mission_data.values():
             if mission_data.missionID not in associated_challenges:
                 # Likely means there is no associated gamespace,
                 # which was logged earlier.
@@ -1718,13 +1718,18 @@ class GameStateManager:
                 unlock_code = ""
                 if associated_mission_id in mission_unlock_codes:
                     unlock_code = mission_unlock_codes[associated_mission_id]
+                complete = False
+                if associated_mission_id in full_mission_data:
+                    associated_mission_data = full_mission_data[associated_mission_id]
+                    complete = associated_mission_data.complete
                 associated_data = AssociatedChallengeData(
                     missionID=associated_mission_id,
                     unlockCode=unlock_code,
+                    complete=complete,
                 )
                 mission_data.associatedChallenges.append(associated_data)
 
-        return full_mission_data
+        return list(full_mission_data.values())
 
     @classmethod
     async def _handle_show_incomplete_when_away(
@@ -1774,7 +1779,7 @@ class GameStateManager:
                     team_score_data,
                     [team_data.ship.gamespaceData.gamespaceID]
                 )
-                if cls._spam_reduction_tracker >= 20:
+                if cls._spam_reduction_tracker >= SPAM_REDUCTION_FACTOR:
                     logging.info(
                         f"Got score data for team {team_id}: "
                         f"{json.dumps(mission_map, indent=2, default=str)}"
@@ -1818,7 +1823,7 @@ class GameStateManager:
 
             await cls._handle_show_incomplete_when_away(full_team_data)
 
-            if cls._spam_reduction_tracker >= 20:
+            if cls._spam_reduction_tracker >= SPAM_REDUCTION_FACTOR:
                 logging.info(
                     "Full team data response:"
                     f"{json.dumps(full_team_data.dict(), default=str)}"

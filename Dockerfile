@@ -2,7 +2,7 @@ FROM python:3.10
 
 WORKDIR /app
 
-COPY settings.yaml ./
+COPY example.settings.yaml ./settings.yaml
 COPY requirements.txt ./
 COPY initial_state.json ./
 RUN pip install --no-cache-dir --upgrade pip --root-user-action=ignore

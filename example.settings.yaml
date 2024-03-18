@@ -1,3 +1,4 @@
+# Make a copy of this file named settings.yaml and edit the copy.
 # (Optional) One of DEBUG, INFO, WARNING, ERROR, or CRITICAL (values are in increasing order of severity).
 log_level: WARNING
 # (Optional) A URL path prefix for all endpoints. Default is "".

@@ -53,6 +53,7 @@ class BackgroundCleanupTask:
                     "does not exist. Cleaning up."
                 )
                 await cleanup_team(team_id)
+                team_data = None
 
             if not team_data:
                 # Does not necessarily mean the team is inactive.

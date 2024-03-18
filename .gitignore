@@ -2,3 +2,4 @@ raw_gamedata/live*.json
 live_initial_state.json
 __pycache__
 .python-version
+settings.yaml
