@@ -2390,7 +2390,7 @@ class GameStateManager:
         for mission in team_specific_missions:
             mission_id = mission.missionID
             if mission_id in team_data.missions:
-                logging.warning(
+                logging.info(
                     f"Attempted to unlock mission {mission_id} for team {team_id}, "
                     "but it was already unlocked."
                 )
