@@ -32,7 +32,7 @@ Here is an example of the configuration for a single challenge.
 
 `taskID` maps the workspace to a task in [PC5.json](./PC5.json). All missions have a task of the format `mission_x_challenge`, where `x` is the same as the letter at the end of the mission ID. For reference, missions are alternatingly "unlocked" and "locked" missions, meaning that `a`, `c`, `e`, etc. are unlocked at the start, and `b`, `d`, `f` are unlocked by the unlocked mission that preceeds them in the list. In the official JSON, missions go up through `mission_p`. `taskID` values should not be used in more than one challenge within a game.
 
-`locationID` maps the workspace to a location. The official PC5 JSON has nine locations - `initial`, which is the location at which the players start the game and where all of the initially-unlocked missions take place, and eight locations of the format `mission_x_location`, where again `mission_x` is the same mission ID as one of the locked missions.
+`locationID` maps the workspace to a location. The official PC5 JSON has nine locations - `initial`, which is the location at which the players start the game and where all of the initially-unlocked missions take place, and eight locations of the format `mission_x_loc`, where again `mission_x` is the same mission ID as one of the locked missions.
 
 Like the ship workspace, this example is given with `noGateway` set to `true`.
 
