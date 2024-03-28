@@ -100,9 +100,10 @@ def get_sanitized_headers(request: Request) -> dict:
     # Starlette's Request Headers property is immutable,
     # but I want to remove the API key from logs.
     headers = dict(request.headers)
-    api_key = headers.get('x-api-key')
-    if api_key:
-        headers['x-api-key'] = '<secret>'
+    sanitize_keys = ['x-api-key', 'authorization']
+    for key in sanitize_keys:
+        if key in headers:
+            headers[key] = '<secret>'
     return headers
 
 
