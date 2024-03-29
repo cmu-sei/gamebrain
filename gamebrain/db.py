@@ -252,6 +252,7 @@ async def store_team(
     headless_url: Optional[str] | None = "",
     team_name: Optional[str] = None,
     game_session_id: Optional[int] = None,
+    active: Optional[bool] = None,
 ):
     """
     ship_gamespace_id: Maximum 36 character string.
@@ -266,6 +267,8 @@ async def store_team(
         kwargs["team_name"] = team_name
     if game_session_id:
         kwargs["game_session_id"] = game_session_id
+    if active is not None:
+        kwargs["active"] = active
     team_data = DBManager.TeamData(id=team_id, **kwargs)
     await DBManager.merge_rows([team_data])
 
@@ -288,7 +291,11 @@ async def store_game_session(
     merged_session_data = await DBManager.merge_rows([session_data])
 
     for team_id in team_ids:
-        await store_team(team_id, game_session_id=merged_session_data[0].id)
+        await store_team(
+            team_id,
+            game_session_id=merged_session_data[0].id,
+            active=True
+        )
 
     await store_players(players)
 
