@@ -210,6 +210,18 @@ async def test_get_settings() -> SettingsModel:
     return get_settings()
 
 
+@test_router.get("/settings/echo_sql/{state}")
+async def test_change_echo_sql(state: bool) -> None:
+    # Dirty workaround to avoid having to re-init the DB engine
+    # or dig through its source to figure out how to change
+    # the setting.
+    if state:
+        level = logging.INFO
+    else:
+        level = logging.NOTSET
+    logging.getLogger("sqlalchemy.engine").setLevel(level)
+
+
 @test_router.get("/current_state")
 async def test_get_current_state() -> GameDataCacheSnapshot:
     snapshot = await GameStateManager.snapshot_data()
