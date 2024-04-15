@@ -146,9 +146,10 @@ class DBManager:
         cls,
         connection_string: str = "",
         drop_first=False,
-        echo=False
+        echo=False,
+        change_echo=False,
     ):
-        if cls.engine and not drop_first:
+        if cls.engine and not (drop_first or change_echo):
             return
         cls.engine = create_async_engine(
             connection_string,

@@ -41,7 +41,7 @@ from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
-from .db import get_active_game_sessions, get_all_sessions
+from .db import get_active_game_sessions, get_all_sessions, DBManager
 import gamebrain.gamedata.cache as cache
 from .gamedata.cache import (
     GameDataCacheSnapshot,
@@ -215,11 +215,18 @@ async def test_change_echo_sql(state: bool) -> None:
     # Dirty workaround to avoid having to re-init the DB engine
     # or dig through its source to figure out how to change
     # the setting.
-    if state:
-        level = logging.INFO
-    else:
-        level = logging.NOTSET
-    logging.getLogger("sqlalchemy.engine").setLevel(level)
+    # if state:
+    #     level = logging.INFO
+    # else:
+    #     level = logging.NOTSET
+    # logging.getLogger("sqlalchemy.engine").setLevel(level)
+    settings = get_settings()
+    await DBManager.init_db(
+        settings.db.connection_string,
+        False,
+        state,
+        True,
+    )
 
 
 @test_router.get("/current_state")
