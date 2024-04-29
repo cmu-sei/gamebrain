@@ -145,3 +145,15 @@ async def cleanup_dead_sessions(nuke: bool = False):
 
 async def nuke_active_sessions():
     await cleanup_dead_sessions(True)
+
+
+async def set_sql_logger(level):
+    logging.getLogger("sqlalchemy.engine").setLevel()
+
+
+async def enable_sql_logger():
+    await set_sql_logger(logging.INFO)
+
+
+async def disable_sql_logger():
+    await set_sql_logger(logging.NOTSET)

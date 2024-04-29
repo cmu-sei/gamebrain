@@ -357,10 +357,14 @@ async def gamestate_get_is_team_active(
 async def get_is_team_active(
     team_id: str
 ) -> GenericResponse:
+    from util import enable_sql_logger, disable_sql_logger
+
+    enable_sql_logger()
     active_teams = {
         team["id"]
         for team in await db.get_active_teams()
     }
+    disable_sql_logger()
     response = GenericResponse(
         success=(team_id in active_teams),
         message=team_id
