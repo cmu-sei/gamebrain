@@ -195,6 +195,33 @@ class DBManager:
             await session.commit()
 
 
+class TeamDataCache:
+    _cache: dict[str, dict] = {}
+    _cache_lock: Lock = Lock()
+
+    @classmethod
+    async def remove(cls, team_id: str):
+        async with cls._cache_lock:
+            try:
+                del cls._cache[team_id]
+            except KeyError:
+                ...
+
+    @classmethod
+    async def set(cls, team_id: str, team_data: dict):
+        async with cls._cache_lock:
+            cls._cache[team_id] = team_data
+
+    @classmethod
+    async def get(cls, team_id: str) -> dict | None:
+        async with cls._cache_lock:
+            return cls._cache.get(team_id)
+
+    @classmethod
+    async def active(cls) -> [dict]:
+        ...
+
+
 class TeamSessionCache:
     _cache: dict[str, dict] = {}
     _cache_lock: Lock = Lock()
