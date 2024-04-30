@@ -360,12 +360,12 @@ async def get_is_team_active(
     from .util import enable_sql_logger, disable_sql_logger
 
     logging.info("Enabling SQL logging")
-    enable_sql_logger()
+    await enable_sql_logger()
     active_teams = {
         team["id"]
         for team in await db.get_active_teams()
     }
-    disable_sql_logger()
+    await disable_sql_logger()
     logging.info("Disabled SQL logging")
     response = GenericResponse(
         success=(team_id in active_teams),
