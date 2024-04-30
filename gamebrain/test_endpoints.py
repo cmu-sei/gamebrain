@@ -27,7 +27,6 @@ from json import (
     JSONDecodeError,
     load as json_load,
     loads as json_loads,
-    dumps as json_dumps,
 )
 import logging
 import sys
@@ -57,6 +56,7 @@ from .gamedata.cache import (
     LocationID,
     PowerMode,
 )
+from .gamedata import controller as gd_controller
 from .util import cleanup_team, nuke_active_sessions
 
 # This whole module was written without thinking about pytest.
@@ -315,3 +315,19 @@ async def adjust_logging_interval(
                 status_code=400,
                 detail="Invalid module specified."
             )
+
+# Make test routes using the `get` decorator on the test router.
+route_map = {
+    "/GameData/": gd_controller.get_gamedata,
+    "/GameData/{team_id}": gd_controller.get_gamedata,
+    "/GameData/LocationUnlock/{coordinates}/{team_id}": gd_controller.get_locationunlock,
+    "/GameData/Jump/{location_id}/{team_id}": gd_controller.get_jump,
+    "/GameData/ExtendAntenna/{team_id}": gd_controller.get_extendantenna,
+    "/GameData/RetractAntenna/{team_id}": gd_controller.get_retractantenna,
+    "/GameData/ScanLocation/{team_id}": gd_controller.get_scanlocation,
+    "/GameData/PowerMode/{status}/{team_id}": gd_controller.get_powermode,
+    "/GameData/CommEventCompleted/{team_id}": gd_controller.get_commeventcompleted,
+}
+
+for route, function in route_map.items():
+    test_router.get(route)(function)
