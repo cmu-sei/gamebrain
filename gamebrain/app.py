@@ -52,7 +52,7 @@ import gamebrain.db as db
 from gamebrain.gamedata.model import GenericResponse
 from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
-from .gamedata.controller import router as gd_router
+from .gamedata.controller import gamestate_router as gd_router
 from .pubsub import PubSub, Subscriber
 from .test_endpoints import test_router
 from .util import url_path_join

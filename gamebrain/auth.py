@@ -25,8 +25,8 @@
 import logging
 from typing import Optional
 
-from fastapi import HTTPException, Depends
-from fastapi.security import APIKeyHeader
+from fastapi import HTTPException, Depends, Security
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
 
@@ -51,6 +51,15 @@ def check_api_key(x_api_key: str, expected_x_api_key: str):
         )
 
 
+def gamestate_jwt_dependency(
+        auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+):
+    return check_jwt(
+        auth.credentials,
+        get_settings().identity.jwt_audiences.gamestate_api
+    )
+
+
 def check_jwt(token: str, scope: Optional[str] = None, require_sub: bool = False):
     settings = get_settings()
     try:
@@ -67,7 +76,9 @@ def check_jwt(token: str, scope: Optional[str] = None, require_sub: bool = False
         if scope:
             token_scopes = payload.get("scope")
             if not token_scopes:
-                raise JWTClaimsError(f"JWT Error. Required: {scope}. Provided: None. ")
+                raise JWTClaimsError(
+                    f"JWT Error. Required: {scope}. Provided: None. "
+                )
             if scope not in token_scopes:
                 raise JWTClaimsError(
                     f"JWT Error. Required: {scope}. Provided: {token_scopes}."
