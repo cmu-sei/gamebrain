@@ -148,7 +148,7 @@ async def nuke_active_sessions():
 
 
 async def set_sql_logger(level):
-    logging.getLogger("sqlalchemy.engine").setLevel()
+    logging.getLogger("sqlalchemy.engine").setLevel(level)
 
 
 async def enable_sql_logger():
