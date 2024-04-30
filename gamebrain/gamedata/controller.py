@@ -51,7 +51,6 @@ gamestate_router = APIRouter(
 async def get_gamedata(
     team_id: TeamID | None = None,
 ) -> GameDataResponse:
-    logging.info(team_id)
     try:
         game_data = await GameStateManager.get_team_data(team_id)
         logging.debug(
