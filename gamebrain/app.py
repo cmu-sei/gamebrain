@@ -357,7 +357,7 @@ async def gamestate_get_is_team_active(
 async def get_is_team_active(
     team_id: str
 ) -> GenericResponse:
-    from util import enable_sql_logger, disable_sql_logger
+    from .util import enable_sql_logger, disable_sql_logger
 
     logging.info("Enabling SQL logging")
     enable_sql_logger()
