@@ -238,6 +238,7 @@ class TeamSessionCache:
     @classmethod
     async def set(cls, team_id: str, game_session: dict):
         async with cls._cache_lock:
+            logging.info(f"Setting team {team_id} to {game_session}")
             cls._cache[team_id] = game_session
 
     @classmethod
