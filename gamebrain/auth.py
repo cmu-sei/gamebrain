@@ -42,8 +42,8 @@ def check_api_key(x_api_key: str, expected_x_api_key: str):
     if x_api_key != expected_x_api_key:
         logging.error(
             "Invalid X-API-Key header received.\n"
-            f"Expected API key: {expected_x_api_key}"
-            f"Request included: {x_api_key}\n"
+            f"Expected API key does not match."
+            f"Request tried key: {x_api_key}\n"
         )
         raise HTTPException(
             status_code=401,
