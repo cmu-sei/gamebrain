@@ -2443,7 +2443,7 @@ class GameStateManager:
                     )
                 else:
                     team_db_data = await get_team(team_id)
-                    gamespace_id = team_db_data.get("gamespace_id")
+                    gamespace_id = team_db_data.get("ship_gamespace_id")
 
                     if not gamespace_id:
                         logging.error(
