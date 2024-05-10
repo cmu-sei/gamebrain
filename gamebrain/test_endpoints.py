@@ -22,6 +22,7 @@
 
 # DM23-0100
 
+import asyncio
 import os
 from json import (
     JSONDecodeError,
@@ -293,7 +294,7 @@ async def end_game_sessions():
 
 @test_router.get("/exit")
 async def exit():
-    sys.exit(1337)
+    asyncio.get_running_loop().stop()
 
 
 @test_router.get("/logs/{module}/{interval}")
