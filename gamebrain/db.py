@@ -22,12 +22,11 @@
 
 # DM23-0100
 
-from asyncio import Lock
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import partial
 import json
+import logging
 from typing import Dict, List, Optional
 
 from sqlalchemy import (
@@ -195,58 +194,6 @@ class DBManager:
             await session.commit()
 
 
-class TeamDataCache:
-    _cache: dict[str, dict] = {}
-    _cache_lock: Lock = Lock()
-
-    @classmethod
-    async def remove(cls, team_id: str):
-        async with cls._cache_lock:
-            try:
-                del cls._cache[team_id]
-            except KeyError:
-                ...
-
-    @classmethod
-    async def set(cls, team_id: str, team_data: dict):
-        async with cls._cache_lock:
-            cls._cache[team_id] = team_data
-
-    @classmethod
-    async def get(cls, team_id: str) -> dict | None:
-        async with cls._cache_lock:
-            return cls._cache.get(team_id)
-
-    @classmethod
-    async def active(cls) -> [dict]:
-        ...
-
-
-class TeamSessionCache:
-    _cache: dict[str, dict] = {}
-    _cache_lock: Lock = Lock()
-
-    @classmethod
-    async def remove(cls, team_ids: [str]):
-        async with cls._cache_lock:
-            for team_id in team_ids:
-                try:
-                    del cls._cache[team_id]
-                except KeyError:
-                    ...
-
-    @classmethod
-    async def set(cls, team_id: str, game_session: dict):
-        async with cls._cache_lock:
-            logging.info(f"Setting team {team_id} to {game_session}")
-            cls._cache[team_id] = game_session
-
-    @classmethod
-    async def get(cls, team_id: str) -> dict | None:
-        async with cls._cache_lock:
-            return cls._cache.get(team_id)
-
-
 async def store_event(team_id: str, message: str):
     received_time = datetime.now(timezone.utc)
     event = [
@@ -344,7 +291,6 @@ async def store_game_session(
     )
     merged_session_data = await DBManager.merge_rows([session_data])
 
-    await TeamSessionCache.remove(team_ids)
     for team_id in team_ids:
         await store_team(
             team_id,
@@ -356,10 +302,6 @@ async def store_game_session(
 
 
 async def get_team_game_session(team_id: str) -> dict:
-    game_session = await TeamSessionCache.get(team_id)
-    if game_session:
-        return game_session
-
     team = await get_team(team_id)
     if not team:
         return None
@@ -371,7 +313,6 @@ async def get_team_game_session(team_id: str) -> dict:
                 DBManager.GameSession.active == True,
             )
         ).pop()
-        await TeamSessionCache.set(team_id, game_session)
         return game_session
     except IndexError:
         return None
