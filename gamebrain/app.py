@@ -52,7 +52,7 @@ import gamebrain.db as db
 from gamebrain.gamedata.model import GenericResponse
 from .clients import gameboard, topomojo
 from .config import Settings, get_settings, Global
-from .gamedata.controller import router as gd_router
+from .gamedata.controller import gamestate_router as gd_router
 from .pubsub import PubSub, Subscriber
 from .test_endpoints import test_router
 from .util import url_path_join
@@ -100,9 +100,10 @@ def get_sanitized_headers(request: Request) -> dict:
     # Starlette's Request Headers property is immutable,
     # but I want to remove the API key from logs.
     headers = dict(request.headers)
-    api_key = headers.get('x-api-key')
-    if api_key:
-        headers['x-api-key'] = '<secret>'
+    sanitize_keys = ['x-api-key', 'authorization']
+    for key in sanitize_keys:
+        if key in headers:
+            headers[key] = '<secret>'
     return headers
 
 
@@ -356,10 +357,16 @@ async def gamestate_get_is_team_active(
 async def get_is_team_active(
     team_id: str
 ) -> GenericResponse:
+    # from .util import enable_sql_logger, disable_sql_logger
+
+    logging.info("Enabling SQL logging")
+    # await enable_sql_logger()
     active_teams = {
         team["id"]
         for team in await db.get_active_teams()
     }
+    # await disable_sql_logger()
+    logging.info("Disabled SQL logging")
     response = GenericResponse(
         success=(team_id in active_teams),
         message=team_id

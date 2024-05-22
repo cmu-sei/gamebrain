@@ -22,12 +22,12 @@
 
 # DM23-0100
 
+import asyncio
 import os
 from json import (
     JSONDecodeError,
     load as json_load,
     loads as json_loads,
-    dumps as json_dumps,
 )
 import logging
 import sys
@@ -41,7 +41,7 @@ from .admin.controller import get_teams_active
 from .auth import admin_api_key_dependency
 from .config import get_settings, SettingsModel
 from .clients import topomojo
-from .db import get_active_game_sessions, get_all_sessions
+from .db import get_active_game_sessions, get_all_sessions, DBManager
 import gamebrain.gamedata.cache as cache
 from .gamedata.cache import (
     GameDataCacheSnapshot,
@@ -57,6 +57,7 @@ from .gamedata.cache import (
     LocationID,
     PowerMode,
 )
+from .gamedata import controller as gd_controller
 from .util import cleanup_team, nuke_active_sessions
 
 # This whole module was written without thinking about pytest.
@@ -210,6 +211,25 @@ async def test_get_settings() -> SettingsModel:
     return get_settings()
 
 
+@test_router.get("/settings/echo_sql/{state}")
+async def test_change_echo_sql(state: bool) -> None:
+    # Dirty workaround to avoid having to re-init the DB engine
+    # or dig through its source to figure out how to change
+    # the setting.
+    # if state:
+    #     level = logging.INFO
+    # else:
+    #     level = logging.NOTSET
+    # logging.getLogger("sqlalchemy.engine").setLevel(level)
+    settings = get_settings()
+    await DBManager.init_db(
+        settings.db.connection_string,
+        False,
+        state,
+        True,
+    )
+
+
 @test_router.get("/current_state")
 async def test_get_current_state() -> GameDataCacheSnapshot:
     snapshot = await GameStateManager.snapshot_data()
@@ -274,7 +294,7 @@ async def end_game_sessions():
 
 @test_router.get("/exit")
 async def exit():
-    sys.exit(1337)
+    asyncio.get_running_loop().stop()
 
 
 @test_router.get("/logs/{module}/{interval}")
@@ -296,3 +316,19 @@ async def adjust_logging_interval(
                 status_code=400,
                 detail="Invalid module specified."
             )
+
+# Make test routes using the `get` decorator on the test router.
+route_map = {
+    "/GameData/": gd_controller.get_gamedata,
+    "/GameData/{team_id}": gd_controller.get_gamedata,
+    "/GameData/LocationUnlock/{coordinates}/{team_id}": gd_controller.get_locationunlock,
+    "/GameData/Jump/{location_id}/{team_id}": gd_controller.get_jump,
+    "/GameData/ExtendAntenna/{team_id}": gd_controller.get_extendantenna,
+    "/GameData/RetractAntenna/{team_id}": gd_controller.get_retractantenna,
+    "/GameData/ScanLocation/{team_id}": gd_controller.get_scanlocation,
+    "/GameData/PowerMode/{status}/{team_id}": gd_controller.get_powermode,
+    "/GameData/CommEventCompleted/{team_id}": gd_controller.get_commeventcompleted,
+}
+
+for route, function in route_map.items():
+    test_router.get(route)(function)

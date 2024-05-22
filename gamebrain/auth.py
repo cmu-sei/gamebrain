@@ -25,8 +25,8 @@
 import logging
 from typing import Optional
 
-from fastapi import HTTPException, Depends
-from fastapi.security import APIKeyHeader
+from fastapi import HTTPException, Depends, Security
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from jose.exceptions import JWTError, JWTClaimsError, ExpiredSignatureError
 
@@ -42,13 +42,22 @@ def check_api_key(x_api_key: str, expected_x_api_key: str):
     if x_api_key != expected_x_api_key:
         logging.error(
             "Invalid X-API-Key header received.\n"
-            f"Expected API key: {expected_x_api_key}"
-            f"Request included: {x_api_key}\n"
+            f"Expected API key does not match."
+            f"Request tried key: {x_api_key}\n"
         )
         raise HTTPException(
             status_code=401,
             detail=f"Invalid X-API-Key header received. You sent: \n{x_api_key}",
         )
+
+
+def gamestate_jwt_dependency(
+        auth: HTTPAuthorizationCredentials = Security((HTTPBearer()))
+):
+    return check_jwt(
+        auth.credentials,
+        get_settings().identity.jwt_audiences.gamestate_api
+    )
 
 
 def check_jwt(token: str, scope: Optional[str] = None, require_sub: bool = False):
@@ -67,7 +76,9 @@ def check_jwt(token: str, scope: Optional[str] = None, require_sub: bool = False
         if scope:
             token_scopes = payload.get("scope")
             if not token_scopes:
-                raise JWTClaimsError(f"JWT Error. Required: {scope}. Provided: None. ")
+                raise JWTClaimsError(
+                    f"JWT Error. Required: {scope}. Provided: None. "
+                )
             if scope not in token_scopes:
                 raise JWTClaimsError(
                     f"JWT Error. Required: {scope}. Provided: {token_scopes}."

@@ -22,11 +22,11 @@
 
 # DM23-0100
 
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import partial
 import json
+import logging
 from typing import Dict, List, Optional
 
 from sqlalchemy import (
@@ -146,9 +146,10 @@ class DBManager:
         cls,
         connection_string: str = "",
         drop_first=False,
-        echo=False
+        echo=False,
+        change_echo=False,
     ):
-        if cls.engine and not drop_first:
+        if cls.engine and not (drop_first or change_echo):
             return
         cls.engine = create_async_engine(
             connection_string,
@@ -252,6 +253,7 @@ async def store_team(
     headless_url: Optional[str] | None = "",
     team_name: Optional[str] = None,
     game_session_id: Optional[int] = None,
+    active: Optional[bool] = None,
 ):
     """
     ship_gamespace_id: Maximum 36 character string.
@@ -266,6 +268,8 @@ async def store_team(
         kwargs["team_name"] = team_name
     if game_session_id:
         kwargs["game_session_id"] = game_session_id
+    if active is not None:
+        kwargs["active"] = active
     team_data = DBManager.TeamData(id=team_id, **kwargs)
     await DBManager.merge_rows([team_data])
 
@@ -288,23 +292,28 @@ async def store_game_session(
     merged_session_data = await DBManager.merge_rows([session_data])
 
     for team_id in team_ids:
-        await store_team(team_id, game_session_id=merged_session_data[0].id)
+        await store_team(
+            team_id,
+            game_session_id=merged_session_data[0].id,
+            active=True
+        )
 
     await store_players(players)
 
 
-async def get_team_game_session(team_id: str):
+async def get_team_game_session(team_id: str) -> dict:
     team = await get_team(team_id)
     if not team:
         return None
     try:
-        return (
+        game_session = (
             await DBManager.get_rows(
                 DBManager.GameSession,
                 DBManager.GameSession.id == team["game_session_id"],
                 DBManager.GameSession.active == True,
             )
         ).pop()
+        return game_session
     except IndexError:
         return None
 

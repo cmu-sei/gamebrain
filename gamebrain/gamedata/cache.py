@@ -1155,9 +1155,12 @@ class GameStateManager:
                 continue
 
             try:
+                ignore_ids = [team_data.ship.gamespaceData.gamespaceID]
+                if team_data.ship.gamespaceData.isPC4Workspace:
+                    ignore_ids = None
                 team_challenges = await gameboard.mission_update(
                     team_id,
-                    [team_data.ship.gamespaceData.gamespaceID],
+                    ignore_ids,
                 )
             except TypeError:
                 logging.error(
@@ -1168,7 +1171,8 @@ class GameStateManager:
             else:
                 logging.info(
                     "Got mission update for team "
-                    f"{team_id}."
+                    f"{team_id}. Team challenges length: "
+                    f"{len(team_challenges)}"
                 )
 
             if not team_challenges:
@@ -1633,10 +1637,12 @@ class GameStateManager:
                 gamespace_data = None
             position_data = {}
             if team_id and not gamespace_data:
-                logging.error(
-                    f"Team {team_id}'s mission {mission.missionID} has "
-                    "not been populated with gamespace data."
-                )
+                # This is expected for PC4 games.
+                if not team_data.ship.gamespaceData.isPC4Workspace:
+                    logging.error(
+                        f"Team {team_id}'s mission {mission.missionID} has "
+                        "not been populated with gamespace data."
+                    )
             elif team_id is None:
                 # This is fine, but don't try to access gamespace_data.
                 pass
@@ -2384,7 +2390,7 @@ class GameStateManager:
         for mission in team_specific_missions:
             mission_id = mission.missionID
             if mission_id in team_data.missions:
-                logging.warning(
+                logging.info(
                     f"Attempted to unlock mission {mission_id} for team {team_id}, "
                     "but it was already unlocked."
                 )
@@ -2437,7 +2443,7 @@ class GameStateManager:
                     )
                 else:
                     team_db_data = await get_team(team_id)
-                    gamespace_id = team_db_data.get("gamespace_id")
+                    gamespace_id = team_db_data.get("ship_gamespace_id")
 
                     if not gamespace_id:
                         logging.error(
