@@ -1039,10 +1039,14 @@ class GameStateManager:
                             question.answer
                         )
                     except TypeError:
-                        logging.error(
-                            "Question "
-                            f"{task_id} in PC4 game had a null answer."
-                        )
+                        # The answer will be null if there's been no submission
+                        # yet. In that case, don't complain.
+                        if question.answer is not None:
+                            logging.error(
+                                "Question "
+                                f"{task_id} in PC4 game had a null answer: "
+                                f"{question.answer}."
+                            )
                     except ValueError:
                         # This means the answer was a non-ISO-format string.
                         # It's no problem if the question is marked correct.
