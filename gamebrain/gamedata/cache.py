@@ -1054,7 +1054,7 @@ class GameStateManager:
                         logging.error(
                             "Question "
                             f"{task_id} in PC4 game had an answer "
-                            "not in ISO format."
+                            f"not in ISO format: {question.answer}"
                         )
                     else:
                         if team_data.pc4_handling_cllctn6 < last_failed_audit:
