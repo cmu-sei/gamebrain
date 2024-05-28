@@ -1690,10 +1690,12 @@ class GameStateManager:
                 score_data["baseSolveValue"] = mission_score_data.base_solve_value
                 score_data["bonusRemaining"] = mission_score_data.bonus_remaining
             elif team_id:
-                logging.warning(
-                    f"Team {team_id} had no score data for "
-                    f"mission {mission.missionID}"
-                )
+                # PC4 scores require special handling.
+                if not team_data.ship.gamespaceData.isPC4Workspace:
+                    logging.warning(
+                        f"Team {team_id} had no score data for "
+                        f"mission {mission.missionID}"
+                    )
 
             if team_id:
                 teams_solved = await cls._get_mission_completion_in_team_session(
