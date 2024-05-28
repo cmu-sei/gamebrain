@@ -1045,7 +1045,7 @@ class GameStateManager:
                         if question.answer is not None:
                             logging.error(
                                 "Question "
-                                f"{task_id} in PC4 game had a null answer: "
+                                f"{task_id} in PC4 game had a bad answer type: "
                                 f"{question.answer}."
                             )
                     except ValueError:
