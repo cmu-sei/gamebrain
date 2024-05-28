@@ -1051,11 +1051,12 @@ class GameStateManager:
                     except ValueError:
                         # This means the answer was a non-ISO-format string.
                         # It's no problem if the question is marked correct.
-                        logging.error(
-                            "Question "
-                            f"{task_id} in PC4 game had an answer "
-                            f"not in ISO format: {question.answer}"
-                        )
+                        if question.answer != "You did not earn a token for this part":
+                            logging.error(
+                                "Question "
+                                f"{task_id} in PC4 game had an answer "
+                                f"not in ISO format: {question.answer}"
+                            )
                     else:
                         if team_data.pc4_handling_cllctn6 < last_failed_audit:
                             send_cllctn6_failure = True
