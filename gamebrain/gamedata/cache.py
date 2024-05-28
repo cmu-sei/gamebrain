@@ -403,7 +403,8 @@ class GameStateManager:
         video_urls = []
         async with cls._lock:
             for comm_event in cls._cache.comm_map.__root__.values():
-                video_urls.append(comm_event.videoURL)
+                if "http" in comm_event.videoURL:
+                    video_urls.append(comm_event.videoURL)
 
             next_refresh = cls._next_video_refresh
 
