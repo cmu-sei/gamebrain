@@ -403,7 +403,8 @@ class GameStateManager:
         video_urls = []
         async with cls._lock:
             for comm_event in cls._cache.comm_map.__root__.values():
-                video_urls.append(comm_event.videoURL)
+                if "http" in comm_event.videoURL:
+                    video_urls.append(comm_event.videoURL)
 
             next_refresh = cls._next_video_refresh
 
@@ -1039,18 +1040,23 @@ class GameStateManager:
                             question.answer
                         )
                     except TypeError:
-                        logging.error(
-                            "Question "
-                            f"{task_id} in PC4 game had a null answer."
-                        )
+                        # The answer will be null if there's been no submission
+                        # yet. In that case, don't complain.
+                        if question.answer is not None:
+                            logging.error(
+                                "Question "
+                                f"{task_id} in PC4 game had a bad answer type: "
+                                f"{question.answer}."
+                            )
                     except ValueError:
                         # This means the answer was a non-ISO-format string.
                         # It's no problem if the question is marked correct.
-                        logging.error(
-                            "Question "
-                            f"{task_id} in PC4 game had an answer "
-                            "not in ISO format."
-                        )
+                        if question.answer != "You did not earn a token for this part":
+                            logging.error(
+                                "Question "
+                                f"{task_id} in PC4 game had an answer "
+                                f"not in ISO format: {question.answer}"
+                            )
                     else:
                         if team_data.pc4_handling_cllctn6 < last_failed_audit:
                             send_cllctn6_failure = True
@@ -1684,10 +1690,12 @@ class GameStateManager:
                 score_data["baseSolveValue"] = mission_score_data.base_solve_value
                 score_data["bonusRemaining"] = mission_score_data.bonus_remaining
             elif team_id:
-                logging.warning(
-                    f"Team {team_id} had no score data for "
-                    f"mission {mission.missionID}"
-                )
+                # PC4 scores require special handling.
+                if not team_data.ship.gamespaceData.isPC4Workspace:
+                    logging.warning(
+                        f"Team {team_id} had no score data for "
+                        f"mission {mission.missionID}"
+                    )
 
             if team_id:
                 teams_solved = await cls._get_mission_completion_in_team_session(
