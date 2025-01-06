@@ -10,7 +10,6 @@ class GameEngineQuestionView(BaseModel):
     hint: str | None
     isCorrect: bool
     isGraded: bool
-    penalty: float
     text: str | None
     weight: float
 
